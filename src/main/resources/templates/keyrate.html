@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 История ключевой ставки | ЦБ РФ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #667eea;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: translateY(-3px);
+            background: white;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        /* Статистика */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9eef5 100%);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #718096;
+            font-weight: 500;
+        }
+
+        .stat-trend {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .trend-up {
+            color: #e53e3e;
+        }
+
+        .trend-down {
+            color: #38a169;
+        }
+
+        .trend-stable {
+            color: #ed8936;
+        }
+
+        /* График */
+        .chart-container {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+
+        .chart-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2d3748;
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chart-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .chart-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        canvas {
+            max-height: 500px;
+            width: 100%;
+        }
+
+        /* Таблица */
+        .table-container {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .table-header {
+            padding: 20px 25px;
+            background: #f7fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .table-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2d3748;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #edf2f7;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #4a5568;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #2d3748;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .rate-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .rate-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 20px;
+        }
+
+        .change-positive {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .change-negative {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .change-neutral {
+            background: #feebc8;
+            color: #c05621;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #718096;
+        }
+
+        .error {
+            text-align: center;
+            padding: 60px;
+            color: #e53e3e;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            background: #f8f9fa;
+            color: #666;
+            border-top: 1px solid #eaeaea;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<a href="/" class="back-button">
+    <i class="fas fa-home"></i> На главную
+</a>
+
+<div class="container">
+    <header>
+        <h1>
+            <i class="fas fa-chart-line"></i>
+            История ключевой ставки ЦБ РФ
+            <i class="fas fa-ruble-sign"></i>
+        </h1>
+        <p class="subtitle">Динамика изменений процентной ставки с течением времени</p>
+    </header>
+
+    <div class="content">
+        <!-- Блок статистики -->
+        <div class="stats-grid" id="statsContainer">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-percent"></i></div>
+                <div class="stat-value" id="currentRate">—</div>
+                <div class="stat-label">Текущая ставка</div>
+                <div class="stat-trend" id="currentTrend"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
+                <div class="stat-value" id="maxRate">—</div>
+                <div class="stat-label">Максимальная ставка</div>
+                <div class="stat-trend" id="maxDate"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
+                <div class="stat-value" id="minRate">—</div>
+                <div class="stat-label">Минимальная ставка</div>
+                <div class="stat-trend" id="minDate"></div>
+            </div>
+        </div>
+
+        <!-- График -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h2>
+                    <i class="fas fa-chart-line" style="color: #667eea;"></i>
+                    Динамика изменения ставки
+                </h2>
+                <div class="chart-actions">
+                    <button class="chart-btn" onclick="downloadChartAsImage()">
+                        <i class="fas fa-camera"></i> Сохранить график
+                    </button>
+                </div>
+            </div>
+            <canvas id="rateChart"></canvas>
+        </div>
+
+        <!-- Таблица с историей -->
+        <div class="table-container">
+            <div class="table-header">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <h2>
+                        <i class="fas fa-table"></i>
+                        Полная история изменений
+                    </h2>
+                    <button class="refresh-btn" id="refreshTableBtn">
+                        <i class="fas fa-sync-alt"></i> Обновить данные
+                    </button>
+                </div>
+            </div>
+            <div class="table-wrapper" id="tableWrapper">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-pulse fa-2x"></i>
+                    <p>Загрузка данных...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 Decision Maker | Данные ЦБ РФ • Ключевая ставка — основной инструмент денежно-кредитной политики</p>
+    </footer>
+</div>
+
+<script>
+    let rateChart = null;
+    let chartData = null;
+
+    // Форматирование даты
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    // Форматирование полной даты для всплывающих подсказок
+    function formatFullDate(dateStr) {
+        const date = new Date(dateStr);
+        const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+            'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+        return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    // Расчет изменений между ставками
+    function calculateChange(current, previous) {
+        if (!previous) return null;
+        const change = current - previous;
+        const percentChange = (change / previous) * 100;
+        return { absolute: change, percent: percentChange };
+    }
+
+    // Обновление статистики
+    function updateStats(data) {
+        if (!data || data.length === 0) return;
+
+        const sortedData = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const current = sortedData[sortedData.length - 1];
+        const previous = sortedData.length > 1 ? sortedData[sortedData.length - 2] : null;
+
+        // Текущая ставка с изменением
+        document.getElementById('currentRate').textContent = `${current.keyRate.toFixed(2)}%`;
+        const currentTrendDiv = document.getElementById('currentTrend');
+        if (previous) {
+            const change = calculateChange(current.keyRate, previous.keyRate);
+            if (change.absolute > 0.01) {
+                currentTrendDiv.innerHTML = `<i class="fas fa-arrow-up"></i> +${change.absolute.toFixed(2)}% (${change.percent.toFixed(1)}%)`;
+                currentTrendDiv.className = "stat-trend trend-up";
+            } else if (change.absolute < -0.01) {
+                currentTrendDiv.innerHTML = `<i class="fas fa-arrow-down"></i> ${change.absolute.toFixed(2)}% (${change.percent.toFixed(1)}%)`;
+                currentTrendDiv.className = "stat-trend trend-down";
+            } else {
+                currentTrendDiv.innerHTML = `<i class="fas fa-minus"></i> без изменений`;
+                currentTrendDiv.className = "stat-trend trend-stable";
+            }
+        } else {
+            currentTrendDiv.innerHTML = `<i class="fas fa-info-circle"></i> Первое значение`;
+            currentTrendDiv.className = "stat-trend";
+        }
+
+        // Максимальная ставка
+        const max = sortedData.reduce((max, item) => item.keyRate > max.keyRate ? item : max, sortedData[0]);
+        document.getElementById('maxRate').textContent = `${max.keyRate.toFixed(2)}%`;
+        document.getElementById('maxDate').innerHTML = `<i class="far fa-calendar-alt"></i> ${formatDate(max.date)}`;
+
+        // Минимальная ставка
+        const min = sortedData.reduce((min, item) => item.keyRate < min.keyRate ? item : min, sortedData[0]);
+        document.getElementById('minRate').textContent = `${min.keyRate.toFixed(2)}%`;
+        document.getElementById('minDate').innerHTML = `<i class="far fa-calendar-alt"></i> ${formatDate(min.date)}`;
+    }
+
+    // Создание графика
+    function createChart(data) {
+        const sortedData = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const labels = sortedData.map(item => formatDate(item.date));
+        const rates = sortedData.map(item => item.keyRate);
+
+        chartData = { labels, rates, rawData: sortedData };
+
+        const ctx = document.getElementById('rateChart').getContext('2d');
+
+        if (rateChart) {
+            rateChart.destroy();
+        }
+
+        rateChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Ключевая ставка, %',
+                    data: rates,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 10,
+                    pointBackgroundColor: '#764ba2',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const rate = context.parsed.y;
+                                const index = context.dataIndex;
+                                const date = sortedData[index].date;
+                                return [
+                                    `Ставка: ${rate.toFixed(2)}%`,
+                                    `Дата: ${formatFullDate(date)}`
+                                ];
+                            }
+                        },
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 12,
+                        cornerRadius: 8
+                    },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            usePointStyle: true,
+                            boxWidth: 10
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Процентная ставка (%)',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            color: '#e2e8f0',
+                            drawBorder: true
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Дата',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+    }
+
+    // Скачать график как изображение
+    function downloadChartAsImage() {
+        if (!rateChart) return;
+
+        const canvas = document.getElementById('rateChart');
+        const link = document.createElement('a');
+        link.download = 'key-rate-history.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    // Создание таблицы
+    function createTable(data) {
+        const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        let tableHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Ключевая ставка</th>
+                        <th>Изменение</th>
+                        <th>Динамика</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        for (let i = 0; i < sortedData.length; i++) {
+            const item = sortedData[i];
+            const prevItem = i < sortedData.length - 1 ? sortedData[i + 1] : null;
+            const change = prevItem ? calculateChange(item.keyRate, prevItem.keyRate) : null;
+
+            let changeHtml = '';
+            let changeClass = '';
+            let trendIcon = '';
+
+            if (change) {
+                if (change.absolute > 0.01) {
+                    changeHtml = `+${change.absolute.toFixed(2)}% (${change.percent.toFixed(1)}%)`;
+                    changeClass = 'change-positive';
+                    trendIcon = '<i class="fas fa-arrow-up"></i>';
+                } else if (change.absolute < -0.01) {
+                    changeHtml = `${change.absolute.toFixed(2)}% (${change.percent.toFixed(1)}%)`;
+                    changeClass = 'change-negative';
+                    trendIcon = '<i class="fas fa-arrow-down"></i>';
+                } else {
+                    changeHtml = '0% (0%)';
+                    changeClass = 'change-neutral';
+                    trendIcon = '<i class="fas fa-minus"></i>';
+                }
+            } else {
+                changeHtml = '—';
+                changeClass = 'change-neutral';
+                trendIcon = '<i class="fas fa-dot-circle"></i>';
+            }
+
+            tableHtml += `
+                <tr>
+                    <td><strong>${formatFullDate(item.date)}</strong></td>
+                    <td class="rate-value" style="color: #667eea;">${item.keyRate.toFixed(2)}%</td>
+                    <td><span class="rate-change ${changeClass}">${trendIcon} ${changeHtml}</span></td>
+                    <td style="font-size: 1.2rem;">
+                        ${change && change.absolute > 0.01 ? '📈' : (change && change.absolute < -0.01 ? '📉' : '➡️')}
+                    </td>
+                </tr>
+            `;
+        }
+
+        tableHtml += `
+                </tbody>
+            </table>
+        `;
+
+        document.getElementById('tableWrapper').innerHTML = tableHtml;
+    }
+
+    // Загрузка данных с сервера
+    async function loadKeyRateHistory() {
+        const tableWrapper = document.getElementById('tableWrapper');
+        tableWrapper.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse fa-2x"></i><p>Загрузка данных...</p></div>';
+
+        try {
+            const response = await fetch('http://localhost:8080/key/rate/all');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+
+            if (!data || data.length === 0) {
+                throw new Error('Нет данных');
+            }
+
+            // Обновляем статистику
+            updateStats(data);
+
+            // Создаем график
+            createChart(data);
+
+            // Создаем таблицу
+            createTable(data);
+
+        } catch (error) {
+            console.error('Ошибка загрузки данных:', error);
+            tableWrapper.innerHTML = `
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                    <p>Не удалось загрузить историю ключевой ставки</p>
+                    <p style="font-size: 0.9rem; margin-top: 10px;">Проверьте подключение к серверу http://localhost:8080/key/rate/all</p>
+                    <button onclick="loadKeyRateHistory()" class="refresh-btn" style="margin-top: 20px;">
+                        <i class="fas fa-sync-alt"></i> Повторить попытку
+                    </button>
+                </div>
+            `;
+
+            // Обновляем заглушки для статистики
+            document.getElementById('currentRate').textContent = 'Ошибка';
+            document.getElementById('maxRate').textContent = '—';
+            document.getElementById('minRate').textContent = '—';
+        }
+    }
+
+    // Обновление таблицы (только таблица, график и статистика тоже обновятся)
+    async function refreshTable() {
+        await loadKeyRateHistory();
+    }
+
+    // Инициализация
+    document.getElementById('refreshTableBtn').addEventListener('click', refreshTable);
+
+    // Загружаем данные при загрузке страницы
+    loadKeyRateHistory();
+
+    // Автообновление каждые 5 минут
+    setInterval(loadKeyRateHistory, 5 * 60 * 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💱 История курсов валют | ЦБ РФ</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    header {
+      background: linear-gradient(to right, #667eea, #764ba2);
+      color: white;
+      padding: 40px 30px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .back-button {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #667eea;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: bold;
+      display: flex;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+      transform: translateY(-3px);
+      background: white;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    /* Статистика */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e9eef5 100%);
+      border-radius: 15px;
+      padding: 25px;
+      transition: transform 0.3s ease;
+      border: 1px solid rgba(102, 126, 234, 0.2);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .stat-header i {
+      font-size: 2rem;
+      color: #667eea;
+    }
+
+    .stat-header h3 {
+      font-size: 1.3rem;
+      color: #2d3748;
+    }
+
+    .stat-current {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #667eea;
+      margin-bottom: 15px;
+    }
+
+    .stat-details {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      background: white;
+      border-radius: 10px;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: #718096;
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #2d3748;
+    }
+
+    .trend-up {
+      color: #e53e3e;
+    }
+
+    .trend-down {
+      color: #38a169;
+    }
+
+    .trend-stable {
+      color: #ed8936;
+    }
+
+    /* График */
+    .chart-container {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 40px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+      gap: 15px;
+    }
+
+    .chart-header h2 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #2d3748;
+    }
+
+    .chart-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chart-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .chart-btn:hover {
+      background: #5a67d8;
+      transform: translateY(-2px);
+    }
+
+    canvas {
+      max-height: 500px;
+      width: 100%;
+    }
+
+    /* Таблица */
+    .table-container {
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+    }
+
+    .table-header {
+      padding: 20px 25px;
+      background: #f7fafc;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .table-header h2 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #2d3748;
+    }
+
+    .refresh-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+
+    .refresh-btn:hover {
+      background: #5a67d8;
+      transform: translateY(-2px);
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: #edf2f7;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      color: #4a5568;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #2d3748;
+    }
+
+    tr:hover {
+      background: #f7fafc;
+    }
+
+    .rate-value {
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .rate-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.85rem;
+      padding: 4px 8px;
+      border-radius: 20px;
+    }
+
+    .change-positive {
+      background: #fed7d7;
+      color: #c53030;
+    }
+
+    .change-negative {
+      background: #c6f6d5;
+      color: #276749;
+    }
+
+    .change-neutral {
+      background: #feebc8;
+      color: #c05621;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: #718096;
+    }
+
+    .error {
+      text-align: center;
+      padding: 60px;
+      color: #e53e3e;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      background: #f8f9fa;
+      color: #666;
+      border-top: 1px solid #eaeaea;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+      .content {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      .stat-current {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back-button">
+  <i class="fas fa-home"></i> На главную
+</a>
+
+<div class="container">
+  <header>
+    <h1>
+      <i class="fas fa-chart-line"></i>
+      История курсов валют ЦБ РФ
+      <i class="fas fa-ruble-sign"></i>
+    </h1>
+    <p class="subtitle">Динамика изменений курсов USD и EUR с течением времени</p>
+  </header>
+
+  <div class="content">
+    <!-- Блок статистики -->
+    <div class="stats-grid" id="statsContainer">
+      <div class="stat-card" id="usdStats">
+        <div class="stat-header">
+          <i class="fas fa-dollar-sign"></i>
+          <h3>Доллар США (USD)</h3>
+        </div>
+        <div class="stat-current" id="usdCurrent">—</div>
+        <div class="stat-details">
+          <div class="stat-item">
+            <div class="stat-label">Максимум</div>
+            <div class="stat-value" id="usdMax">—</div>
+            <div class="stat-label" id="usdMaxDate" style="font-size: 0.7rem;"></div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Минимум</div>
+            <div class="stat-value" id="usdMin">—</div>
+            <div class="stat-label" id="usdMinDate" style="font-size: 0.7rem;"></div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Среднее</div>
+            <div class="stat-value" id="usdAvg">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card" id="eurStats">
+        <div class="stat-header">
+          <i class="fas fa-euro-sign"></i>
+          <h3>Евро (EUR)</h3>
+        </div>
+        <div class="stat-current" id="eurCurrent">—</div>
+        <div class="stat-details">
+          <div class="stat-item">
+            <div class="stat-label">Максимум</div>
+            <div class="stat-value" id="eurMax">—</div>
+            <div class="stat-label" id="eurMaxDate" style="font-size: 0.7rem;"></div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Минимум</div>
+            <div class="stat-value" id="eurMin">—</div>
+            <div class="stat-label" id="eurMinDate" style="font-size: 0.7rem;"></div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Среднее</div>
+            <div class="stat-value" id="eurAvg">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- График -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h2>
+          <i class="fas fa-chart-line" style="color: #667eea;"></i>
+          Динамика курсов валют
+        </h2>
+        <div class="chart-actions">
+          <button class="chart-btn" onclick="toggleCurrency('usd')" id="toggleUsdBtn">
+            <i class="fas fa-dollar-sign"></i> USD
+          </button>
+          <button class="chart-btn" onclick="toggleCurrency('eur')" id="toggleEurBtn">
+            <i class="fas fa-euro-sign"></i> EUR
+          </button>
+          <button class="chart-btn" onclick="downloadChartAsImage()">
+            <i class="fas fa-camera"></i> Сохранить график
+          </button>
+        </div>
+      </div>
+      <canvas id="currencyChart"></canvas>
+    </div>
+
+    <!-- Таблица с историей -->
+    <div class="table-container">
+      <div class="table-header">
+        <h2>
+          <i class="fas fa-table"></i>
+          Полная история изменений
+        </h2>
+        <button class="refresh-btn" id="refreshTableBtn">
+          <i class="fas fa-sync-alt"></i> Обновить данные
+        </button>
+      </div>
+      <div class="table-wrapper" id="tableWrapper">
+        <div class="loading">
+          <i class="fas fa-spinner fa-pulse fa-2x"></i>
+          <p>Загрузка данных...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 Decision Maker | Данные ЦБ РФ • Курсы валют обновляются ежедневно</p>
+  </footer>
+</div>
+
+<script>
+  let currencyChart = null;
+  let chartData = null;
+  let showUsd = true;
+  let showEur = true;
+
+  // Форматирование даты
+  function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  }
+
+  // Форматирование полной даты для всплывающих подсказок
+  function formatFullDate(dateStr) {
+    const date = new Date(dateStr);
+    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  }
+
+  // Расчет изменений между курсами
+  function calculateChange(current, previous) {
+    if (!previous) return null;
+    const change = current - previous;
+    const percentChange = (change / previous) * 100;
+    return { absolute: change, percent: percentChange };
+  }
+
+  // Обновление статистики
+  function updateStats(data) {
+    if (!data || data.length === 0) return;
+
+    const sortedData = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const current = sortedData[sortedData.length - 1];
+    const previous = sortedData.length > 1 ? sortedData[sortedData.length - 2] : null;
+
+    // USD статистика
+    const usdRates = sortedData.map(item => item.usdRate);
+    const usdMax = Math.max(...usdRates);
+    const usdMin = Math.min(...usdRates);
+    const usdAvg = usdRates.reduce((a, b) => a + b, 0) / usdRates.length;
+    const usdMaxItem = sortedData.find(item => item.usdRate === usdMax);
+    const usdMinItem = sortedData.find(item => item.usdRate === usdMin);
+
+    document.getElementById('usdCurrent').innerHTML = `${current.usdRate.toFixed(2)} ₽`;
+    document.getElementById('usdMax').innerHTML = `${usdMax.toFixed(2)} ₽`;
+    document.getElementById('usdMaxDate').innerHTML = formatDate(usdMaxItem.date);
+    document.getElementById('usdMin').innerHTML = `${usdMin.toFixed(2)} ₽`;
+    document.getElementById('usdMinDate').innerHTML = formatDate(usdMinItem.date);
+    document.getElementById('usdAvg').innerHTML = `${usdAvg.toFixed(2)} ₽`;
+
+    // Добавляем тренд для USD
+    if (previous) {
+      const usdChange = calculateChange(current.usdRate, previous.usdRate);
+      const usdTrendHtml = usdChange.absolute > 0 ?
+              `<span class="trend-up"><i class="fas fa-arrow-up"></i> +${usdChange.absolute.toFixed(2)}₽</span>` :
+              usdChange.absolute < 0 ?
+                      `<span class="trend-down"><i class="fas fa-arrow-down"></i> ${usdChange.absolute.toFixed(2)}₽</span>` :
+                      `<span class="trend-stable"><i class="fas fa-minus"></i> без изменений</span>`;
+      document.getElementById('usdCurrent').innerHTML += `<div style="font-size: 0.85rem; margin-top: 5px;">${usdTrendHtml}</div>`;
+    }
+
+    // EUR статистика
+    const eurRates = sortedData.map(item => item.eurRate);
+    const eurMax = Math.max(...eurRates);
+    const eurMin = Math.min(...eurRates);
+    const eurAvg = eurRates.reduce((a, b) => a + b, 0) / eurRates.length;
+    const eurMaxItem = sortedData.find(item => item.eurRate === eurMax);
+    const eurMinItem = sortedData.find(item => item.eurRate === eurMin);
+
+    document.getElementById('eurCurrent').innerHTML = `${current.eurRate.toFixed(2)} ₽`;
+    document.getElementById('eurMax').innerHTML = `${eurMax.toFixed(2)} ₽`;
+    document.getElementById('eurMaxDate').innerHTML = formatDate(eurMaxItem.date);
+    document.getElementById('eurMin').innerHTML = `${eurMin.toFixed(2)} ₽`;
+    document.getElementById('eurMinDate').innerHTML = formatDate(eurMinItem.date);
+    document.getElementById('eurAvg').innerHTML = `${eurAvg.toFixed(2)} ₽`;
+
+    // Добавляем тренд для EUR
+    if (previous) {
+      const eurChange = calculateChange(current.eurRate, previous.eurRate);
+      const eurTrendHtml = eurChange.absolute > 0 ?
+              `<span class="trend-up"><i class="fas fa-arrow-up"></i> +${eurChange.absolute.toFixed(2)}₽</span>` :
+              eurChange.absolute < 0 ?
+                      `<span class="trend-down"><i class="fas fa-arrow-down"></i> ${eurChange.absolute.toFixed(2)}₽</span>` :
+                      `<span class="trend-stable"><i class="fas fa-minus"></i> без изменений</span>`;
+      document.getElementById('eurCurrent').innerHTML += `<div style="font-size: 0.85rem; margin-top: 5px;">${eurTrendHtml}</div>`;
+    }
+  }
+
+  // Создание графика
+  function createChart(data) {
+    const sortedData = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const labels = sortedData.map(item => formatDate(item.date));
+    const usdRates = sortedData.map(item => item.usdRate);
+    const eurRates = sortedData.map(item => item.eurRate);
+
+    chartData = { labels, usdRates, eurRates, rawData: sortedData };
+
+    const ctx = document.getElementById('currencyChart').getContext('2d');
+
+    if (currencyChart) {
+      currencyChart.destroy();
+    }
+
+    const datasets = [];
+    if (showUsd) {
+      datasets.push({
+        label: 'Доллар США (USD), ₽',
+        data: usdRates,
+        borderColor: '#48bb78',
+        backgroundColor: 'rgba(72, 187, 120, 0.1)',
+        borderWidth: 3,
+        pointRadius: 5,
+        pointHoverRadius: 8,
+        pointBackgroundColor: '#38a169',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0.3,
+        fill: true,
+      });
+    }
+    if (showEur) {
+      datasets.push({
+        label: 'Евро (EUR), ₽',
+        data: eurRates,
+        borderColor: '#ed8936',
+        backgroundColor: 'rgba(237, 137, 54, 0.1)',
+        borderWidth: 3,
+        pointRadius: 5,
+        pointHoverRadius: 8,
+        pointBackgroundColor: '#dd6b20',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0.3,
+        fill: true,
+      });
+    }
+
+    currencyChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.dataset.label || '';
+                const value = context.parsed.y;
+                const index = context.dataIndex;
+                const date = sortedData[index].date;
+                return [
+                  `${label}: ${value.toFixed(2)} ₽`,
+                  `Дата: ${formatFullDate(date)}`
+                ];
+              }
+            },
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            padding: 12,
+            cornerRadius: 8
+          },
+          legend: {
+            position: 'top',
+            labels: {
+              font: {
+                size: 12,
+                weight: 'bold'
+              },
+              usePointStyle: true,
+              boxWidth: 10
+            }
+          }
+        },
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: 'Курс (рублей)',
+              font: {
+                size: 12,
+                weight: 'bold'
+              }
+            },
+            grid: {
+              color: '#e2e8f0',
+              drawBorder: true
+            },
+            ticks: {
+              callback: function(value) {
+                return value + ' ₽';
+              }
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Дата',
+              font: {
+                size: 12,
+                weight: 'bold'
+              }
+            },
+            grid: {
+              display: false
+            },
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        }
+      }
+    });
+  }
+
+  // Переключение отображения валют на графике
+  function toggleCurrency(currency) {
+    if (currency === 'usd') {
+      showUsd = !showUsd;
+      const btn = document.getElementById('toggleUsdBtn');
+      if (showUsd) {
+        btn.style.opacity = '1';
+        btn.style.background = '#667eea';
+      } else {
+        btn.style.opacity = '0.5';
+        btn.style.background = '#a0aec0';
+      }
+    } else if (currency === 'eur') {
+      showEur = !showEur;
+      const btn = document.getElementById('toggleEurBtn');
+      if (showEur) {
+        btn.style.opacity = '1';
+        btn.style.background = '#667eea';
+      } else {
+        btn.style.opacity = '0.5';
+        btn.style.background = '#a0aec0';
+      }
+    }
+
+    if (chartData) {
+      createChart(chartData.rawData);
+    }
+  }
+
+  // Скачать график как изображение
+  function downloadChartAsImage() {
+    if (!currencyChart) return;
+
+    const canvas = document.getElementById('currencyChart');
+    const link = document.createElement('a');
+    link.download = 'currency-history.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  // Создание таблицы
+  function createTable(data) {
+    const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    let tableHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>USD (Доллар США)</th>
+                        <th>Изменение USD</th>
+                        <th>EUR (Евро)</th>
+                        <th>Изменение EUR</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+    for (let i = 0; i < sortedData.length; i++) {
+      const item = sortedData[i];
+      const prevItem = i < sortedData.length - 1 ? sortedData[i + 1] : null;
+
+      const usdChange = prevItem ? calculateChange(item.usdRate, prevItem.usdRate) : null;
+      const eurChange = prevItem ? calculateChange(item.eurRate, prevItem.eurRate) : null;
+
+      // Форматирование изменения USD
+      let usdChangeHtml = '';
+      let usdChangeClass = '';
+      let usdTrendIcon = '';
+      if (usdChange) {
+        if (usdChange.absolute > 0.01) {
+          usdChangeHtml = `+${usdChange.absolute.toFixed(2)}₽ (${usdChange.percent.toFixed(1)}%)`;
+          usdChangeClass = 'change-positive';
+          usdTrendIcon = '<i class="fas fa-arrow-up"></i>';
+        } else if (usdChange.absolute < -0.01) {
+          usdChangeHtml = `${usdChange.absolute.toFixed(2)}₽ (${usdChange.percent.toFixed(1)}%)`;
+          usdChangeClass = 'change-negative';
+          usdTrendIcon = '<i class="fas fa-arrow-down"></i>';
+        } else {
+          usdChangeHtml = '0₽ (0%)';
+          usdChangeClass = 'change-neutral';
+          usdTrendIcon = '<i class="fas fa-minus"></i>';
+        }
+      } else {
+        usdChangeHtml = '—';
+        usdChangeClass = 'change-neutral';
+        usdTrendIcon = '<i class="fas fa-dot-circle"></i>';
+      }
+
+      // Форматирование изменения EUR
+      let eurChangeHtml = '';
+      let eurChangeClass = '';
+      let eurTrendIcon = '';
+      if (eurChange) {
+        if (eurChange.absolute > 0.01) {
+          eurChangeHtml = `+${eurChange.absolute.toFixed(2)}₽ (${eurChange.percent.toFixed(1)}%)`;
+          eurChangeClass = 'change-positive';
+          eurTrendIcon = '<i class="fas fa-arrow-up"></i>';
+        } else if (eurChange.absolute < -0.01) {
+          eurChangeHtml = `${eurChange.absolute.toFixed(2)}₽ (${eurChange.percent.toFixed(1)}%)`;
+          eurChangeClass = 'change-negative';
+          eurTrendIcon = '<i class="fas fa-arrow-down"></i>';
+        } else {
+          eurChangeHtml = '0₽ (0%)';
+          eurChangeClass = 'change-neutral';
+          eurTrendIcon = '<i class="fas fa-minus"></i>';
+        }
+      } else {
+        eurChangeHtml = '—';
+        eurChangeClass = 'change-neutral';
+        eurTrendIcon = '<i class="fas fa-dot-circle"></i>';
+      }
+
+      tableHtml += `
+                <tr>
+                    <td><strong>${formatFullDate(item.date)}</strong></td>
+                    <td class="rate-value" style="color: #48bb78;">${item.usdRate.toFixed(2)} ₽</td>
+                    <td><span class="rate-change ${usdChangeClass}">${usdTrendIcon} ${usdChangeHtml}</span></td>
+                    <td class="rate-value" style="color: #ed8936;">${item.eurRate.toFixed(2)} ₽</td>
+                    <td><span class="rate-change ${eurChangeClass}">${eurTrendIcon} ${eurChangeHtml}</span></td>
+                </tr>
+            `;
+    }
+
+    tableHtml += `
+                </tbody>
+            </table>
+        `;
+
+    document.getElementById('tableWrapper').innerHTML = tableHtml;
+  }
+
+  // Загрузка данных с сервера
+  async function loadCurrencyHistory() {
+    const tableWrapper = document.getElementById('tableWrapper');
+    tableWrapper.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse fa-2x"></i><p>Загрузка данных...</p></div>';
+
+    try {
+      const response = await fetch('http://localhost:8080/currency/rate/all');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const data = await response.json();
+
+      if (!data || data.length === 0) {
+        throw new Error('Нет данных');
+      }
+
+      // Обновляем статистику
+      updateStats(data);
+
+      // Создаем график
+      createChart(data);
+
+      // Создаем таблицу
+      createTable(data);
+
+    } catch (error) {
+      console.error('Ошибка загрузки данных:', error);
+      tableWrapper.innerHTML = `
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                    <p>Не удалось загрузить историю курсов валют</p>
+                    <p style="font-size: 0.9rem; margin-top: 10px;">Проверьте подключение к серверу http://localhost:8080/currency/rate/all</p>
+                    <button onclick="loadCurrencyHistory()" class="refresh-btn" style="margin-top: 20px;">
+                        <i class="fas fa-sync-alt"></i> Повторить попытку
+                    </button>
+                </div>
+            `;
+    }
+  }
+
+  // Обновление данных
+  async function refreshData() {
+    await loadCurrencyHistory();
+  }
+
+  // Инициализация
+  document.getElementById('refreshTableBtn').addEventListener('click', refreshData);
+
+  // Загружаем данные при загрузке страницы
+  loadCurrencyHistory();
+
+  // Автообновление каждые 5 минут
+  setInterval(loadCurrencyHistory, 5 * 60 * 1000);
+</script>
+</body>
+</html>

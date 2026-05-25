@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Проекты + Календарь | NeoProject Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at 0% 0%, #0f0c2a 0%, #1a1747 50%, #0f0c2a 100%);
+            min-height: 100vh;
+            padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(79, 70, 229, 0.15));
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+            filter: blur(12px);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.2; }
+            25% { transform: translateY(-40px) translateX(30px) rotate(90deg); opacity: 0.4; }
+            50% { transform: translateY(0) translateX(50px) rotate(180deg); opacity: 0.2; }
+            75% { transform: translateY(40px) translateX(30px) rotate(270deg); opacity: 0.4; }
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .top-navbar {
+            backdrop-filter: blur(20px);
+            background: rgba(15, 12, 42, 0.6);
+            border-radius: 1.5rem;
+            padding: 1rem 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            animation: slideInDown 0.6s ease;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .home-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(79, 70, 229, 0.9));
+            color: white;
+            text-decoration: none;
+            padding: 0.6rem 1.4rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .home-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+        }
+
+        .header {
+            backdrop-filter: blur(20px);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(79, 70, 229, 0.1));
+            border-radius: 1.5rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            text-align: center;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 50%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* Модальные окна проектов */
+        .fullscreen-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f0c2a 0%, #1a1747 100%);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeInModal 0.3s ease;
+            overflow-y: auto;
+        }
+
+        @keyframes fadeInModal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fullscreen-modal-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            animation: slideUpModal 0.4s ease;
+        }
+
+        @keyframes slideUpModal {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fullscreen-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .fullscreen-modal-header h2 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #ffffff, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .close-modal-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-modal-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.5);
+            transform: rotate(90deg);
+        }
+
+        .fullscreen-form {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .form-group label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-radius: 1rem;
+            padding: 1rem;
+            font-size: 1rem;
+            color: #ffffff;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .form-group input { height: 56px; }
+        .form-group textarea { min-height: 250px; resize: vertical; line-height: 1.6; }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+            padding-top: 1rem;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 3rem;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4); }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.875rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 3rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-cancel:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
+
+        /* Секция проектов */
+        .projects-section {
+            backdrop-filter: blur(20px);
+            background: rgba(15, 12, 42, 0.5);
+            border-radius: 1.5rem;
+            padding: 1.8rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            animation: fadeInUp 0.6s ease 0.2s both;
+        }
+
+        .projects-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.8rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .projects-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .create-project-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            padding: 0.6rem 1.4rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        .create-project-btn:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.5); }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .project-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 280px;
+        }
+        .project-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            border-color: rgba(139, 92, 246, 0.6);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .project-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        .project-icon { font-size: 2.5rem; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2)); }
+
+        .project-actions { display: flex; gap: 0.5rem; }
+        .edit-project-btn, .delete-project-btn {
+            padding: 0.35rem 0.7rem;
+            border-radius: 0.6rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            border: none;
+        }
+        .edit-project-btn {
+            background: rgba(139, 92, 246, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #c4b5fd;
+        }
+        .edit-project-btn:hover { background: rgba(139, 92, 246, 0.6); transform: scale(1.05); }
+        .delete-project-btn {
+            background: rgba(239, 68, 68, 0.3);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+        .delete-project-btn:hover { background: rgba(239, 68, 68, 0.6); transform: scale(1.05); }
+
+        .project-content { flex: 1; display: flex; flex-direction: column; }
+        .project-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.6rem;
+        }
+        .project-description {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .project-description.empty { color: rgba(255, 255, 255, 0.45); font-style: italic; }
+        .project-metric-wrapper { margin-top: auto; }
+        .project-metric {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(79, 70, 229, 0.1));
+            border-radius: 0.75rem;
+            padding: 0.8rem;
+            border: 1px solid rgba(139, 92, 246, 0.25);
+        }
+        .project-metric-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 0.3rem;
+        }
+        .project-metric-value {
+            font-size: 0.85rem;
+            color: #ffffff;
+            font-weight: 500;
+        }
+        .project-metric-value.empty { color: rgba(255, 255, 255, 0.5); font-style: italic; }
+
+        /* КАЛЕНДАРЬ */
+        .calendar-section {
+            backdrop-filter: blur(20px);
+            background: rgba(15, 12, 42, 0.5);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            animation: fadeInUp 0.6s ease 0.3s both;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .calendar-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .calendar-nav { display: flex; gap: 0.5rem; align-items: center; }
+        .calendar-nav-btn {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            font-weight: 500;
+        }
+        .calendar-nav-btn:hover { background: rgba(139, 92, 246, 0.4); }
+        .current-month {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: white;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        /* КНОПКА СОЗДАТЬ СОБЫТИЕ — ЗЕЛЕНАЯ */
+        .create-event-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 2rem;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        .create-event-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            background: linear-gradient(135deg, #1acf91, #0a7a50);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .calendar-weekday {
+            text-align: center;
+            padding: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            font-size: 0.85rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0.5rem;
+        }
+        .calendar-day {
+            min-height: 100px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.2s ease;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            overflow: hidden;
+        }
+        .calendar-day:hover {
+            background: rgba(139, 92, 246, 0.1);
+            transform: translateY(-2px);
+        }
+        .calendar-day.other-month { opacity: 0.4; }
+        .calendar-day.today {
+            border: 2px solid #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+        }
+        .day-number {
+            font-size: 0.85rem;
+            color: white;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .events-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            max-height: 65px;
+            overflow-y: auto;
+        }
+        .events-list::-webkit-scrollbar { width: 4px; }
+        .events-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+        .events-list::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.5); border-radius: 2px; }
+
+        .event-item {
+            background: #6d28d9;
+            border-radius: 0.25rem;
+            padding: 0.2rem 0.3rem;
+            font-size: 0.7rem;
+            color: white;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background 0.15s ease;
+            border: none;
+            line-height: 1.3;
+        }
+        .event-item:hover {
+            background: #7c3aed;
+        }
+        .more-events-btn {
+            background: rgba(139, 92, 246, 0.35);
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            border-radius: 0.25rem;
+            padding: 0.2rem 0.3rem;
+            font-size: 0.65rem;
+            color: #c4b5fd;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 0.2rem;
+            transition: background 0.15s ease;
+        }
+        .more-events-btn:hover {
+            background: rgba(139, 92, 246, 0.6);
+        }
+
+        /* Модалки событий */
+        .day-events-modal, .event-view-modal, .event-edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeInModal 0.3s ease;
+            padding: 2rem;
+        }
+        .day-events-content, .event-view-content, .event-edit-content {
+            background: linear-gradient(135deg, #1a1747, #0f0c2a);
+            border-radius: 2rem;
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            animation: scaleIn 0.3s ease;
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .day-events-content h3, .event-view-content h3, .event-edit-content h3 {
+            margin-bottom: 1.5rem;
+            color: white;
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .event-info {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .event-info p {
+            margin-bottom: 0.75rem;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.5;
+            font-size: 1rem;
+        }
+        .event-info strong {
+            color: #c4b5fd;
+            display: inline-block;
+            min-width: 100px;
+        }
+
+        .day-event-item {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .day-event-item:hover { background: rgba(139, 92, 246, 0.2); }
+        .day-event-time { font-size: 0.8rem; color: #c4b5fd; font-weight: 600; }
+        .day-event-name { font-size: 1rem; color: white; font-weight: 600; margin: 0.3rem 0; }
+        .day-event-desc { font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); }
+
+        .event-field { margin-bottom: 1.5rem; }
+        .event-field label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 0.5rem;
+        }
+        .event-field input,
+        .event-field textarea {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(139,92,246,0.4);
+            border-radius: 1rem;
+            font-size: 1rem;
+            color: white;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+        .event-field input:focus,
+        .event-field textarea:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139,92,246,0.2);
+        }
+        .event-field textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .event-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+        .event-save {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.7rem 2rem;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        .event-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        .event-delete {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 0.7rem 2rem;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        .event-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        .event-close, .event-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.7rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        .event-close:hover, .event-cancel:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .event-edit {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            color: white;
+            padding: 0.7rem 2rem;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        .event-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        /* Кнопка создания события внутри модального окна дня — тоже зеленая */
+        #createEventForDayBtn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            padding: 0.7rem 2rem;
+            border-radius: 2rem;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        #createEventForDayBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            background: linear-gradient(135deg, #1acf91, #0a7a50);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .toast-message {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            z-index: 2001;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            animation: slideInRight 0.3s ease;
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(139, 92, 246, 0.3);
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .projects-grid { grid-template-columns: 1fr; }
+            .calendar-day { min-height: 80px; }
+            .calendar-grid { gap: 0.25rem; }
+            .calendar-nav-btn, .create-event-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+            .current-month { font-size: 1rem; min-width: 140px; }
+            .event-buttons { flex-wrap: wrap; }
+            .event-save, .event-delete, .event-close, .event-cancel, .event-edit, #createEventForDayBtn { padding: 0.5rem 1.2rem; font-size: 0.85rem; }
+        }
+
+        .project-date-created {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        .project-date-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.3rem;
+        }
+        .project-date-value {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(139, 92, 246, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #c4b5fd);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+<div class="app-container">
+    <div class="top-navbar">
+        <div class="logo"><span>✨</span> NeoProject Manager</div>
+        <a href="http://localhost:8080/" class="home-button"><span>🏠</span> На главную</a>
+    </div>
+    <div class="header">
+        <h1><span>🚀</span> Управление проектами <span>💫</span></h1>
+        <p>Создавайте, управляйте и достигайте целей в современном стиле</p>
+    </div>
+
+    <div class="projects-section">
+        <div class="projects-header">
+            <div class="projects-title"><span>📁</span> Список проектов <span id="projectsCount"></span></div>
+            <button class="create-project-btn" id="createProjectBtn"><span>➕</span> Создать проект</button>
+        </div>
+        <div id="projectsList" class="projects-grid"><div class="empty-state"><div class="loading-spinner"></div><div>Загрузка проектов...</div></div></div>
+    </div>
+
+    <div class="calendar-section">
+        <div class="calendar-header">
+            <div class="calendar-title">📅 Календарь событий</div>
+            <div class="calendar-nav">
+                <button class="calendar-nav-btn" id="prevMonthBtn">◀ Пред.</button>
+                <span class="current-month" id="currentMonth"></span>
+                <button class="calendar-nav-btn" id="nextMonthBtn">След. ▶</button>
+                <button class="create-event-btn" id="createEventBtn">➕ Создать событие</button>
+            </div>
+        </div>
+        <div class="calendar-grid" id="calendarWeekdays">
+            <div class="calendar-weekday">Пн</div><div class="calendar-weekday">Вт</div><div class="calendar-weekday">Ср</div>
+            <div class="calendar-weekday">Чт</div><div class="calendar-weekday">Пт</div><div class="calendar-weekday">Сб</div><div class="calendar-weekday">Вс</div>
+        </div>
+        <div id="calendarDays" class="calendar-grid"></div>
+    </div>
+</div>
+
+<script>
+    function createParticles() {
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 20; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const s = Math.random() * 150 + 50;
+            p.style.width = s + 'px'; p.style.height = s + 'px';
+            p.style.left = Math.random() * 100 + '%'; p.style.top = Math.random() * 100 + '%';
+            p.style.animationDelay = Math.random() * 15 + 's';
+            p.style.animationDuration = Math.random() * 10 + 15 + 's';
+            container.appendChild(p);
+        }
+    }
+    createParticles();
+
+    const PROJECT_API = '/project';
+    const EVENT_API = '/event';
+    let projects = [];
+    let events = [];
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
+    const MONTHS_RU = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+
+    function showToast(msg, isError = false) {
+        const existing = document.querySelector('.toast-message');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'toast-message';
+        toast.textContent = msg;
+        toast.style.background = isError ? 'rgba(185, 28, 28, 0.95)' : 'rgba(16, 185, 129, 0.95)';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2800);
+    }
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+    function formatDateTime(dateTime) { return new Date(dateTime).toLocaleString('ru-RU'); }
+    function formatTime(dateTime) { return new Date(dateTime).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }); }
+
+    async function fetchProjects() {
+        try {
+            const res = await fetch(PROJECT_API);
+            if (!res.ok) throw new Error();
+            projects = await res.json();
+            renderProjects();
+        } catch(e) { showToast('Ошибка загрузки проектов', true); projects = []; renderProjects(); }
+    }
+    async function createProject(data) {
+        try {
+            const res = await fetch(PROJECT_API, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+            if (!res.ok) throw new Error();
+            showToast(`✅ Проект "${data.name}" создан`);
+            await fetchProjects();
+        } catch(e) { showToast('Ошибка создания', true); }
+    }
+    async function updateProject(proj) {
+        try {
+            const res = await fetch(PROJECT_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(proj) });
+            if (!res.ok) throw new Error();
+            showToast(`✅ Проект обновлен`);
+            await fetchProjects();
+        } catch(e) { showToast('Ошибка обновления', true); }
+    }
+    async function deleteProject(id, name) {
+        if (!confirm(`Удалить проект "${name}"?`)) return;
+        try {
+            const res = await fetch(`${PROJECT_API}/${id}`, { method:'DELETE' });
+            if (res.ok) { showToast(`✅ Проект удален`); await fetchProjects(); }
+            else throw new Error();
+        } catch(e) { showToast('Ошибка удаления', true); }
+    }
+
+    async function fetchEvents() {
+        try {
+            const res = await fetch(EVENT_API);
+            if (!res.ok) throw new Error();
+            events = await res.json();
+            renderCalendar();
+        } catch(e) { console.error(e); events = []; renderCalendar(); }
+    }
+    async function createEvent(name, description, dateTime) {
+        try {
+            const res = await fetch(EVENT_API, {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ name, description: description||'', dateTime, projectId:null })
+            });
+            if (!res.ok) throw new Error();
+            showToast('✅ Событие создано');
+            await fetchEvents();
+        } catch(e) { showToast('Ошибка создания события', true); }
+    }
+    async function updateEvent(eventModel) {
+        try {
+            const res = await fetch(EVENT_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(eventModel) });
+            if (!res.ok) throw new Error();
+            showToast('✅ Событие обновлено');
+            await fetchEvents();
+        } catch(e) { showToast('Ошибка обновления', true); }
+    }
+    async function deleteEvent(eventId) {
+        if (!confirm('Удалить событие?')) return;
+        try {
+            const res = await fetch(`${EVENT_API}/${eventId}`, { method:'DELETE' });
+            if (res.ok) { showToast('✅ Событие удалено'); await fetchEvents(); }
+            else throw new Error();
+        } catch(e) { showToast('Ошибка удаления', true); }
+    }
+
+    function showEventViewModal(event) {
+        const modal = document.createElement('div'); modal.className = 'event-view-modal';
+        modal.innerHTML = `
+            <div class="event-view-content">
+                <h3>📅 Информация о событии</h3>
+                <div class="event-info">
+                    <p><strong>📌 Название:</strong> ${escapeHtml(event.name)}</p>
+                    <p><strong>📝 Описание:</strong> ${escapeHtml(event.description || 'Нет описания')}</p>
+                    <p><strong>⏰ Дата и время:</strong> ${formatDateTime(event.dateTime)}</p>
+                </div>
+                <div class="event-buttons">
+                    <button class="event-close">Закрыть</button>
+                    <button class="event-edit">✎ Редактировать</button>
+                    <button class="event-delete">🗑 Удалить</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('.event-close').onclick = () => modal.remove();
+        modal.querySelector('.event-edit').onclick = () => { modal.remove(); showEventEditModal(event); };
+        modal.querySelector('.event-delete').onclick = async () => { await deleteEvent(event.id); modal.remove(); };
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    }
+
+    function showEventEditModal(event) {
+        const modal = document.createElement('div'); modal.className = 'event-edit-modal';
+        const dateVal = event.dateTime ? new Date(event.dateTime).toISOString().slice(0,16) : '';
+        modal.innerHTML = `
+            <div class="event-edit-content">
+                <h3>✏️ Редактирование события</h3>
+                <div class="event-field">
+                    <label>Название события</label>
+                    <input type="text" id="eventName" value="${escapeHtml(event.name)}" placeholder="Введите название события...">
+                </div>
+                <div class="event-field">
+                    <label>Описание</label>
+                    <textarea id="eventDesc" rows="4" placeholder="Введите описание события...">${escapeHtml(event.description||'')}</textarea>
+                </div>
+                <div class="event-field">
+                    <label>Дата и время</label>
+                    <input type="datetime-local" id="eventDateTime" value="${dateVal}">
+                </div>
+                <div class="event-buttons">
+                    <button class="event-cancel">Отмена</button>
+                    <button class="event-save">💾 Сохранить</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        const save = () => {
+            const name = modal.querySelector('#eventName').value.trim();
+            if (!name) { showToast('Введите название', true); return; }
+            updateEvent({ id:event.id, name, description: modal.querySelector('#eventDesc').value, dateTime: modal.querySelector('#eventDateTime').value, projectId:null });
+            modal.remove();
+        };
+        modal.querySelector('.event-save').onclick = save;
+        modal.querySelector('.event-cancel').onclick = () => modal.remove();
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    }
+
+    function showCreateEventModal(selectedDate = null) {
+        const modal = document.createElement('div'); modal.className = 'event-edit-modal';
+        const defaultDate = selectedDate ? selectedDate.toISOString().slice(0,16) : new Date().toISOString().slice(0,16);
+        modal.innerHTML = `
+            <div class="event-edit-content">
+                <h3>➕ Создание события</h3>
+                <div class="event-field">
+                    <label>Название события</label>
+                    <input type="text" id="eventName" placeholder="Введите название события...">
+                </div>
+                <div class="event-field">
+                    <label>Описание</label>
+                    <textarea id="eventDesc" rows="4" placeholder="Введите описание события..."></textarea>
+                </div>
+                <div class="event-field">
+                    <label>Дата и время</label>
+                    <input type="datetime-local" id="eventDateTime" value="${defaultDate}">
+                </div>
+                <div class="event-buttons">
+                    <button class="event-cancel">Отмена</button>
+                    <button class="event-save">✨ Создать</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('.event-save').onclick = async () => {
+            const name = modal.querySelector('#eventName').value.trim();
+            if (!name) { showToast('Введите название', true); return; }
+            await createEvent(name, modal.querySelector('#eventDesc').value, modal.querySelector('#eventDateTime').value);
+            modal.remove();
+        };
+        modal.querySelector('.event-cancel').onclick = () => modal.remove();
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    }
+
+    function showDayEventsModal(dayEvents, date) {
+        const modal = document.createElement('div'); modal.className = 'day-events-modal';
+        modal.innerHTML = `
+            <div class="day-events-content">
+                <h3>📅 События за ${date.toLocaleDateString('ru-RU')}</h3>
+                <div class="day-events-list" id="dayEventsList"></div>
+                <div class="event-buttons">
+                    <button class="event-close">Закрыть</button>
+                    <button class="event-edit" id="createEventForDayBtn">➕ Создать событие</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        const list = modal.querySelector('#dayEventsList');
+        dayEvents.forEach(ev => {
+            const div = document.createElement('div'); div.className = 'day-event-item';
+            div.innerHTML = `<div class="day-event-time">⏰ ${formatTime(ev.dateTime)}</div><div class="day-event-name">📌 ${escapeHtml(ev.name)}</div>${ev.description ? `<div class="day-event-desc">📝 ${escapeHtml(ev.description)}</div>` : ''}`;
+            div.onclick = () => { modal.remove(); showEventViewModal(ev); };
+            list.appendChild(div);
+        });
+        modal.querySelector('.event-close').onclick = () => modal.remove();
+        modal.querySelector('#createEventForDayBtn').onclick = () => { modal.remove(); showCreateEventModal(date); };
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    }
+
+    function renderCalendar() {
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        let startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+        const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+        const prevDays = new Date(currentYear, currentMonth, 0).getDate();
+        const today = new Date();
+        const isToday = (y,m,d) => y===today.getFullYear() && m===today.getMonth() && d===today.getDate();
+        let html = '';
+        for (let i = startDay-1; i>=0; i--) html += `<div class="calendar-day other-month" data-year="${currentYear}" data-month="${currentMonth-1}" data-day="${prevDays-i}"><div class="day-number">${prevDays-i}</div><div class="events-list"></div></div>`;
+        for (let d=1; d<=daysInMonth; d++) {
+            const cls = isToday(currentYear, currentMonth, d) ? 'calendar-day today' : 'calendar-day';
+            html += `<div class="${cls}" data-year="${currentYear}" data-month="${currentMonth}" data-day="${d}"><div class="day-number">${d}</div><div class="events-list"></div></div>`;
+        }
+        const totalCells = startDay + daysInMonth;
+        const remaining = 42 - totalCells;
+        for (let i=1; i<=remaining; i++) html += `<div class="calendar-day other-month" data-year="${currentYear}" data-month="${currentMonth+1}" data-day="${i}"><div class="day-number">${i}</div><div class="events-list"></div></div>`;
+        document.getElementById('calendarDays').innerHTML = html;
+        document.getElementById('currentMonth').innerHTML = `${MONTHS_RU[currentMonth]} ${currentYear}`;
+
+        const byDay = new Map();
+        events.forEach(ev => {
+            const d = new Date(ev.dateTime);
+            if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
+                const day = d.getDate();
+                if (!byDay.has(day)) byDay.set(day, []);
+                byDay.get(day).push(ev);
+            }
+        });
+        const MAX_VIS = 2;
+        byDay.forEach((dayEvents, day) => {
+            const cell = document.querySelector(`.calendar-day[data-day="${day}"][data-month="${currentMonth}"]`);
+            if (cell) {
+                const list = cell.querySelector('.events-list'); list.innerHTML = '';
+                dayEvents.sort((a,b)=>new Date(a.dateTime)-new Date(b.dateTime));
+                dayEvents.slice(0,MAX_VIS).forEach(ev => {
+                    const el = document.createElement('div'); el.className = 'event-item';
+                    el.textContent = `${formatTime(ev.dateTime)} ${ev.name.length>30?ev.name.slice(0,27)+'...':ev.name}`;
+                    el.onclick = (e) => { e.stopPropagation(); showEventViewModal(ev); };
+                    list.appendChild(el);
+                });
+                if (dayEvents.length > MAX_VIS) {
+                    const more = document.createElement('div'); more.className = 'more-events-btn';
+                    more.textContent = `+${dayEvents.length-MAX_VIS} еще`;
+                    more.onclick = (e) => { e.stopPropagation(); showDayEventsModal(dayEvents, new Date(currentYear, currentMonth, day)); };
+                    list.appendChild(more);
+                }
+            }
+        });
+        document.querySelectorAll('.calendar-day').forEach(cell => {
+            cell.onclick = (e) => {
+                if (e.target.classList.contains('event-item') || e.target.classList.contains('more-events-btn')) return;
+                const year = parseInt(cell.dataset.year);
+                const month = parseInt(cell.dataset.month);
+                const day = parseInt(cell.dataset.day);
+                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                    if (cell.classList.contains('other-month')) {
+                        currentYear = year; currentMonth = month;
+                        renderCalendar();
+                    } else {
+                        showCreateEventModal(new Date(year, month, day));
+                    }
+                }
+            };
+        });
+    }
+
+    function showCreateProjectModal() {
+        const modal = document.createElement('div');
+        modal.className = 'fullscreen-modal';
+        modal.innerHTML = `
+        <div class="fullscreen-modal-container">
+            <div class="fullscreen-modal-header">
+                <h2><span>🚀</span> Создание проекта</h2>
+                <button class="close-modal-btn">✕</button>
+            </div>
+            <div class="fullscreen-form">
+                <div class="form-group">
+                    <label><span>📌</span> Название *</label>
+                    <input type="text" id="projName" placeholder="Название проекта">
+                </div>
+                <div class="form-group">
+                    <label><span>📝</span> Описание</label>
+                    <textarea id="projDesc" rows="6" placeholder="Опишите цели и задачи проекта..."></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-cancel" id="cancelModalBtn">Отмена</button>
+                    <button class="btn-save" id="saveModalBtn">✨ Создать</button>
+                </div>
+            </div>
+        </div>
+    `;
+        document.body.appendChild(modal);
+        const closeModal = () => modal.remove();
+        modal.querySelector('#saveModalBtn').onclick = async () => {
+            const name = modal.querySelector('#projName').value.trim();
+            if (!name) { showToast('Введите название проекта', true); return; }
+            await createProject({
+                name,
+                description: modal.querySelector('#projDesc').value || null
+            });
+            closeModal();
+        };
+        modal.querySelector('#cancelModalBtn').onclick = closeModal;
+        modal.querySelector('.close-modal-btn').onclick = closeModal;
+        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+        modal.querySelector('#projName').focus();
+    }
+
+    function showEditProjectModal(proj) {
+        const modal = document.createElement('div');
+        modal.className = 'fullscreen-modal';
+        modal.innerHTML = `
+        <div class="fullscreen-modal-container">
+            <div class="fullscreen-modal-header">
+                <h2><span>✏️</span> Редактирование проекта</h2>
+                <button class="close-modal-btn">✕</button>
+            </div>
+            <div class="fullscreen-form">
+                <div class="form-group">
+                    <label><span>📌</span> Название *</label>
+                    <input type="text" id="projName" value="${escapeHtml(proj.name)}" placeholder="Название проекта">
+                </div>
+                <div class="form-group">
+                    <label><span>📝</span> Описание</label>
+                    <textarea id="projDesc" rows="6" placeholder="Опишите цели и задачи проекта...">${escapeHtml(proj.description || '')}</textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-cancel" id="cancelModalBtn">Отмена</button>
+                    <button class="btn-save" id="saveModalBtn">💾 Сохранить</button>
+                </div>
+            </div>
+        </div>
+    `;
+        document.body.appendChild(modal);
+        const closeModal = () => modal.remove();
+        modal.querySelector('#saveModalBtn').onclick = async () => {
+            const name = modal.querySelector('#projName').value.trim();
+            if (!name) { showToast('Введите название проекта', true); return; }
+            await updateProject({
+                id: proj.id,
+                name,
+                description: modal.querySelector('#projDesc').value || null
+            });
+            closeModal();
+        };
+        modal.querySelector('#cancelModalBtn').onclick = closeModal;
+        modal.querySelector('.close-modal-btn').onclick = closeModal;
+        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+        modal.querySelector('#projName').focus();
+        modal.querySelector('#projName').select();
+    }
+
+    function renderProjects() {
+        const container = document.getElementById('projectsList');
+        const countSpan = document.getElementById('projectsCount');
+        if (!projects.length) {
+            container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✨</div><div>Нет проектов</div><div style="font-size:0.85rem; margin-top:0.5rem;">Нажмите "Создать проект"</div></div>`;
+            if(countSpan) countSpan.textContent = '';
+            return;
+        }
+        if(countSpan) countSpan.textContent = `(${projects.length})`;
+        const icons = ['🚀','💼','🎯','🌟','⚡','💎'];
+        container.innerHTML = projects.map((p,i) => `
+            <div class="project-card" data-id="${p.id}">
+                <div class="project-card-header">
+                    <div class="project-icon">${icons[i%icons.length]}</div>
+                    <div class="project-actions">
+                        <button class="edit-project-btn" data-id="${p.id}">✎</button>
+                        <button class="delete-project-btn" data-id="${p.id}" data-name="${escapeHtml(p.name)}">✖</button>
+                    </div>
+                </div>
+                <div class="project-content">
+                    <div class="project-name">${escapeHtml(p.name)}</div>
+                    <div class="project-description ${!p.description?.trim()?'empty':''}">${p.description?.trim() ? escapeHtml(p.description) : '📝 Нет описания'}</div>
+                    <div class="project-metric-wrapper">
+                    <div class="project-metric">
+                        <div class="project-metric-label">📊 КЛЮЧЕВАЯ МЕТРИКА</div>
+                        <div class="project-metric-value ${!p.mainProjectMetric?.name ? 'empty' : ''}">
+                            ${p.mainProjectMetric?.name ? escapeHtml(p.mainProjectMetric.name) : 'Не указана'}
+                        </div>
+                        ${p.mainMetricCompletePercent !== undefined && p.mainMetricCompletePercent !== null ? `
+                        <div style="margin-top: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="font-size: 0.7rem; color: rgba(255,255,255,0.7);">Прогресс:</span>
+                                <span style="font-size: 0.7rem; font-weight: 600; color: #8b5cf6;">${p.mainMetricCompletePercent}%</span>
+                            </div>
+                            <div style="width: 100%; height: 4px; background: rgba(139, 92, 246, 0.2); border-radius: 2px; overflow: hidden;">
+                                <div style="width: ${p.mainMetricCompletePercent}%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #c4b5fd); border-radius: 2px;"></div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                    <div class="project-date-created">
+                        <div class="project-date-label">📅 ДАТА СОЗДАНИЯ</div>
+                        <div class="project-date-value">${formatDate(p.createDate)}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        document.querySelectorAll('.edit-project-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const proj = projects.find(p => p.id == btn.dataset.id);
+                if(proj) showEditProjectModal(proj);
+            };
+        });
+
+        document.querySelectorAll('.delete-project-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                deleteProject(btn.dataset.id, btn.dataset.name);
+            };
+        });
+
+        document.querySelectorAll('.project-card').forEach(card => {
+            card.onclick = (e) => {
+                if(e.target.closest('.project-actions')) return;
+                window.location.href = `/page/kanban?id=${card.dataset.id}`;
+            };
+        });
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'Дата не указана';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+
+    document.getElementById('prevMonthBtn').onclick = () => { currentMonth--; if(currentMonth<0){ currentMonth=11; currentYear--; } renderCalendar(); };
+    document.getElementById('nextMonthBtn').onclick = () => { currentMonth++; if(currentMonth>11){ currentMonth=0; currentYear++; } renderCalendar(); };
+    document.getElementById('createEventBtn').onclick = () => showCreateEventModal();
+
+    async function init() {
+        await fetchProjects();
+        await fetchEvents();
+        document.getElementById('createProjectBtn').onclick = () => showCreateProjectModal();
+    }
+    init();
+</script>
+</body>
+</html>

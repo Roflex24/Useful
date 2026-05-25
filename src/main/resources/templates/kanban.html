@@ -1,0 +1,2149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Канбан Доска | NeoProject Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at 0% 0%, #0f0c2a 0%, #1a1747 50%, #0f0c2a 100%);
+            min-height: 100vh;
+            padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(79, 70, 229, 0.15));
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+            filter: blur(12px);
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0.2;
+            }
+            25% {
+                transform: translateY(-40px) translateX(30px) rotate(90deg);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateY(0) translateX(50px) rotate(180deg);
+                opacity: 0.2;
+            }
+            75% {
+                transform: translateY(40px) translateX(30px) rotate(270deg);
+                opacity: 0.4;
+            }
+        }
+
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .top-bar {
+            backdrop-filter: blur(20px);
+            background: rgba(15, 12, 42, 0.6);
+            border-radius: 1.5rem;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            animation: slideInDown 0.6s ease;
+        }
+
+        .back-button {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 2rem;
+            padding: 0.6rem 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .back-button:hover {
+            background: rgba(139, 92, 246, 0.4);
+            transform: translateX(-2px);
+        }
+
+        .project-title-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .project-title-badge span:first-child {
+            font-size: 1.1rem;
+        }
+
+        .project-title-badge span:last-child {
+            font-weight: 600;
+            color: #a78bfa;
+        }
+
+        .project-info {
+            backdrop-filter: blur(20px);
+            background: rgba(15, 12, 42, 0.5);
+            border-radius: 1.5rem;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .project-edit-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 2rem;
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: #c4b5fd;
+            font-weight: 600;
+            z-index: 1;
+        }
+
+        .project-edit-btn:hover {
+            background: rgba(139, 92, 246, 0.4);
+            transform: scale(1.02);
+        }
+
+        .project-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+            padding-right: 140px;
+        }
+
+        .project-description {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.5;
+            margin-top: 0.5rem;
+        }
+
+        .project-description.empty {
+            color: rgba(255, 255, 255, 0.4);
+            font-style: italic;
+        }
+
+        .main-metric-card {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(79, 70, 229, 0.15));
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .metric-value {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            color: white;
+        }
+
+        .completion-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .completion-bar {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .bar-background {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 1rem;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            background: linear-gradient(90deg, #8b5cf6, #c4b5fd);
+            height: 100%;
+            border-radius: 1rem;
+            transition: width 0.3s ease;
+        }
+
+        .completion-text {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .intermediate-metrics {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .metrics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .metrics-title {
+            font-weight: 700;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .add-metric-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .add-metric-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .metrics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .metric-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            transition: all 0.2s ease;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .metric-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .metric-item.drag-over {
+            border-top: 2px solid #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .metric-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(2px);
+        }
+
+        .drag-handle {
+            cursor: grab;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.5);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .metric-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #8b5cf6;
+        }
+
+        .metric-name {
+            flex: 1;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            padding: 0.2rem 0;
+        }
+
+        .metric-name:hover {
+            text-decoration: underline;
+            color: #c4b5fd;
+        }
+
+        .metric-actions {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .edit-metric-btn, .delete-metric-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.4rem;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .edit-metric-btn:hover {
+            background: rgba(139, 92, 246, 0.3);
+            color: #c4b5fd;
+        }
+
+        .delete-metric-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .board-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(20px);
+            background: rgba(15, 12, 42, 0.5);
+            padding: 1rem 2rem;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .title-section h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .title-section p {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.2rem;
+        }
+
+        .btn-secondary {
+            background: rgba(139, 92, 246, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(139, 92, 246, 0.5);
+        }
+
+        .kanban-board {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 1.5rem;
+            padding-bottom: 1rem;
+            min-height: 500px;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 1200px) {
+            .kanban-board {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+            }
+            .column-card {
+                min-width: 300px;
+                flex: 1 1 0;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1199px) {
+            .kanban-board {
+                flex-wrap: wrap;
+            }
+            .column-card {
+                flex: 1 1 calc(50% - 1.5rem);
+                min-width: 280px;
+            }
+        }
+
+        .kanban-board::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .kanban-board::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .kanban-board::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.5);
+            border-radius: 4px;
+        }
+
+        .column-card {
+            backdrop-filter: blur(20px);
+            background: rgba(15, 12, 42, 0.5);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: visible;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .column-header {
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .column-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .column-title-text {
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            background: rgba(139, 92, 246, 0.2);
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.75rem;
+        }
+
+        .column-tasks-count {
+            font-size: 0.7rem;
+            color: white;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.2rem 0.5rem;
+            border-radius: 1rem;
+            flex-shrink: 0;
+        }
+
+        .column-body {
+            padding: 1rem;
+            min-height: 200px;
+            overflow-y: visible;
+        }
+
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-bottom: 0.8rem;
+            min-height: 100px;
+            overflow: visible;
+        }
+
+        .task-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.8rem;
+            padding: 0.7rem;
+            border-left: 3px solid #8b5cf6;
+            transition: all 0.2s ease;
+            cursor: grab;
+            user-select: none;
+            position: relative;
+        }
+
+        .task-card.completed {
+            opacity: 0.6;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .task-card.completed .task-title span:last-child {
+            text-decoration: line-through;
+        }
+
+        .task-card.difficulty-BASE { border-left-color: #94a3b8; }
+        .task-card.difficulty-LOW { border-left-color: #22c55e; }
+        .task-card.difficulty-MEDIUM { border-left-color: #eab308; }
+        .task-card.difficulty-HIGH { border-left-color: #f97316; }
+        .task-card.difficulty-URGENT { border-left-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+        .task-card.dragging {
+            opacity: 0.5;
+        }
+
+        .task-card.drag-over-top {
+            border-top: 3px solid #8b5cf6;
+        }
+
+        .task-card.drag-over-bottom {
+            border-bottom: 3px solid #8b5cf6;
+        }
+
+        .task-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(2px);
+        }
+
+        .task-click-area {
+            cursor: pointer;
+        }
+
+        .task-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 0.3rem;
+        }
+
+        .task-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: white;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .task-title-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .task-drag-handle {
+            cursor: grab;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            flex-shrink: 0;
+        }
+
+        .task-emoji {
+            flex-shrink: 0;
+        }
+
+        .task-actions-icons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-shrink: 0;
+            z-index: 10;
+            position: relative;
+        }
+
+        .difficulty-button, .delete-task-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 22px;
+            height: 22px;
+            border-radius: 0.4rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .difficulty-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .delete-task-btn:hover {
+            background: rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+            transform: scale(1.05);
+        }
+
+        .task-desc-preview {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-left: 1.2rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .task-desc-preview.empty-desc {
+            color: rgba(255, 255, 255, 0.3);
+            font-style: italic;
+        }
+
+        .add-task-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-top: 0.8rem;
+            padding-top: 0.6rem;
+            border-top: 1px dashed rgba(139, 92, 246, 0.3);
+        }
+
+        .add-task-form input, .add-task-form textarea {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 0.8rem;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            color: white;
+        }
+
+        .add-task-form input:focus, .add-task-form textarea:focus {
+            outline: none;
+            border-color: #8b5cf6;
+        }
+
+        .task-placeholder {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.8rem;
+            padding: 0.9rem;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.8rem;
+            border: 1px dashed rgba(139, 92, 246, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .task-placeholder.drag-over {
+            background: rgba(139, 92, 246, 0.2);
+            border: 2px dashed #8b5cf6;
+        }
+
+        /* Полноэкранное модальное окно для задачи */
+        .task-edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+            padding: 2rem;
+        }
+
+        .task-edit-modal-content {
+            background: linear-gradient(135deg, #1a1747, #0f0c2a);
+            border-radius: 2rem;
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 900px;
+            height: 85vh;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            animation: scaleIn 0.3s ease;
+        }
+
+        /* Полноэкранное модальное окно для проекта */
+        .project-edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+            padding: 2rem;
+        }
+
+        .project-edit-modal-content {
+            background: linear-gradient(135deg, #1a1747, #0f0c2a);
+            border-radius: 2rem;
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 900px;
+            height: 85vh;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            animation: scaleIn 0.3s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .project-edit-modal-content h3 {
+            margin-bottom: 1.5rem;
+            color: white;
+            font-size: 1.6rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .project-edit-scrollable {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .project-edit-scrollable::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .project-edit-scrollable::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .project-edit-scrollable::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.5);
+            border-radius: 3px;
+        }
+
+        .project-edit-field {
+            margin-bottom: 1.5rem;
+        }
+
+        .project-edit-field label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.5rem;
+        }
+
+        .project-edit-field input,
+        .project-edit-field textarea {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 1rem;
+            font-size: 1rem;
+            color: white;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .project-edit-field input:focus,
+        .project-edit-field textarea:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+
+        .project-edit-field textarea {
+            resize: vertical;
+            min-height: 300px;
+        }
+
+        .project-edit-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(139, 92, 246, 0.3);
+            flex-shrink: 0;
+        }
+
+        .project-edit-save {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.7rem 2rem;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .project-edit-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .project-edit-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.7rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .project-edit-cancel:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .task-edit-modal-content h3 {
+            margin-bottom: 1.5rem;
+            color: white;
+            font-size: 1.6rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .task-edit-scrollable {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .task-edit-scrollable::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .task-edit-scrollable::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .task-edit-scrollable::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.5);
+            border-radius: 3px;
+        }
+
+        .task-edit-field {
+            margin-bottom: 1.5rem;
+        }
+
+        .task-edit-field label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.5rem;
+        }
+
+        .task-edit-field input,
+        .task-edit-field textarea {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 1rem;
+            font-size: 1rem;
+            color: white;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .task-edit-field input:focus,
+        .task-edit-field textarea:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+
+        .task-edit-field textarea {
+            resize: vertical;
+            min-height: 200px;
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .difficulty-option-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            background: rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        .difficulty-option-btn:hover {
+            background: rgba(139, 92, 246, 0.3);
+            transform: scale(1.02);
+        }
+
+        .difficulty-option-btn.selected {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+        }
+
+        .task-edit-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(139, 92, 246, 0.3);
+            flex-shrink: 0;
+        }
+
+        .task-edit-save {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.7rem 2rem;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .task-edit-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .task-edit-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.7rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .task-edit-cancel:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .metric-edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .metric-edit-modal-content {
+            background: linear-gradient(135deg, #1a1747, #0f0c2a);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            width: 500px;
+            max-width: 90%;
+            border: 1px solid rgba(139, 92, 246, 0.4);
+        }
+
+        .metric-edit-modal-content h3 {
+            margin-bottom: 1.5rem;
+            color: white;
+            font-size: 1.4rem;
+        }
+
+        .metric-edit-field {
+            margin-bottom: 1rem;
+        }
+
+        .metric-edit-field label {
+            display: block;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-edit-field input {
+            width: 100%;
+            padding: 0.7rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 0.75rem;
+            color: white;
+        }
+
+        .metric-edit-buttons {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .metric-edit-save {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.6rem 1.5rem;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+        }
+
+        .metric-edit-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.6rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2rem;
+            cursor: pointer;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .toast-message {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            z-index: 1000;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(139, 92, 246, 0.3);
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            .column-card {
+                min-width: 280px;
+                flex: 1 1 auto;
+            }
+            .project-name {
+                font-size: 1.3rem;
+                padding-right: 100px;
+            }
+            .top-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .board-header {
+                flex-direction: column;
+            }
+            .kanban-board {
+                flex-wrap: wrap;
+            }
+            .task-edit-modal-content,
+            .project-edit-modal-content {
+                width: 95%;
+                padding: 1.5rem;
+                height: auto;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            .task-edit-modal,
+            .project-edit-modal {
+                padding: 1rem;
+            }
+            .task-create-date {
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 0.75rem;
+                padding: 0.75rem;
+                margin-top: 0.5rem;
+            }
+
+            .task-create-date label {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.85rem;
+                color: rgba(255, 255, 255, 0.8);
+                margin-bottom: 0.5rem;
+            }
+
+            .task-create-date .date-value {
+                color: #c4b5fd;
+                font-weight: 500;
+                padding-left: 1.5rem;
+            }
+
+            .date-note {
+                font-size: 0.7rem;
+                color: rgba(255, 255, 255, 0.5);
+                margin-left: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+
+<div class="app-container">
+    <div class="top-bar">
+        <button class="back-button" id="backToProjectsBtn">
+            <span>←</span>
+            Назад к проектам
+        </button>
+        <div class="project-title-badge">
+            <span>📌</span>
+            Текущий проект: <span id="currentProjectName">Загрузка...</span>
+            <span id="projectIdDisplay"></span>
+        </div>
+    </div>
+
+    <div id="projectInfo" class="project-info">
+        <div class="loading-spinner"></div>
+        Загрузка...
+    </div>
+
+    <div class="board-header">
+        <div class="title-section">
+            <h1>📋 Канбан Доска</h1>
+            <p>Перетаскивайте задачи между колонками • Нажмите на задачу для редактирования</p>
+        </div>
+    </div>
+
+    <div id="kanbanBoardContainer" class="kanban-board">
+        <div class="empty-state">
+            <div class="loading-spinner"></div>
+            Загрузка колонок...
+        </div>
+    </div>
+</div>
+
+<script>
+    function createParticles() {
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 20; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const s = Math.random() * 150 + 50;
+            p.style.width = s + 'px';
+            p.style.height = s + 'px';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.top = Math.random() * 100 + '%';
+            p.style.animationDelay = Math.random() * 15 + 's';
+            p.style.animationDuration = Math.random() * 10 + 15 + 's';
+            container.appendChild(p);
+        }
+    }
+    createParticles();
+
+    const PROJECT_API = '/project';
+    const COLUMN_API = '/columns';
+    const TASK_API = '/tasks';
+    const METRIC_API = '/project/metric';
+
+    function getProjectId() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('id');
+    }
+
+    let PROJECT_ID = getProjectId();
+    let mainMetric = null;
+    if (!PROJECT_ID) {
+        showToast('Проект не выбран', true);
+        setTimeout(() => window.location.href = '/page/projects', 2000);
+    }
+
+    const DIFFICULTY_LIST = [
+        { enum: 'BASE', name: 'Непонятно', emoji: '❓' },
+        { enum: 'LOW', name: 'Легкая', emoji: '🟢' },
+        { enum: 'MEDIUM', name: 'Средняя', emoji: '🟡' },
+        { enum: 'HIGH', name: 'Сложная', emoji: '🟠' },
+        { enum: 'URGENT', name: 'Безумие', emoji: '🔴' }
+    ];
+
+    let projectData = null;
+    let intermediateMetrics = [];
+    let columns = [];
+    let tasksMap = new Map();
+
+    function showToast(msg, isError = false) {
+        const existing = document.querySelector('.toast-message');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'toast-message';
+        toast.textContent = msg;
+        toast.style.background = isError ? 'rgba(185, 28, 28, 0.95)' : 'rgba(16, 185, 129, 0.95)';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2800);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    }
+
+    async function fetchProject() {
+        try {
+            const res = await fetch(`${PROJECT_API}/${PROJECT_ID}`);
+            if (!res.ok) throw new Error();
+            projectData = await res.json();
+            document.getElementById('currentProjectName').textContent = projectData.name;
+            document.getElementById('projectIdDisplay').textContent = `(ID: ${PROJECT_ID})`;
+            await fetchMetrics();
+        } catch(e) { showToast('Ошибка загрузки проекта', true); }
+    }
+
+    async function fetchMetrics() {
+        try {
+            const res = await fetch(`${METRIC_API}/${PROJECT_ID}`);
+            if (res.ok) {
+                const allMetrics = await res.json();
+                // Находим главную метрику
+                mainMetric = allMetrics.find(m => m.isMain === true) || null;
+                // Промежуточные метрики - все остальные
+                intermediateMetrics = allMetrics.filter(m => m.isMain !== true).sort((a,b) => a.orderIndex - b.orderIndex);
+
+                // Если есть главная метрика, используем её имя
+                if (mainMetric) {
+                    projectData.mainProjectMetric = mainMetric.name;
+                } else {
+                    projectData.mainProjectMetric = 'Прогресс проекта';
+                }
+                // Процент уже приходит с сервера, не пересчитываем
+            }
+        } catch(e) {
+            intermediateMetrics = [];
+            mainMetric = null;
+            projectData.mainProjectMetric = 'Прогресс проекта';
+        }
+        renderProjectInfo();
+    }
+
+    async function refreshProjectAfterMetricUpdate() {
+        try {
+            const res = await fetch(`${PROJECT_API}/${PROJECT_ID}`);
+            if (!res.ok) throw new Error();
+            const updatedProject = await res.json();
+            projectData.mainMetricCompletePercent = updatedProject.mainMetricCompletePercent;
+            projectData.mainProjectMetric = updatedProject.mainProjectMetric;
+        } catch(e) {
+            console.error('Ошибка обновления проекта:', e);
+        }
+    }
+
+    async function updateMetricsOrder(metrics) {
+        try {
+            const metricsToUpdate = metrics.map((metric, index) => ({
+                ...metric,
+                orderIndex: index,
+                projectId: PROJECT_ID
+            }));
+
+            const response = await fetch(`${METRIC_API}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(metricsToUpdate)
+            });
+
+            if (!response.ok) throw new Error(`Ошибка обновления порядка метрик: ${response.status}`);
+
+            // Обновляем проект после изменения порядка метрик
+            await refreshProjectAfterMetricUpdate();
+            return true;
+        } catch (error) {
+            console.error('PUT /project/metric error:', error);
+            showToast(`❌ Ошибка обновления порядка метрик`, true);
+            return false;
+        }
+    }
+
+    async function updateProject(projectRq) {
+        try {
+            const response = await fetch(`${PROJECT_API}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: PROJECT_ID,
+                    name: projectRq.name,
+                    description: projectRq.description
+                })
+            });
+            if (!response.ok) throw new Error(`Ошибка обновления проекта: ${response.status}`);
+            showToast('✅ Проект успешно обновлен');
+            await fetchProject();
+            return true;
+        } catch (error) {
+            console.error('PUT /project error:', error);
+            showToast(`❌ Ошибка обновления проекта`, true);
+            return false;
+        }
+    }
+
+    async function updateMetric(id, name, isComplete, isMain = false) {
+        try {
+            if (!isMain) {
+                // Обновляем промежуточные метрики
+                const updated = intermediateMetrics.map(m => m.id === id ? { ...m, name, isComplete } : m);
+                await fetch(METRIC_API, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updated.map((m,i) => ({
+                        ...m,
+                        orderIndex: i,
+                        projectId: PROJECT_ID
+                    })))
+                });
+                intermediateMetrics = updated;
+            } else {
+                // Обновляем главную метрику
+                await fetch(`${METRIC_API}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: id,
+                        name: name,
+                        isComplete: isComplete,
+                        isMain: true,
+                        projectId: PROJECT_ID
+                    })
+                });
+                // Обновляем локальную переменную mainMetric
+                if (mainMetric) {
+                    mainMetric.name = name;
+                    mainMetric.isComplete = isComplete;
+                }
+                projectData.mainProjectMetric = name;
+            }
+
+            // Обновляем данные проекта (процент мог измениться)
+            await refreshProjectAfterMetricUpdate();
+            await fetchMetrics(); // Перезагружаем все метрики
+            showToast('Метрика обновлена');
+        } catch(e) {
+            console.error('Error updating metric:', e);
+            showToast('Ошибка обновления метрики', true);
+        }
+    }
+
+    async function createMetric(name) {
+        if (!name?.trim()) { showToast('Введите название', true); return; }
+        try {
+            await fetch(METRIC_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name.trim(),
+                    isComplete: false,
+                    isMain: false,
+                    orderIndex: intermediateMetrics.length,
+                    projectId: PROJECT_ID
+                })
+            });
+            await fetchMetrics();
+            showToast('Метрика создана');
+        } catch(e) {
+            console.error('Error creating metric:', e);
+            showToast('Ошибка создания метрики', true);
+        }
+    }
+
+    async function deleteMetric(metricId, isMain = false) {
+        try {
+            await fetch(`${METRIC_API}/${metricId}`, { method: 'DELETE' });
+            if (isMain) {
+                mainMetric = null;
+                projectData.mainProjectMetric = 'Прогресс проекта';
+            }
+            await refreshProjectAfterMetricUpdate();
+            await fetchMetrics();
+            showToast('Метрика удалена');
+        } catch(e) {
+            console.error('Error deleting metric:', e);
+            showToast('Ошибка удаления метрики', true);
+        }
+    }
+
+
+    function showMetricEditModal(metric = null, isMain = false) {
+        const modal = document.createElement('div');
+        modal.className = 'metric-edit-modal';
+        const isEdit = metric !== null;
+        modal.innerHTML = `
+        <div class="metric-edit-modal-content">
+            <h3>${isEdit ? '✏️ Редактирование метрики' : '➕ Новая метрика'}</h3>
+            <div class="metric-edit-field">
+                <label>Название метрики</label>
+                <input type="text" id="metricName" value="${isEdit ? escapeHtml(metric.name) : ''}" maxlength="200" placeholder="Например: Написание документации">
+            </div>
+            <div class="metric-edit-buttons">
+                <button class="metric-edit-cancel">Отмена</button>
+                <button class="metric-edit-save">${isEdit ? 'Сохранить' : 'Создать'}</button>
+            </div>
+        </div>
+    `;
+        document.body.appendChild(modal);
+        const saveBtn = modal.querySelector('.metric-edit-save');
+        const cancelBtn = modal.querySelector('.metric-edit-cancel');
+        const nameInput = modal.querySelector('#metricName');
+        saveBtn.onclick = async () => {
+            const name = nameInput.value.trim();
+            if (!name) { showToast('Введите название', true); return; }
+            if (isEdit) await updateMetric(metric.id, name, metric.isComplete, isMain);
+            else await createMetric(name);
+            modal.remove();
+        };
+        cancelBtn.onclick = () => modal.remove();
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        nameInput.focus();
+        if (!isEdit) nameInput.select();
+    }
+
+    function showProjectEditModal() {
+        if (!projectData) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'project-edit-modal';
+
+        modal.innerHTML = `
+        <div class="project-edit-modal-content">
+            <h3>✏️ Редактирование проекта</h3>
+            <div class="project-edit-scrollable">
+                <div class="project-edit-field">
+                    <label>Название проекта</label>
+                    <input type="text" id="edit-project-name" value="${escapeHtml(projectData.name)}" placeholder="Введите название проекта...">
+                </div>
+                <div class="project-edit-field">
+                    <label>Описание проекта</label>
+                    <textarea id="edit-project-desc" rows="8" placeholder="Введите подробное описание проекта...&#10;&#10;• Цели и задачи проекта&#10;• Основные этапы&#10;• Ожидаемые результаты&#10;• Ключевые метрики успеха&#10;• Необходимые ресурсы">${escapeHtml(projectData.description || '')}</textarea>
+                </div>
+            </div>
+            <div class="project-edit-buttons">
+                <button class="project-edit-cancel">Отмена</button>
+                <button class="project-edit-save">💾 Сохранить</button>
+            </div>
+        </div>
+    `;
+        document.body.appendChild(modal);
+
+        const saveBtn = modal.querySelector('.project-edit-save');
+        const cancelBtn = modal.querySelector('.project-edit-cancel');
+        const nameInput = modal.querySelector('#edit-project-name');
+
+        saveBtn.onclick = async () => {
+            const newName = nameInput.value.trim();
+            if (!newName) {
+                showToast('Название проекта не может быть пустым', true);
+                return;
+            }
+            const newDescription = modal.querySelector('#edit-project-desc').value;
+
+            await updateProject({
+                name: newName,
+                description: newDescription || null
+            });
+            modal.remove();
+        };
+
+        cancelBtn.onclick = () => modal.remove();
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+        setTimeout(() => nameInput.focus(), 100);
+    }
+
+    function showTaskModal(task, colId) {
+        const modal = document.createElement('div');
+        modal.className = 'task-edit-modal';
+
+        const createDateFormatted = task.createDate ? new Date(task.createDate).toLocaleDateString('ru-RU', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }) : 'Дата не указана';
+
+        modal.innerHTML = `
+            <div class="task-edit-modal-content">
+                <h3>✏️ Редактирование задачи</h3>
+                <div class="task-edit-scrollable">
+                    <div class="task-edit-field">
+                        <label>Название задачи</label>
+                        <input type="text" id="edit-title" value="${escapeHtml(task.title)}" placeholder="Введите название задачи...">
+                    </div>
+                    <div class="task-edit-field">
+                        <label>Описание</label>
+                        <textarea id="edit-desc" rows="6" placeholder="Введите подробное описание задачи...">${escapeHtml(task.description || '')}</textarea>
+                    </div>
+                    <div class="task-edit-field">
+                        <label>Сложность</label>
+                        <div class="difficulty-selector" id="difficulty-selector"></div>
+                    </div>
+                    <div class="task-edit-field" style="opacity: 0.7; background: rgba(0,0,0,0.2); border-radius: 0.75rem; padding: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span>📅 Дата создания</span>
+                        </label>
+                        <div style="padding: 0.5rem 0; color: #c4b5fd; font-weight: 500;">
+                            ${escapeHtml(createDateFormatted)}
+                        </div>
+                    </div>
+                </div>
+                <div class="task-edit-buttons">
+                    <button class="task-edit-cancel">Отмена</button>
+                    <button class="task-edit-save">💾 Сохранить</button>
+                </div>
+            </div>
+            `;
+        document.body.appendChild(modal);
+
+        const selector = modal.querySelector('#difficulty-selector');
+        DIFFICULTY_LIST.forEach(d => {
+            const btn = document.createElement('button');
+            btn.className = `difficulty-option-btn ${d.enum === task.difficulty ? 'selected' : ''}`;
+            btn.innerHTML = `${d.emoji} ${d.name}`;
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                selector.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            };
+            selector.appendChild(btn);
+        });
+
+        modal.querySelector('.task-edit-save').onclick = async () => {
+            const title = modal.querySelector('#edit-title').value.trim();
+            if (!title) { showToast('Введите название задачи', true); return; }
+            const difficultyBtn = modal.querySelector('.difficulty-option-btn.selected');
+            let difficulty = task.difficulty;
+            if (difficultyBtn) {
+                const text = difficultyBtn.innerText;
+                if (text.includes('Непонятно')) difficulty = 'BASE';
+                else if (text.includes('Легкая')) difficulty = 'LOW';
+                else if (text.includes('Средняя')) difficulty = 'MEDIUM';
+                else if (text.includes('Сложная')) difficulty = 'HIGH';
+                else if (text.includes('Безумие')) difficulty = 'URGENT';
+            }
+            await updateTask(task.id, colId, title, modal.querySelector('#edit-desc').value, difficulty);
+            modal.remove();
+        };
+
+        modal.querySelector('.task-edit-cancel').onclick = () => modal.remove();
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+        setTimeout(() => modal.querySelector('#edit-title').focus(), 100);
+    }
+
+    async function fetchColumns() {
+        try {
+            const res = await fetch(`${COLUMN_API}/${PROJECT_ID}`);
+            if (!res.ok) throw new Error();
+            columns = (await res.json()).sort((a,b) => a.orderIndex - b.orderIndex);
+            await fetchAllTasks();
+            renderBoard();
+        } catch(e) { showToast('Ошибка загрузки колонок', true); }
+    }
+
+    async function fetchTasksByColumn(colId) {
+        try {
+            const res = await fetch(`${TASK_API}/column/${colId}`);
+            if (res.ok) {
+                tasksMap.set(colId, (await res.json()).sort((a,b) => a.orderIndex - b.orderIndex));
+            } else {
+                tasksMap.set(colId, []);
+            }
+        } catch(e) { tasksMap.set(colId, []); }
+    }
+
+    async function fetchAllTasks() {
+        for (const col of columns) await fetchTasksByColumn(col.id);
+    }
+
+    async function createTask(colId, title, desc) {
+        if (!title?.trim()) { showToast('Введите название', true); return; }
+        const tasks = tasksMap.get(colId) || [];
+        try {
+            await fetch(TASK_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: title.trim(), description: desc || '', orderIndex: tasks.length, columnId: colId, difficulty: 'BASE' })
+            });
+            await fetchTasksByColumn(colId);
+            renderBoard();
+            showToast('Задача создана');
+        } catch(e) { showToast('Ошибка создания', true); }
+    }
+
+    async function updateTask(taskId, colId, title, desc, difficulty) {
+        const tasks = tasksMap.get(colId) || [];
+        const updated = tasks.map(t =>
+            t.id === taskId ? {
+                ...t,
+                title,
+                description: desc,
+                difficulty
+            } : t
+        );
+        try {
+            await fetch(TASK_API, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated.map((t,i) => ({
+                    ...t,
+                    orderIndex: i
+                    // createDate не включаем в запрос на сервер
+                })))
+            });
+            tasksMap.set(colId, updated);
+            renderBoard();
+            showToast('Задача обновлена');
+        } catch(e) {
+            showToast('Ошибка обновления', true);
+        }
+    }
+
+    async function deleteTask(taskId, colId) {
+        if (!confirm('Удалить задачу?')) return;
+        try {
+            await fetch(`${TASK_API}/${taskId}`, { method: 'DELETE' });
+            await fetchTasksByColumn(colId);
+            renderBoard();
+            showToast('Задача удалена');
+        } catch(e) { showToast('Ошибка удаления', true); }
+    }
+
+    async function moveTask(taskId, fromCol, toCol, toIndex) {
+        const fromTasks = [...(tasksMap.get(fromCol) || [])];
+        const toTasks = fromCol === toCol ? fromTasks : [...(tasksMap.get(toCol) || [])];
+
+        const taskIndex = fromTasks.findIndex(t => t.id === taskId);
+        if (taskIndex === -1) return;
+
+        const [task] = fromTasks.splice(taskIndex, 1);
+        task.columnId = toCol;
+
+        let targetIndex = toIndex;
+        if (fromCol === toCol && taskIndex < toIndex) {
+            targetIndex--;
+        }
+
+        if (fromCol === toCol) {
+            fromTasks.splice(targetIndex, 0, task);
+        } else {
+            toTasks.splice(targetIndex, 0, task);
+        }
+
+        try {
+            if (fromCol !== toCol) {
+                await fetch(TASK_API, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(fromTasks.map((t, i) => ({ ...t, orderIndex: i })))
+                });
+
+                await fetch(TASK_API, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(toTasks.map((t, i) => ({ ...t, orderIndex: i })))
+                });
+
+                tasksMap.set(fromCol, fromTasks);
+                tasksMap.set(toCol, toTasks);
+            } else {
+                await fetch(TASK_API, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(fromTasks.map((t, i) => ({ ...t, orderIndex: i })))
+                });
+
+                tasksMap.set(fromCol, fromTasks);
+            }
+
+            renderBoard();
+            showToast('Задача перемещена');
+        } catch(e) {
+            console.error('Move error:', e);
+            showToast('Ошибка перемещения', true);
+            await fetchTasksByColumn(fromCol);
+            if (fromCol !== toCol) await fetchTasksByColumn(toCol);
+            renderBoard();
+        }
+    }
+
+    function initMetricDragAndDrop() {
+        const metricsList = document.querySelector('.metrics-list');
+        if (!metricsList) return;
+
+        let draggedItem = null;
+
+        const items = metricsList.querySelectorAll('.metric-item');
+
+        items.forEach(item => {
+            item.setAttribute('draggable', 'true');
+
+            item.ondragstart = (e) => {
+                draggedItem = item;
+                e.dataTransfer.setData('text/plain', '');
+                item.classList.add('dragging');
+                e.stopPropagation();
+            };
+
+            item.ondragend = () => {
+                items.forEach(i => i.classList.remove('dragging', 'drag-over'));
+                draggedItem = null;
+            };
+
+            item.ondragover = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!draggedItem || draggedItem === item) return;
+                item.classList.add('drag-over');
+            };
+
+            item.ondragleave = () => {
+                item.classList.remove('drag-over');
+            };
+
+            item.ondrop = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                item.classList.remove('drag-over');
+
+                if (!draggedItem || draggedItem === item) return;
+
+                const allItems = Array.from(metricsList.querySelectorAll('.metric-item'));
+                const fromIndex = allItems.indexOf(draggedItem);
+                const toIndex = allItems.indexOf(item);
+
+                if (fromIndex === -1 || toIndex === -1) return;
+
+                const reordered = [...intermediateMetrics];
+                const [movedMetric] = reordered.splice(fromIndex, 1);
+                reordered.splice(toIndex, 0, movedMetric);
+
+                const success = await updateMetricsOrder(reordered);
+                if (success) {
+                    intermediateMetrics = reordered;
+                    renderProjectInfo();
+                    showToast('Порядок метрик обновлен');
+                } else {
+                    showToast('Ошибка обновления порядка метрик', true);
+                }
+            };
+        });
+    }
+
+    function renderProjectInfo() {
+        if (!projectData) return;
+
+        // Получаем главную метрику из переменной mainMetric
+        const mainMetricName = mainMetric ? mainMetric.name : (projectData.mainProjectMetric || 'Прогресс проекта');
+        const progress = projectData.mainMetricCompletePercent || 0;
+        const hasDesc = projectData.description?.trim();
+        const completedCount = intermediateMetrics.filter(m => m.isComplete).length;
+        const totalCount = intermediateMetrics.length;
+
+        document.getElementById('projectInfo').innerHTML = `
+        <button class="project-edit-btn" id="editProjectBtn">✎ Редактировать проект</button>
+        <div class="project-name">${escapeHtml(projectData.name)}</div>
+        <div class="project-description ${!hasDesc ? 'empty' : ''}">${hasDesc ? escapeHtml(projectData.description) : '📝 Нет описания проекта'}</div>
+
+        <!-- Блок главной метрики -->
+        <div class="main-metric-card">
+            <div class="metrics-header" style="margin-bottom: 0.5rem;">
+                <div class="metrics-title" style="font-size: 0.7rem;">📊 ОСНОВНАЯ МЕТРИКА</div>
+                <button class="edit-metric-btn" id="editMainMetricBtn" style="background: none; border: none; cursor: pointer; color: #c4b5fd; font-size: 0.8rem;">✎ Редактировать</button>
+            </div>
+            <div class="metric-value" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">${escapeHtml(mainMetricName)}</div>
+            <div class="completion-bar-container">
+                <div class="completion-bar">
+                    <div class="bar-background">
+                        <div class="bar-fill" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+                <span class="completion-text">${progress.toFixed(1)}%</span>
+            </div>
+        </div>
+
+        <!-- Блок промежуточных метрик -->
+        <div class="intermediate-metrics">
+            <div class="metrics-header">
+                <div class="metrics-title">📋 Промежуточные метрики ${totalCount > 0 ? `<span style="font-size: 0.7rem;">(${completedCount}/${totalCount} выполнено)</span>` : ''}</div>
+                <button class="add-metric-btn" id="addMetricBtn">+ Добавить</button>
+            </div>
+            <div class="metrics-list" id="metricsList">
+                ${intermediateMetrics.map(m => `
+                    <div class="metric-item" data-metric-id="${m.id}" draggable="true">
+                        <span class="drag-handle">⋮⋮</span>
+                        <input type="checkbox" class="metric-checkbox" data-id="${m.id}" ${m.isComplete ? 'checked' : ''}>
+                        <span class="metric-name" data-id="${m.id}">${escapeHtml(m.name)}</span>
+                        <div class="metric-actions">
+                            <button class="edit-metric-btn" data-id="${m.id}" data-name="${escapeHtml(m.name)}">✎</button>
+                            <button class="delete-metric-btn" data-id="${m.id}" data-name="${escapeHtml(m.name)}">✖</button>
+                        </div>
+                    </div>
+                `).join('') || '<div style="text-align:center;color:rgba(255,255,255,0.5);">Нет промежуточных метрик</div>'}
+            </div>
+        </div>
+    `;
+
+        // Обработчики для редактирования проекта
+        document.getElementById('editProjectBtn')?.addEventListener('click', showProjectEditModal);
+
+        // Обработчик для редактирования главной метрики
+        document.getElementById('editMainMetricBtn')?.addEventListener('click', () => {
+            if (mainMetric) {
+                // Если главная метрика существует, редактируем её
+                showMetricEditModal(mainMetric, true);
+            } else {
+                showToast('Главная метрика не найдена', true);
+            }
+        });
+
+        // Обработчик для добавления промежуточной метрики
+        document.getElementById('addMetricBtn')?.addEventListener('click', () => showMetricEditModal(null, false));
+
+        // Обработчики для чекбоксов промежуточных метрик
+        document.querySelectorAll('.metric-checkbox').forEach(cb => {
+            cb.addEventListener('change', async () => {
+                const metric = intermediateMetrics.find(m => m.id == cb.dataset.id);
+                if (metric) {
+                    await updateMetric(metric.id, metric.name, cb.checked, false);
+                }
+            });
+        });
+
+        // Обработчики для кнопок редактирования промежуточных метрик
+        document.querySelectorAll('.metric-item .edit-metric-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const metric = intermediateMetrics.find(m => m.id == btn.dataset.id);
+                if (metric) {
+                    showMetricEditModal(metric, false);
+                }
+            });
+        });
+
+        // Обработчики для кнопок удаления промежуточных метрик
+        document.querySelectorAll('.delete-metric-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const metric = intermediateMetrics.find(m => m.id == btn.dataset.id);
+                if (metric) {
+                    if (confirm(`Удалить метрику "${btn.dataset.name}"?`)) {
+                        await deleteMetric(metric.id, false);
+                    }
+                }
+            });
+        });
+
+        // Обработчики для клика по названию метрики
+        document.querySelectorAll('.metric-name').forEach(nameSpan => {
+            nameSpan.addEventListener('click', () => {
+                const metric = intermediateMetrics.find(m => m.id == nameSpan.dataset.id);
+                if (metric) {
+                    showMetricEditModal(metric, false);
+                }
+            });
+        });
+
+        initMetricDragAndDrop();
+    }
+
+    function renderBoard() {
+        const boardContainer = document.getElementById('kanbanBoardContainer');
+        if (!boardContainer) return;
+
+        if (!columns.length) {
+            boardContainer.innerHTML = `<div class="empty-state">Нет колонок</div>`;
+            return;
+        }
+
+        boardContainer.innerHTML = columns.map(col => {
+            const tasks = tasksMap.get(col.id) || [];
+            const isLastColumn = col.orderIndex === columns.length - 1;
+            return `
+        <div class="column-card" data-col-id="${col.id}">
+            <div class="column-header">
+                <div class="column-title-wrapper">
+                    <span class="column-title-text">📌 ${escapeHtml(col.title)}</span>
+                    <span class="column-tasks-count">${tasks.length}</span>
+                </div>
+            </div>
+            <div class="column-body">
+                <div class="tasks-list" data-col-id="${col.id}">
+                    ${tasks.length === 0
+                ? `<div class="task-placeholder" data-col-id="${col.id}">📌 Перетащите задачу сюда</div>`
+                : tasks.map(task => {
+                    const difficulty = DIFFICULTY_LIST.find(d => d.enum === task.difficulty) || DIFFICULTY_LIST[0];
+                    const hasDesc = task.description?.trim();
+                    const completedClass = isLastColumn ? 'completed' : '';
+                    return `
+                                <div class="task-card difficulty-${task.difficulty || 'BASE'} ${completedClass}" data-task-id="${task.id}" data-col-id="${col.id}">
+                                    <div class="task-click-area" data-task-id="${task.id}" data-col-id="${col.id}">
+                                        <div class="task-header">
+                                            <div class="task-title">
+                                                <span class="task-drag-handle">⋮⋮</span>
+                                                <span class="task-emoji">📌</span>
+                                                <span class="task-title-text">${escapeHtml(task.title)}</span>
+                                            </div>
+                                            <div class="task-actions-icons">
+                                                <button class="difficulty-button" data-task-id="${task.id}" data-col-id="${col.id}" data-action="difficulty">${difficulty.emoji}</button>
+                                                <button class="delete-task-btn" data-task-id="${task.id}" data-col-id="${col.id}" data-action="delete">✕</button>
+                                            </div>
+                                        </div>
+                                        <div class="task-desc-preview ${!hasDesc ? 'empty-desc' : ''}">
+                                            ${hasDesc ? escapeHtml(task.description.substring(0, 100)) : '➕ Добавить описание...'}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                }).join('')}
+                </div>
+                ${col.orderIndex === 0 ? `
+                <div class="add-task-form">
+                    <input type="text" class="new-task-title" placeholder="Название задачи">
+                    <textarea class="new-task-desc" placeholder="Описание (необязательно)" rows="2"></textarea>
+                    <button class="btn-secondary create-task-btn" data-col-id="${col.id}">+ Добавить задачу</button>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+        }).join('');
+
+        let dragTaskData = null;
+
+        document.querySelectorAll('.task-card').forEach(card => {
+            card.setAttribute('draggable', 'true');
+            card.ondragstart = (e) => {
+                dragTaskData = { id: parseInt(card.dataset.taskId), colId: parseInt(card.dataset.colId) };
+                e.dataTransfer.setData('text/plain', '');
+                card.classList.add('dragging');
+                e.stopPropagation();
+            };
+            card.ondragend = () => {
+                document.querySelectorAll('.task-card').forEach(c => c.classList.remove('dragging', 'drag-over-top', 'drag-over-bottom'));
+                dragTaskData = null;
+            };
+            card.ondragover = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!dragTaskData) return;
+                const rect = card.getBoundingClientRect();
+                const y = e.clientY;
+                const middle = rect.top + rect.height / 2;
+                const position = y < middle ? 'top' : 'bottom';
+                card.classList.remove('drag-over-top', 'drag-over-bottom');
+                card.classList.add(position === 'top' ? 'drag-over-top' : 'drag-over-bottom');
+            };
+            card.ondragleave = () => card.classList.remove('drag-over-top', 'drag-over-bottom');
+            card.ondrop = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!dragTaskData) return;
+                const rect = card.getBoundingClientRect();
+                const y = e.clientY;
+                const middle = rect.top + rect.height / 2;
+                const position = y < middle ? 'top' : 'bottom';
+                const targetColId = parseInt(card.dataset.colId);
+                const targetTaskId = parseInt(card.dataset.taskId);
+                const tasksInCol = tasksMap.get(targetColId) || [];
+                let targetIndex = tasksInCol.findIndex(t => t.id === targetTaskId);
+                if (position === 'bottom') targetIndex++;
+                await moveTask(dragTaskData.id, dragTaskData.colId, targetColId, targetIndex);
+                card.classList.remove('drag-over-top', 'drag-over-bottom');
+            };
+        });
+
+        document.querySelectorAll('.task-placeholder, .tasks-list').forEach(el => {
+            el.ondragover = (e) => { e.preventDefault(); el.classList.add('drag-over'); };
+            el.ondragleave = () => el.classList.remove('drag-over');
+            el.ondrop = async (e) => {
+                e.preventDefault();
+                el.classList.remove('drag-over');
+                if (!dragTaskData) return;
+                const targetColId = parseInt(el.dataset.colId);
+                if (dragTaskData.colId !== targetColId) await moveTask(dragTaskData.id, dragTaskData.colId, targetColId, 0);
+            };
+        });
+
+        document.querySelectorAll('.task-click-area').forEach(area => {
+            area.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const taskId = parseInt(area.dataset.taskId);
+                const colId = parseInt(area.dataset.colId);
+                const task = (tasksMap.get(colId) || []).find(t => t.id === taskId);
+                if (task) {
+                    showTaskModal(task, colId);
+                }
+            });
+        });
+
+        document.querySelectorAll('.difficulty-button').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const taskId = parseInt(btn.dataset.taskId);
+                const colId = parseInt(btn.dataset.colId);
+                const task = (tasksMap.get(colId) || []).find(t => t.id === taskId);
+                if (task) {
+                    showTaskModal(task, colId);
+                }
+            });
+        });
+
+        document.querySelectorAll('.delete-task-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const taskId = parseInt(btn.dataset.taskId);
+                const colId = parseInt(btn.dataset.colId);
+                await deleteTask(taskId, colId);
+            });
+        });
+
+        document.querySelectorAll('.create-task-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const colId = parseInt(btn.dataset.colId);
+                const card = btn.closest('.column-card');
+                const titleInput = card.querySelector('.new-task-title');
+                const descInput = card.querySelector('.new-task-desc');
+                createTask(colId, titleInput.value, descInput.value);
+                titleInput.value = '';
+                descInput.value = '';
+            });
+        });
+    }
+
+    document.getElementById('backToProjectsBtn').onclick = () => window.location.href = '/page/projects';
+
+    async function init() {
+        await fetchProject();
+        await fetchColumns();
+    }
+    init();
+</script>
+</body>
+</html>

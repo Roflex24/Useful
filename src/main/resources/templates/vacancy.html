@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Динамика вакансий | График изменений</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Подключаем Chart.js для графиков -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .page-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Карточка графика */
+        .chart-card {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            backdrop-filter: blur(2px);
+        }
+
+        .chart-header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+            padding: 30px 35px;
+            position: relative;
+        }
+
+        .chart-header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chart-header h1 i {
+            background: rgba(255,255,255,0.2);
+            padding: 12px;
+            border-radius: 50%;
+            font-size: 1.6rem;
+        }
+
+        .subhead {
+            color: #94a3b8;
+            font-size: 1rem;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .refresh-area {
+            position: absolute;
+            top: 30px;
+            right: 35px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .refresh-btn {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.02);
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateX(-3px);
+        }
+
+        /* тело графика */
+        .chart-body {
+            padding: 35px 30px 30px 30px;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            margin-bottom: 30px;
+            background: #f8fafc;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        canvas {
+            max-height: 450px;
+            width: 100%;
+        }
+
+        /* статистика снизу - 3 карточки */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, #f1f5f9, #ffffff);
+            border-radius: 24px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-top: 8px;
+        }
+
+        .stat-trend {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .trend-up { color: #10b981; }
+        .trend-down { color: #ef4444; }
+        .trend-neutral { color: #f59e0b; }
+
+        .data-table {
+            margin-top: 35px;
+            background: #f1f5f9;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .data-table h3 {
+            padding: 18px 24px;
+            background: #e2e8f0;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1e293b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 14px 20px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        td {
+            color: #1e293b;
+        }
+
+        .vacancy-number {
+            font-weight: 800;
+            color: #4f46e5;
+            font-size: 1.1rem;
+        }
+
+        /* Кнопка перехода на hh.ru */
+        .hh-link-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: linear-gradient(95deg, #ff7a45, #ff4d4f);
+            color: white;
+            text-decoration: none;
+            padding: 14px 28px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.25s ease;
+            box-shadow: 0 8px 20px rgba(255, 77, 79, 0.3);
+            margin-top: 20px;
+            width: 100%;
+            border: none;
+            cursor: pointer;
+        }
+
+        .hh-link-button i {
+            font-size: 1.2rem;
+        }
+
+        .hh-link-button:hover {
+            transform: translateY(-3px);
+            background: linear-gradient(95deg, #ff5e2e, #e63e3e);
+            box-shadow: 0 12px 28px rgba(255, 77, 79, 0.4);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .loader {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 20px;
+            border-radius: 24px;
+            text-align: center;
+            margin: 30px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-container">
+    <div class="chart-card">
+        <div class="chart-header">
+            <h1>
+                <i class="fas fa-chart-line"></i>
+                Динамика количества вакансий
+            </h1>
+            <div class="subhead">
+                <span><i class="fas fa-calendar-alt"></i> Анализ изменений по дням</span>
+                <!-- Убрана надпись "Данные: /vacancy/list" -->
+            </div>
+            <div class="refresh-area">
+                <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> На главную</a>
+                <button id="refreshChartBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Обновить</button>
+            </div>
+        </div>
+
+        <div class="chart-body" id="chartBody">
+            <!-- Тут будет динамическое содержимое: график + статистика -->
+            <div class="loader">
+                <i class="fas fa-spinner fa-pulse fa-3x" style="color:white; text-shadow:0 0 5px rgba(0,0,0,0.3);"></i>
+                <p style="color:#334155; font-weight:500;">Загрузка данных о вакансиях...</p>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <i class="fas fa-chart-simple"></i> График построен на основе данных сервера | Актуальность при каждом обновлении
+    </footer>
+</div>
+
+<script>
+    // Глобальная переменная для хранения экземпляра графика
+    let vacanciesChart = null;
+
+    // Ссылка на HH.ru (Java developer)
+    const HH_VACANCY_URL = "https://nn.hh.ru/search/vacancy?text=Java+developer&from=suggest_post&salary=&ored_clusters=true&search_field=name&suggestId=8fff2cb4-38a4-45c9-9ac8-93435a4903c2&hhtmFrom=vacancy_search_list&hhtmFromLabel=vacancy_search_line";
+
+    // Функция форматирования даты: "2026-05-13" -> "13 мая"
+    function formatDateLabel(dateStr) {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        const year = parts[0];
+        const month = parseInt(parts[1], 10);
+        const day = parseInt(parts[2], 10);
+        const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        return `${day} ${months[month-1]}`;
+    }
+
+    // Полная дата для таблицы: "2026-05-13" -> "13 мая 2026"
+    function formatFullDate(dateStr) {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        const year = parts[0];
+        const month = parseInt(parts[1], 10);
+        const day = parseInt(parts[2], 10);
+        const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+        return `${day} ${months[month-1]} ${year}`;
+    }
+
+    // Вычисление статистики по массиву данных [{date, vacancyCount}]
+    function calculateStats(data) {
+        if (!data || data.length === 0) return null;
+        const counts = data.map(item => item.vacancyCount);
+        const avg = counts.reduce((a,b) => a + b, 0) / counts.length;
+        const max = Math.max(...counts);
+        const min = Math.min(...counts);
+        const last = counts[counts.length - 1];
+        const first = counts[0];
+        const change = last - first;
+        const changePercent = first !== 0 ? (change / first) * 100 : 0;
+        return {
+            avg: avg.toFixed(1),
+            max,
+            min,
+            first,
+            last,
+            change,
+            changePercent: changePercent.toFixed(1)
+        };
+    }
+
+    // Рендер всей страницы: график, статистика (3 блока), таблица, плюс кнопка перехода на HH
+    function renderDashboard(vacancyData) {
+        const container = document.getElementById('chartBody');
+        if (!vacancyData || vacancyData.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-chart-simple"></i>
+                    <h3>Нет данных о вакансиях</h3>
+                    <p>Сервер вернул пустой список. Попробуйте обновить позже.</p>
+                    <button id="retryEmptyBtn" style="margin-top:20px; background:#667eea; border:none; padding:10px 30px; border-radius:40px; color:white; cursor:pointer;">
+                        <i class="fas fa-sync-alt"></i> Повторить
+                    </button>
+                    <a href="${HH_VACANCY_URL}" target="_blank" class="hh-link-button" style="margin-top: 25px; display: inline-flex; width: auto;">
+                        <i class="fab fa-hh"></i> Перейти к вакансиям Java-разработчика
+                    </a>
+                </div>
+            `;
+            const retryBtn = document.getElementById('retryEmptyBtn');
+            if (retryBtn) retryBtn.addEventListener('click', () => fetchVacancyList());
+            return;
+        }
+
+        // Сортируем данные по дате (на всякий случай, если пришли не по порядку)
+        const sortedData = [...vacancyData].sort((a,b) => new Date(a.date) - new Date(b.date));
+        const dates = sortedData.map(item => formatDateLabel(item.date));
+        const counts = sortedData.map(item => item.vacancyCount);
+        const stats = calculateStats(sortedData);
+
+        // Создаем структуру HTML — 3 карточки + таблица + КНОПКА НА HH.RU
+        const html = `
+            <div class="canvas-wrapper">
+                <canvas id="vacancyLineChart" width="800" height="400" style="max-width:100%; height:auto; aspect-ratio:16/9;"></canvas>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-calculator"></i></div>
+                    <div class="stat-label">Среднее за день</div>
+                    <div class="stat-value">${stats.avg}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-arrow-trend-up"></i></div>
+                    <div class="stat-label">Изменение (посл. - перв.)</div>
+                    <div class="stat-value ${stats.change >= 0 ? 'trend-up' : 'trend-down'}">${stats.change >= 0 ? '+' : ''}${stats.change.toLocaleString()}</div>
+                    <div class="stat-trend">
+                        ${stats.changePercent >= 0 ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>'}
+                        <span>${Math.abs(stats.changePercent)}%</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-chart-simple"></i></div>
+                    <div class="stat-label">Диапазон (мин — макс)</div>
+                    <div class="stat-value">${stats.min} — ${stats.max}</div>
+                </div>
+            </div>
+
+            <div class="data-table">
+                <h3><i class="fas fa-table-list"></i> Детальная динамика по дням</h3>
+                <table>
+                    <thead>
+                        <tr><th>Дата</th><th>Количество вакансий</th><th>Изменение (к предыдущему)</th></tr>
+                    </thead>
+                    <tbody>
+                        ${generateTableRows(sortedData)}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Кнопка перехода на HeadHunter с вакансиями Java-разработчика -->
+            <a href="${HH_VACANCY_URL}" target="_blank" class="hh-link-button" id="hhRedirectBtn">
+                <i class="fab fa-hh"></i> Смотреть актуальные вакансии Java-разработчика на hh.ru
+                <i class="fas fa-external-link-alt"></i>
+            </a>
+        `;
+
+        container.innerHTML = html;
+
+        // После вставки HTML рисуем график
+        const ctx = document.getElementById('vacancyLineChart').getContext('2d');
+        if (vacanciesChart) {
+            vacanciesChart.destroy();
+        }
+
+        // Градиент для заливки
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(102, 126, 234, 0.5)');
+        gradient.addColorStop(1, 'rgba(102, 126, 234, 0.02)');
+
+        vacanciesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: 'Количество вакансий',
+                        data: counts,
+                        borderColor: '#4f46e5',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#ffffff',
+                        pointRadius: 6,
+                        pointHoverRadius: 9,
+                        pointBorderWidth: 2,
+                        tension: 0.2,
+                        fill: true,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#f1f5f9',
+                        bodyColor: '#cbd5e1',
+                        callbacks: {
+                            label: function(context) {
+                                let value = context.raw;
+                                return `📊 Вакансий: ${value.toLocaleString()}`;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { size: 13, weight: 'bold' },
+                            color: '#334155',
+                            usePointStyle: true,
+                            boxWidth: 12,
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString() + ' шт.';
+                            },
+                            stepSize: 'auto',
+                            color: '#475569'
+                        },
+                        grid: {
+                            color: '#e2e8f0',
+                            drawBorder: true,
+                        },
+                        title: {
+                            display: true,
+                            text: 'Количество активных вакансий',
+                            color: '#334155',
+                            font: { weight: 'bold', size: 12 }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#475569',
+                            font: { size: 12 },
+                            maxRotation: 35,
+                            minRotation: 25
+                        },
+                        grid: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Дата (по дням)',
+                            color: '#334155',
+                            font: { weight: 'bold', size: 12 }
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                elements: {
+                    line: {
+                        borderJoin: 'round',
+                    }
+                }
+            }
+        });
+    }
+
+    // Генерируем строки таблицы с вычислением изменений
+    function generateTableRows(sortedData) {
+        if (!sortedData.length) return '<tr><td colspan="3">Нет данных</td></tr>';
+        let rows = '';
+        for (let i = 0; i < sortedData.length; i++) {
+            const item = sortedData[i];
+            const count = item.vacancyCount;
+            const fullDate = formatFullDate(item.date);
+            let changeHtml = '';
+            if (i === 0) {
+                changeHtml = '<span style="color:#94a3b8;"><i class="fas fa-minus-circle"></i> —</span>';
+            } else {
+                const prevCount = sortedData[i-1].vacancyCount;
+                const diff = count - prevCount;
+                const diffPercent = prevCount !== 0 ? (diff / prevCount) * 100 : 0;
+                if (diff > 0) {
+                    changeHtml = `<span class="trend-up"><i class="fas fa-arrow-up"></i> +${diff} (+${diffPercent.toFixed(1)}%)</span>`;
+                } else if (diff < 0) {
+                    changeHtml = `<span class="trend-down"><i class="fas fa-arrow-down"></i> ${diff} (${diffPercent.toFixed(1)}%)</span>`;
+                } else {
+                    changeHtml = `<span class="trend-neutral"><i class="fas fa-equals"></i> 0 (0%)</span>`;
+                }
+            }
+            rows += `
+                <tr>
+                    <td style="font-weight:500;"><i class="far fa-calendar-alt" style="margin-right:8px; color:#667eea;"></i> ${fullDate}</td>
+                    <td class="vacancy-number">${count.toLocaleString()} <span style="font-size:0.7rem;">вакансий</span></td>
+                    <td>${changeHtml}</td>
+                </tr>
+            `;
+        }
+        return rows;
+    }
+
+    // Функция для запроса данных с сервера: http://localhost:8080/vacancy/list
+    async function fetchVacancyList() {
+        const container = document.getElementById('chartBody');
+        // Показываем лоадер, если данные еще не грузились
+        if (container) {
+            container.innerHTML = `
+                <div class="loader">
+                    <i class="fas fa-spinner fa-pulse fa-3x" style="color:#4f46e5;"></i>
+                    <p style="color:#334155;">Загрузка данных с сервера...</p>
+                </div>
+            `;
+        }
+
+        try {
+            // Используем полный URL (локальный сервер)
+            const response = await fetch('http://localhost:8080/vacancy/list');
+            if (!response.ok) {
+                throw new Error(`HTTP ошибка: ${response.status} ${response.statusText}`);
+            }
+            const data = await response.json();
+
+            // Проверяем структуру: ожидаем массив объектов с полями date и vacancyCount
+            if (!Array.isArray(data)) {
+                throw new Error('Ответ сервера не является массивом');
+            }
+
+            // Валидация каждого элемента
+            const validData = data.filter(item =>
+                item && typeof item === 'object' &&
+                typeof item.date === 'string' &&
+                typeof item.vacancyCount === 'number'
+            );
+
+            if (validData.length === 0 && data.length > 0) {
+                console.warn('Некоторые элементы не соответствуют формату {date, vacancyCount}');
+            }
+
+            if (validData.length === 0) {
+                // Если нет валидных данных, показываем пустое состояние
+                renderDashboard([]);
+                return;
+            }
+
+            // Успешно: рендерим дашборд
+            renderDashboard(validData);
+
+        } catch (error) {
+            console.error('Ошибка при загрузке /vacancy/list:', error);
+            const containerElem = document.getElementById('chartBody');
+            if (containerElem) {
+                containerElem.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 12px; display: inline-block;"></i>
+                        <h3>Не удалось загрузить данные о вакансиях</h3>
+                        <p>${error.message || 'Проверьте доступность сервера http://localhost:8080/vacancy/list'}</p>
+                        <button id="retryFetchBtn" style="margin-top: 20px; background: #667eea; border: none; padding: 10px 28px; border-radius: 40px; color: white; font-weight: bold; cursor: pointer;">
+                            <i class="fas fa-redo-alt"></i> Повторить запрос
+                        </button>
+                        <a href="${HH_VACANCY_URL}" target="_blank" class="hh-link-button" style="margin-top: 25px; display: inline-flex; width: auto; background: #ff4d4f;">
+                            <i class="fab fa-hh"></i> Перейти к вакансиям Java-разработчика
+                        </a>
+                    </div>
+                `;
+                const retryBtn = document.getElementById('retryFetchBtn');
+                if (retryBtn) retryBtn.addEventListener('click', () => fetchVacancyList());
+            }
+        }
+    }
+
+    // Инициализация страницы: загружаем данные, добавляем обработчик на кнопку обновления
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchVacancyList();
+
+        const refreshBtn = document.getElementById('refreshChartBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                fetchVacancyList();
+            });
+        }
+    });
+</script>
+</body>
+</html>
