@@ -1393,7 +1393,8 @@
                 body: JSON.stringify({
                     id: PROJECT_ID,
                     name: projectRq.name,
-                    description: projectRq.description
+                    description: projectRq.description,
+                    createDate: projectData.createDate
                 })
             });
             if (!response.ok) throw new Error(`Ошибка обновления проекта: ${response.status}`);

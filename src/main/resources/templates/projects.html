@@ -1261,7 +1261,8 @@
             await updateProject({
                 id: proj.id,
                 name,
-                description: modal.querySelector('#projDesc').value || null
+                description: modal.querySelector('#projDesc').value || null,
+                createDate: proj.createDate
             });
             closeModal();
         };
