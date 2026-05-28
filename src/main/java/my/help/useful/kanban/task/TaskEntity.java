@@ -30,6 +30,7 @@ public class TaskEntity {
     private Difficulty difficulty;
 
     private LocalDate createDate;
+    private LocalDate closeDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "column_id")

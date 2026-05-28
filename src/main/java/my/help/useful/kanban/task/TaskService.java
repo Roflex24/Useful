@@ -6,6 +6,7 @@ import my.help.useful.kanban.column.ColumnRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -29,16 +30,30 @@ public class TaskService {
         taskRepository.save(taskEntity);
     }
 
-    public void updateTaskList(List<TaskModel> rq) {
+    public List<TaskModel> updateTaskList(List<TaskModel> rq) {
         List<TaskEntity> taskEntityList = taskMapper.toEntityList(rq);
         for (int i = 0; i < taskEntityList.size(); i++) {
             TaskEntity taskEntity = taskEntityList.get(i);
-            taskEntity.setColumn(columnRepository.findById(rq.get(i).getColumnId()).get());
+            ColumnEntity column = columnRepository.findById(rq.get(i).getColumnId()).get();
+            if (column.getOrderIndex() == 3) {
+                if (taskEntity.getCloseDate() == null) {
+                    taskEntity.setCloseDate(LocalDate.now());
+                }
+            } else {
+                taskEntity.setCloseDate(null);
+            }
+            taskEntity.setColumn(column);
         }
-        taskRepository.saveAll(taskEntityList);
+        List<TaskEntity> saved = taskRepository.saveAll(taskEntityList);
+        return taskMapper.toModelList(saved);
     }
 
     public void deleteTask(Long id) {
         taskRepository.deleteById(id);
+    }
+
+    public long getTaskListForPeriod(LocalDate start, LocalDate end) {
+        return taskRepository.countByCloseDateBetween(
+                start, end);
     }
 }

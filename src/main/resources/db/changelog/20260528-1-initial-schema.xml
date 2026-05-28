@@ -1,6 +1,6 @@
 <?xml version="1.1" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
-    <changeSet author="Roflex (generated)" id="1779944544819-1">
+    <changeSet author="Roflex (generated)" id="1779949408317-1">
         <createTable tableName="plan_tasks">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="plan_tasks_pkey"/>
@@ -15,7 +15,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-2">
+    <changeSet author="Roflex (generated)" id="1779949408317-2">
         <createTable tableName="products">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="product_entity_pkey"/>
@@ -41,7 +41,7 @@
             <column name="unit" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-3">
+    <changeSet author="Roflex (generated)" id="1779949408317-3">
         <createTable tableName="strategic_plan">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="strategic_plan_pkey"/>
@@ -53,7 +53,7 @@
             <column name="title" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-4">
+    <changeSet author="Roflex (generated)" id="1779949408317-4">
         <createTable tableName="tasks">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="tasks_pkey"/>
@@ -68,7 +68,7 @@
             <column name="create_date" type="date"/>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-5">
+    <changeSet author="Roflex (generated)" id="1779949408317-5">
         <createTable tableName="nutrients_per_day">
             <column name="date" type="date">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="calories_entity_pkey"/>
@@ -90,7 +90,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-6">
+    <changeSet author="Roflex (generated)" id="1779949408317-6">
         <createTable tableName="columns">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="columns_pkey"/>
@@ -102,7 +102,7 @@
             <column name="project_id" type="BIGINT"/>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-7">
+    <changeSet author="Roflex (generated)" id="1779949408317-7">
         <createTable tableName="completed_task">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="completed_task_pkey"/>
@@ -113,7 +113,7 @@
             <column name="task_name" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-8">
+    <changeSet author="Roflex (generated)" id="1779949408317-8">
         <createTable tableName="currency_rates">
             <column name="actual_date" type="date">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="currency_rate_entity_pkey"/>
@@ -126,7 +126,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-9">
+    <changeSet author="Roflex (generated)" id="1779949408317-9">
         <createTable tableName="products_per_day">
             <column name="date" type="date">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="day_product_pkey"/>
@@ -139,7 +139,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-10">
+    <changeSet author="Roflex (generated)" id="1779949408317-10">
         <createTable tableName="events">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="events_pkey"/>
@@ -149,7 +149,7 @@
             <column name="name" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-11">
+    <changeSet author="Roflex (generated)" id="1779949408317-11">
         <createTable tableName="weather_forecasts">
             <column name="city_name_en" type="VARCHAR(255)">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="forecast_item_entity_pkey"/>
@@ -176,7 +176,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-12">
+    <changeSet author="Roflex (generated)" id="1779949408317-12">
         <createTable tableName="key_rates">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="key_rate_entity_pkey"/>
@@ -192,7 +192,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-13">
+    <changeSet author="Roflex (generated)" id="1779949408317-13">
         <createTable tableName="project_metric">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="project_metric_pkey"/>
@@ -208,7 +208,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-14">
+    <changeSet author="Roflex (generated)" id="1779949408317-14">
         <createTable tableName="projects">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="projects_pkey"/>
@@ -221,7 +221,7 @@
             <column name="create_date" type="date"/>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-15">
+    <changeSet author="Roflex (generated)" id="1779949408317-15">
         <createTable tableName="vacancies_per_day">
             <column name="date" type="date">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="vacancy_entity_pkey"/>
@@ -231,16 +231,16 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-16">
+    <changeSet author="Roflex (generated)" id="1779949408317-16">
         <addForeignKeyConstraint baseColumnNames="project_id" baseTableName="columns" constraintName="fk6isidsjmp0457qd85n4x030cc" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="projects" validate="true"/>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-17">
+    <changeSet author="Roflex (generated)" id="1779949408317-17">
         <addForeignKeyConstraint baseColumnNames="project_id" baseTableName="project_metric" constraintName="fkhdq9jl4r3vbok24059ix21ybo" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="projects" validate="true"/>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-18">
+    <changeSet author="Roflex (generated)" id="1779949408317-18">
         <addForeignKeyConstraint baseColumnNames="column_id" baseTableName="tasks" constraintName="fkleqsyhtos46wpnhh7a1lpn38q" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="columns" validate="true"/>
     </changeSet>
-    <changeSet author="Roflex (generated)" id="1779944544819-19">
+    <changeSet author="Roflex (generated)" id="1779949408317-19">
         <addForeignKeyConstraint baseColumnNames="plan_id" baseTableName="plan_tasks" constraintName="fkqg6xxd82otalo8dp740smfrin" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="strategic_plan" validate="true"/>
     </changeSet>
 </databaseChangeLog>

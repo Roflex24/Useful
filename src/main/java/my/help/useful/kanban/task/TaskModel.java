@@ -16,5 +16,6 @@ public class TaskModel {
     private int orderIndex;
     private Difficulty difficulty;
     private LocalDate createDate;
+    private LocalDate closeDate;
     private Long columnId;
 }

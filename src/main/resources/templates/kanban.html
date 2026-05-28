@@ -424,27 +424,6 @@
             margin-bottom: 2rem;
         }
 
-        @media (min-width: 1200px) {
-            .kanban-board {
-                flex-wrap: nowrap;
-                overflow-x: auto;
-            }
-            .column-card {
-                min-width: 300px;
-                flex: 1 1 0;
-            }
-        }
-
-        @media (min-width: 769px) and (max-width: 1199px) {
-            .kanban-board {
-                flex-wrap: wrap;
-            }
-            .column-card {
-                flex: 1 1 calc(50% - 1.5rem);
-                min-width: 280px;
-            }
-        }
-
         .kanban-board::-webkit-scrollbar {
             height: 8px;
         }
@@ -460,6 +439,8 @@
         }
 
         .column-card {
+            flex: 1 1 300px;
+            min-width: 280px;
             backdrop-filter: blur(20px);
             background: rgba(15, 12, 42, 0.5);
             border-radius: 1.5rem;
@@ -687,7 +668,7 @@
             border: 2px dashed #8b5cf6;
         }
 
-        /* Полноэкранное модальное окно для задачи */
+        /* Модальные окна */
         .task-edit-modal {
             position: fixed;
             top: 0;
@@ -719,7 +700,6 @@
             animation: scaleIn 0.3s ease;
         }
 
-        /* Полноэкранное модальное окно для проекта */
         .project-edit-modal {
             position: fixed;
             top: 0;
@@ -1146,67 +1126,62 @@
             to { transform: rotate(360deg); }
         }
 
-        @media (max-width: 768px) {
-            body {
-                padding: 1rem;
-            }
-            .column-card {
-                min-width: 280px;
-                flex: 1 1 auto;
-            }
-            .project-name {
-                font-size: 1.3rem;
-                padding-right: 100px;
-            }
-            .top-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .board-header {
-                flex-direction: column;
-            }
-            .kanban-board {
-                flex-wrap: wrap;
-            }
-            .task-edit-modal-content,
-            .project-edit-modal-content {
-                width: 95%;
-                padding: 1.5rem;
-                height: auto;
-                max-height: 90vh;
-                overflow-y: auto;
-            }
-            .task-edit-modal,
-            .project-edit-modal {
-                padding: 1rem;
-            }
-            .task-create-date {
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 0.75rem;
-                padding: 0.75rem;
-                margin-top: 0.5rem;
-            }
+        /* Статистика */
+        .stats-section {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 1rem;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            min-width: 300px;
+            backdrop-filter: blur(8px);
+        }
 
-            .task-create-date label {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                font-size: 0.85rem;
-                color: rgba(255, 255, 255, 0.8);
-                margin-bottom: 0.5rem;
-            }
+        .stats-container {
+            display: flex;
+            gap: 2rem;
+        }
 
-            .task-create-date .date-value {
-                color: #c4b5fd;
-                font-weight: 500;
-                padding-left: 1.5rem;
-            }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
 
-            .date-note {
-                font-size: 0.7rem;
-                color: rgba(255, 255, 255, 0.5);
-                margin-left: 0.5rem;
-            }
+        .stat-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #d8b4fe;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.2;
+            text-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+        }
+
+        .stat-period {
+            font-size: 0.75rem;
+            color: #c4b5fd;
+        }
+
+        .stats-loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #c4b5fd;
+        }
+
+        .loading-spinner-small {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
     </style>
 </head>
@@ -1235,6 +1210,12 @@
         <div class="title-section">
             <h1>📋 Канбан Доска</h1>
             <p>Перетаскивайте задачи между колонками • Нажмите на задачу для редактирования</p>
+        </div>
+        <div class="stats-section" id="statsSection">
+            <div class="stats-loading">
+                <div class="loading-spinner-small"></div>
+                Загрузка статистики...
+            </div>
         </div>
     </div>
 
@@ -1268,6 +1249,7 @@
     const COLUMN_API = '/columns';
     const TASK_API = '/tasks';
     const METRIC_API = '/project/metric';
+    const STATS_API = '/tasks/period';
 
     function getProjectId() {
         const params = new URLSearchParams(window.location.search);
@@ -1293,6 +1275,116 @@
     let intermediateMetrics = [];
     let columns = [];
     let tasksMap = new Map();
+
+    async function fetchTaskStats(startDate, endDate) {
+        try {
+            // Форматируем даты в формат YYYY-MM-DD для LocalDate
+            const startStr = startDate.toISOString().split('T')[0];
+            const endStr = endDate.toISOString().split('T')[0];
+
+            const response = await fetch(`${STATS_API}?start=${startStr}&end=${endStr}`);
+            if (response.ok) {
+                const count = await response.json();
+                return count;
+            }
+            return 0;
+        } catch(e) {
+            console.error('Error fetching stats:', e);
+            return 0;
+        }
+    }
+
+    async function fetchAllStats() {
+        const now = new Date();
+
+        // Начало недели (понедельник)
+        const startOfWeek = new Date(now);
+        const dayOfWeek = now.getDay();
+        const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        startOfWeek.setDate(now.getDate() - diffToMonday);
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        // Конец недели (воскресенье)
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        // Начало месяца
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        // Конец месяца
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endOfMonth.setHours(23, 59, 59, 999);
+
+        // Запрашиваем статистику параллельно
+        const [weekStats, monthStats] = await Promise.all([
+            fetchTaskStats(startOfWeek, endOfWeek),
+            fetchTaskStats(startOfMonth, endOfMonth)
+        ]);
+
+        return {
+            week: weekStats,
+            month: monthStats,
+            weekPeriod: {
+                start: startOfWeek,
+                end: endOfWeek
+            },
+            monthPeriod: {
+                start: startOfMonth,
+                end: endOfMonth
+            }
+        };
+    }
+
+    async function renderStats() {
+        const statsContainer = document.getElementById('statsSection');
+        if (!statsContainer) return;
+
+        try {
+            const stats = await fetchAllStats();
+
+            statsContainer.innerHTML = `
+            <div class="stats-container">
+                <div class="stat-item">
+                    <div class="stat-label">✅ Выполнено за неделю</div>
+                    <div class="stat-value">${stats.week}</div>
+                    <div class="stat-period">
+                        ${formatDateRange(stats.weekPeriod.start, stats.weekPeriod.end)}
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">📅 Выполнено за месяц</div>
+                    <div class="stat-value">${stats.month}</div>
+                    <div class="stat-period">
+                        ${formatDateRange(stats.monthPeriod.start, stats.monthPeriod.end)}
+                    </div>
+                </div>
+            </div>
+        `;
+        } catch(e) {
+            console.error('Error rendering stats:', e);
+            statsContainer.innerHTML = `
+            <div class="stats-container">
+                <div class="stat-item">
+                    <div class="stat-label">✅ За неделю</div>
+                    <div class="stat-value">—</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">📅 За месяц</div>
+                    <div class="stat-value">—</div>
+                </div>
+            </div>
+        `;
+        }
+    }
+
+    // Вспомогательная функция для форматирования диапазона дат
+    function formatDateRange(startDate, endDate) {
+        const start = startDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+        const end = endDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+        return `${start} - ${end}`;
+    }
 
     function showToast(msg, isError = false) {
         const existing = document.querySelector('.toast-message');
@@ -1589,6 +1681,12 @@
             day: 'numeric'
         }) : 'Дата не указана';
 
+        const closeDateFormatted = task.closeDate ? new Date(task.closeDate).toLocaleDateString('ru-RU', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }) : null;
+
         modal.innerHTML = `
             <div class="task-edit-modal-content">
                 <h3>✏️ Редактирование задачи</h3>
@@ -1606,12 +1704,13 @@
                         <div class="difficulty-selector" id="difficulty-selector"></div>
                     </div>
                     <div class="task-edit-field" style="opacity: 0.7; background: rgba(0,0,0,0.2); border-radius: 0.75rem; padding: 0.5rem;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span>📅 Дата создания</span>
-                        </label>
-                        <div style="padding: 0.5rem 0; color: #c4b5fd; font-weight: 500;">
-                            ${escapeHtml(createDateFormatted)}
-                        </div>
+                      <label style="display: flex; align-items: center; gap: 0.5rem;">
+                          <span>📅 Даты</span>
+                      </label>
+                      <div style="padding: 0.5rem 0; color: #c4b5fd; font-weight: 500;">
+                          <div>Создана: ${escapeHtml(createDateFormatted)}</div>
+                          ${closeDateFormatted ? `<div style="margin-top: 0.3rem;">Закрыта: ${escapeHtml(closeDateFormatted)}</div>` : ''}
+                      </div>
                     </div>
                 </div>
                 <div class="task-edit-buttons">
@@ -1694,6 +1793,7 @@
             });
             await fetchTasksByColumn(colId);
             renderBoard();
+            await renderStats(); // Обновляем статистику
             showToast('Задача создана');
         } catch(e) { showToast('Ошибка создания', true); }
     }
@@ -1709,20 +1809,30 @@
             } : t
         );
         try {
-            await fetch(TASK_API, {
+            const response = await fetch(TASK_API, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updated.map((t,i) => ({
                     ...t,
                     orderIndex: i
-                    // createDate не включаем в запрос на сервер
                 })))
             });
-            tasksMap.set(colId, updated);
-            renderBoard();
-            showToast('Задача обновлена');
+
+            if (response.ok) {
+                const updatedTasksFromServer = await response.json();
+                tasksMap.set(colId, updatedTasksFromServer);
+                renderBoard();
+                await renderStats(); // <-- Добавьте эту строку
+                showToast('Задача обновлена');
+            } else {
+                throw new Error('Ошибка при обновлении');
+            }
         } catch(e) {
+            console.error('Update error:', e);
             showToast('Ошибка обновления', true);
+            // В случае ошибки перезагружаем задачи из сервера
+            await fetchTasksByColumn(colId);
+            renderBoard();
         }
     }
 
@@ -1732,65 +1842,100 @@
             await fetch(`${TASK_API}/${taskId}`, { method: 'DELETE' });
             await fetchTasksByColumn(colId);
             renderBoard();
+            await renderStats(); // Обновляем статистику
             showToast('Задача удалена');
         } catch(e) { showToast('Ошибка удаления', true); }
     }
 
+    let isMoving = false;
+
     async function moveTask(taskId, fromCol, toCol, toIndex) {
-        const fromTasks = [...(tasksMap.get(fromCol) || [])];
-        const toTasks = fromCol === toCol ? fromTasks : [...(tasksMap.get(toCol) || [])];
-
-        const taskIndex = fromTasks.findIndex(t => t.id === taskId);
-        if (taskIndex === -1) return;
-
-        const [task] = fromTasks.splice(taskIndex, 1);
-        task.columnId = toCol;
-
-        let targetIndex = toIndex;
-        if (fromCol === toCol && taskIndex < toIndex) {
-            targetIndex--;
+        // Предотвращаем параллельные перемещения
+        if (isMoving) {
+            console.log('Move already in progress, skipping...');
+            return;
         }
 
-        if (fromCol === toCol) {
-            fromTasks.splice(targetIndex, 0, task);
-        } else {
-            toTasks.splice(targetIndex, 0, task);
-        }
+        isMoving = true;
 
         try {
+            const fromTasks = [...(tasksMap.get(fromCol) || [])];
+            const toTasks = fromCol === toCol ? fromTasks : [...(tasksMap.get(toCol) || [])];
+
+            const taskIndex = fromTasks.findIndex(t => t.id === taskId);
+            if (taskIndex === -1) {
+                isMoving = false;
+                return;
+            }
+
+            const [task] = fromTasks.splice(taskIndex, 1);
+            task.columnId = toCol;
+
+            let targetIndex = toIndex;
+            if (fromCol === toCol && taskIndex < toIndex) {
+                targetIndex--;
+            }
+
+            if (fromCol === toCol) {
+                fromTasks.splice(targetIndex, 0, task);
+            } else {
+                toTasks.splice(targetIndex, 0, task);
+            }
+
             if (fromCol !== toCol) {
-                await fetch(TASK_API, {
+                // Обновляем первую колонку
+                const response1 = await fetch(TASK_API, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(fromTasks.map((t, i) => ({ ...t, orderIndex: i })))
                 });
 
-                await fetch(TASK_API, {
+                if (response1.ok) {
+                    const updatedFromTasks = await response1.json();
+                    tasksMap.set(fromCol, updatedFromTasks);
+                } else {
+                    throw new Error('Ошибка обновления первой колонки');
+                }
+
+                // Обновляем вторую колонку
+                const response2 = await fetch(TASK_API, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(toTasks.map((t, i) => ({ ...t, orderIndex: i })))
                 });
 
-                tasksMap.set(fromCol, fromTasks);
-                tasksMap.set(toCol, toTasks);
+                if (response2.ok) {
+                    const updatedToTasks = await response2.json();
+                    tasksMap.set(toCol, updatedToTasks);
+                } else {
+                    throw new Error('Ошибка обновления второй колонки');
+                }
             } else {
-                await fetch(TASK_API, {
+                // Обновляем одну колонку
+                const response = await fetch(TASK_API, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(fromTasks.map((t, i) => ({ ...t, orderIndex: i })))
                 });
 
-                tasksMap.set(fromCol, fromTasks);
+                if (response.ok) {
+                    const updatedTasks = await response.json();
+                    tasksMap.set(fromCol, updatedTasks);
+                } else {
+                    throw new Error('Ошибка обновления колонки');
+                }
             }
 
             renderBoard();
+            await renderStats();
             showToast('Задача перемещена');
         } catch(e) {
             console.error('Move error:', e);
             showToast('Ошибка перемещения', true);
-            await fetchTasksByColumn(fromCol);
-            if (fromCol !== toCol) await fetchTasksByColumn(toCol);
+            await fetchAllTasks();
             renderBoard();
+        } finally {
+            isMoving = false;
         }
     }
 
@@ -2003,22 +2148,24 @@
                     const hasDesc = task.description?.trim();
                     const completedClass = isLastColumn ? 'completed' : '';
                     return `
-                                <div class="task-card difficulty-${task.difficulty || 'BASE'} ${completedClass}" data-task-id="${task.id}" data-col-id="${col.id}">
-                                    <div class="task-click-area" data-task-id="${task.id}" data-col-id="${col.id}">
-                                        <div class="task-header">
-                                            <div class="task-title">
-                                                <span class="task-drag-handle">⋮⋮</span>
-                                                <span class="task-emoji">📌</span>
-                                                <span class="task-title-text">${escapeHtml(task.title)}</span>
-                                            </div>
-                                            <div class="task-actions-icons">
-                                                <button class="difficulty-button" data-task-id="${task.id}" data-col-id="${col.id}" data-action="difficulty">${difficulty.emoji}</button>
-                                                <button class="delete-task-btn" data-task-id="${task.id}" data-col-id="${col.id}" data-action="delete">✕</button>
-                                            </div>
+                                <div class="task-card difficulty-${task.difficulty || 'BASE'} ${completedClass}" data-task-id="${task.id}" data-col-id="${col.id}" draggable="true">
+                                    <div class="task-header">
+                                        <div class="task-title">
+                                            <span class="task-drag-handle">⋮⋮</span>
+                                            <span class="task-emoji">📌</span>
+                                            <span class="task-title-text task-clickable" data-task-id="${task.id}" data-col-id="${col.id}">${escapeHtml(task.title)}</span>
                                         </div>
-                                        <div class="task-desc-preview ${!hasDesc ? 'empty-desc' : ''}">
-                                            ${hasDesc ? escapeHtml(task.description.substring(0, 100)) : '➕ Добавить описание...'}
+                                        <div class="task-actions-icons">
+                                            <button class="difficulty-button" data-task-id="${task.id}" data-col-id="${col.id}" data-action="difficulty">${difficulty.emoji}</button>
+                                            <button class="delete-task-btn" data-task-id="${task.id}" data-col-id="${col.id}" data-action="delete">✕</button>
                                         </div>
+                                    </div>
+                                    <div class="task-desc-preview task-clickable ${!hasDesc ? 'empty-desc' : ''}" data-task-id="${task.id}" data-col-id="${col.id}">
+                                        ${hasDesc ? escapeHtml(task.description.substring(0, 100)) : '➕ Добавить описание...'}
+                                    </div>
+                                    <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem; margin-left: 1.2rem; font-size: 0.65rem; color: rgba(255,255,255,0.5);">
+                                        <span>📅 ${task.createDate ? new Date(task.createDate).toLocaleDateString('ru-RU') : '—'}</span>
+                                        ${task.closeDate ? `<span>✅ ${new Date(task.closeDate).toLocaleDateString('ru-RU')}</span>` : ''}
                                     </div>
                                 </div>
                             `;
@@ -2037,35 +2184,53 @@
         }).join('');
 
         let dragTaskData = null;
+        let isDropHandled = false;
 
+        // Обработчики для drag and drop
         document.querySelectorAll('.task-card').forEach(card => {
-            card.setAttribute('draggable', 'true');
             card.ondragstart = (e) => {
-                dragTaskData = { id: parseInt(card.dataset.taskId), colId: parseInt(card.dataset.colId) };
+                dragTaskData = {
+                    id: parseInt(card.dataset.taskId),
+                    colId: parseInt(card.dataset.colId)
+                };
                 e.dataTransfer.setData('text/plain', '');
                 card.classList.add('dragging');
                 e.stopPropagation();
             };
+
             card.ondragend = () => {
-                document.querySelectorAll('.task-card').forEach(c => c.classList.remove('dragging', 'drag-over-top', 'drag-over-bottom'));
+                document.querySelectorAll('.task-card').forEach(c =>
+                    c.classList.remove('dragging', 'drag-over-top', 'drag-over-bottom')
+                );
                 dragTaskData = null;
+                isDropHandled = false;
             };
+
             card.ondragover = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 if (!dragTaskData) return;
+
                 const rect = card.getBoundingClientRect();
                 const y = e.clientY;
                 const middle = rect.top + rect.height / 2;
                 const position = y < middle ? 'top' : 'bottom';
+
                 card.classList.remove('drag-over-top', 'drag-over-bottom');
                 card.classList.add(position === 'top' ? 'drag-over-top' : 'drag-over-bottom');
             };
-            card.ondragleave = () => card.classList.remove('drag-over-top', 'drag-over-bottom');
+
+            card.ondragleave = () => {
+                card.classList.remove('drag-over-top', 'drag-over-bottom');
+            };
+
             card.ondrop = async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (!dragTaskData) return;
+
+                if (isDropHandled || !dragTaskData) return;
+                isDropHandled = true;
+
                 const rect = card.getBoundingClientRect();
                 const y = e.clientY;
                 const middle = rect.top + rect.height / 2;
@@ -2074,68 +2239,128 @@
                 const targetTaskId = parseInt(card.dataset.taskId);
                 const tasksInCol = tasksMap.get(targetColId) || [];
                 let targetIndex = tasksInCol.findIndex(t => t.id === targetTaskId);
+
                 if (position === 'bottom') targetIndex++;
+
                 await moveTask(dragTaskData.id, dragTaskData.colId, targetColId, targetIndex);
                 card.classList.remove('drag-over-top', 'drag-over-bottom');
+
+                setTimeout(() => { isDropHandled = false; }, 100);
             };
         });
 
+        // Обработчики для placeholder
         document.querySelectorAll('.task-placeholder, .tasks-list').forEach(el => {
-            el.ondragover = (e) => { e.preventDefault(); el.classList.add('drag-over'); };
+            el.ondragover = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                el.classList.add('drag-over');
+            };
+
             el.ondragleave = () => el.classList.remove('drag-over');
+
             el.ondrop = async (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 el.classList.remove('drag-over');
-                if (!dragTaskData) return;
+
+                if (isDropHandled || !dragTaskData) return;
+                isDropHandled = true;
+
                 const targetColId = parseInt(el.dataset.colId);
-                if (dragTaskData.colId !== targetColId) await moveTask(dragTaskData.id, dragTaskData.colId, targetColId, 0);
+                if (dragTaskData.colId !== targetColId) {
+                    await moveTask(dragTaskData.id, dragTaskData.colId, targetColId, 0);
+                }
+
+                setTimeout(() => { isDropHandled = false; }, 100);
             };
         });
 
-        document.querySelectorAll('.task-click-area').forEach(area => {
-            area.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const taskId = parseInt(area.dataset.taskId);
-                const colId = parseInt(area.dataset.colId);
-                const task = (tasksMap.get(colId) || []).find(t => t.id === taskId);
-                if (task) {
-                    showTaskModal(task, colId);
-                }
-            });
+        // Обработчики для открытия формы редактирования задачи
+        // Используем делегирование событий через document, чтобы не зависеть от stopPropagation
+        document.querySelectorAll('.task-clickable').forEach(element => {
+            element.removeEventListener('click', handleTaskClick);
+            element.addEventListener('click', handleTaskClick);
         });
 
+        // Также добавляем обработчик на саму карточку, но только если клик не по кнопкам
+        document.querySelectorAll('.task-card').forEach(card => {
+            card.removeEventListener('click', handleCardClick);
+            card.addEventListener('click', handleCardClick);
+        });
+
+        // Обработчики для кнопок
         document.querySelectorAll('.difficulty-button').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const taskId = parseInt(btn.dataset.taskId);
-                const colId = parseInt(btn.dataset.colId);
-                const task = (tasksMap.get(colId) || []).find(t => t.id === taskId);
-                if (task) {
-                    showTaskModal(task, colId);
-                }
-            });
+            btn.removeEventListener('click', handleDifficultyClick);
+            btn.addEventListener('click', handleDifficultyClick);
         });
 
         document.querySelectorAll('.delete-task-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const taskId = parseInt(btn.dataset.taskId);
-                const colId = parseInt(btn.dataset.colId);
-                await deleteTask(taskId, colId);
-            });
+            btn.removeEventListener('click', handleDeleteClick);
+            btn.addEventListener('click', handleDeleteClick);
         });
 
+        // Обработчики для создания задач
         document.querySelectorAll('.create-task-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const colId = parseInt(btn.dataset.colId);
-                const card = btn.closest('.column-card');
-                const titleInput = card.querySelector('.new-task-title');
-                const descInput = card.querySelector('.new-task-desc');
-                createTask(colId, titleInput.value, descInput.value);
-                titleInput.value = '';
-                descInput.value = '';
-            });
+            btn.removeEventListener('click', handleCreateTask);
+            btn.addEventListener('click', handleCreateTask);
         });
+    }
+
+    // Выносим обработчики в отдельные функции для удобства
+    function handleTaskClick(e) {
+        e.stopPropagation();
+        const taskId = parseInt(e.currentTarget.dataset.taskId);
+        const colId = parseInt(e.currentTarget.dataset.colId);
+        const task = (tasksMap.get(colId) || []).find(t => t.id === taskId);
+        if (task) {
+            showTaskModal(task, colId);
+        }
+    }
+
+    function handleCardClick(e) {
+        // Проверяем, что клик не по кнопкам и не по дочерним элементам с классом task-clickable
+        if (e.target.classList.contains('difficulty-button') ||
+            e.target.classList.contains('delete-task-btn') ||
+            e.target.closest('.difficulty-button') ||
+            e.target.closest('.delete-task-btn')) {
+            return;
+        }
+
+        const card = e.currentTarget;
+        const taskId = parseInt(card.dataset.taskId);
+        const colId = parseInt(card.dataset.colId);
+        const task = (tasksMap.get(colId) || []).find(t => t.id === taskId);
+        if (task) {
+            showTaskModal(task, colId);
+        }
+    }
+
+    function handleDifficultyClick(e) {
+        e.stopPropagation();
+        const taskId = parseInt(e.currentTarget.dataset.taskId);
+        const colId = parseInt(e.currentTarget.dataset.colId);
+        const task = (tasksMap.get(colId) || []).find(t => t.id === taskId);
+        if (task) {
+            showTaskModal(task, colId);
+        }
+    }
+
+    function handleDeleteClick(e) {
+        e.stopPropagation();
+        const taskId = parseInt(e.currentTarget.dataset.taskId);
+        const colId = parseInt(e.currentTarget.dataset.colId);
+        deleteTask(taskId, colId);
+    }
+
+    function handleCreateTask(e) {
+        const colId = parseInt(e.currentTarget.dataset.colId);
+        const card = e.currentTarget.closest('.column-card');
+        const titleInput = card.querySelector('.new-task-title');
+        const descInput = card.querySelector('.new-task-desc');
+        createTask(colId, titleInput.value, descInput.value);
+        titleInput.value = '';
+        descInput.value = '';
     }
 
     document.getElementById('backToProjectsBtn').onclick = () => window.location.href = '/page/projects';
@@ -2143,6 +2368,7 @@
     async function init() {
         await fetchProject();
         await fetchColumns();
+        await renderStats();
     }
     init();
 </script>

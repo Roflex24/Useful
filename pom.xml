@@ -97,6 +97,12 @@
             <artifactId>jsoup</artifactId>
             <version>1.18.3</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <version>4.27.0</version>
+        </dependency>
     </dependencies>
 
     <build>

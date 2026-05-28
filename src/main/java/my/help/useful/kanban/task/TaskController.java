@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -26,14 +27,18 @@ public class TaskController {
     }
 
     @PutMapping
-    ResponseEntity<Void> updateTask(@RequestBody List<TaskModel> request) {
-        taskService.updateTaskList(request);
-        return ResponseEntity.ok().build();
+    ResponseEntity<List<TaskModel>> updateTask(@RequestBody List<TaskModel> request) {
+        return ResponseEntity.ok(taskService.updateTaskList(request));
     }
 
     @DeleteMapping("/{id}")
     ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/period")
+    ResponseEntity<Long> getCountTasksForPeriod(@RequestParam LocalDate start, @RequestParam LocalDate end) {
+        return ResponseEntity.ok(taskService.getTaskListForPeriod(start, end));
     }
 }
