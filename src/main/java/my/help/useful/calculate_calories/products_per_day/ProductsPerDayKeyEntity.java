@@ -1,10 +1,7 @@
 package my.help.useful.calculate_calories.products_per_day;
 
 import jakarta.persistence.Embeddable;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 
@@ -13,6 +10,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Getter
 @Setter
+@EqualsAndHashCode
 public class ProductsPerDayKeyEntity {
 
     private LocalDate date;

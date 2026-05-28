@@ -1,0 +1,246 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="Roflex (generated)" id="1779944544819-1">
+        <createTable tableName="plan_tasks">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="plan_tasks_pkey"/>
+            </column>
+            <column name="comment" type="VARCHAR(2000)"/>
+            <column name="description" type="VARCHAR(2000)"/>
+            <column name="order_index" type="INTEGER"/>
+            <column name="status" type="VARCHAR(255)"/>
+            <column name="title" type="VARCHAR(255)"/>
+            <column name="plan_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-2">
+        <createTable tableName="products">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="product_entity_pkey"/>
+            </column>
+            <column name="calories" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="carbohydrate" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fat" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fiber" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="photo_url" type="VARCHAR(255)"/>
+            <column name="protein" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="shop" type="SMALLINT"/>
+            <column name="unit" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-3">
+        <createTable tableName="strategic_plan">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="strategic_plan_pkey"/>
+            </column>
+            <column name="end_date" type="date"/>
+            <column name="plan_type" type="VARCHAR(255)"/>
+            <column name="start_date" type="date"/>
+            <column name="status" type="VARCHAR(255)"/>
+            <column name="title" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-4">
+        <createTable tableName="tasks">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="tasks_pkey"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="difficulty" type="VARCHAR(255)"/>
+            <column name="order_index" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(255)"/>
+            <column name="column_id" type="BIGINT"/>
+            <column name="create_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-5">
+        <createTable tableName="nutrients_per_day">
+            <column name="date" type="date">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="calories_entity_pkey"/>
+            </column>
+            <column name="calories" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="carbohydrates" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fat" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fiber" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="protein" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-6">
+        <createTable tableName="columns">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="columns_pkey"/>
+            </column>
+            <column name="order_index" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(255)"/>
+            <column name="project_id" type="BIGINT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-7">
+        <createTable tableName="completed_task">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="completed_task_pkey"/>
+            </column>
+            <column name="completed_date" type="date"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="project_name" type="VARCHAR(255)"/>
+            <column name="task_name" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-8">
+        <createTable tableName="currency_rates">
+            <column name="actual_date" type="date">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="currency_rate_entity_pkey"/>
+            </column>
+            <column name="eur_rate" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="usd_rate" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-9">
+        <createTable tableName="products_per_day">
+            <column name="date" type="date">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="day_product_pkey"/>
+            </column>
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="day_product_pkey"/>
+            </column>
+            <column name="quantity" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-10">
+        <createTable tableName="events">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="events_pkey"/>
+            </column>
+            <column name="date_time" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-11">
+        <createTable tableName="weather_forecasts">
+            <column name="city_name_en" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="forecast_item_entity_pkey"/>
+            </column>
+            <column name="date_time" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="forecast_item_entity_pkey"/>
+            </column>
+            <column name="city_name_ru" type="VARCHAR(255)"/>
+            <column name="date" type="VARCHAR(255)"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="humidity" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="main_weather" type="VARCHAR(255)"/>
+            <column name="pressure" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="temperature" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="time" type="VARCHAR(255)"/>
+            <column name="wind_speed" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-12">
+        <createTable tableName="key_rates">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="key_rate_entity_pkey"/>
+            </column>
+            <column name="actual_date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="key_rate" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-13">
+        <createTable tableName="project_metric">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="project_metric_pkey"/>
+            </column>
+            <column name="is_complete" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="order_index" type="INTEGER"/>
+            <column name="project_id" type="BIGINT"/>
+            <column name="is_main" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-14">
+        <createTable tableName="projects">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="projects_pkey"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="completion_metric" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="date"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-15">
+        <createTable tableName="vacancies_per_day">
+            <column name="date" type="date">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="vacancy_entity_pkey"/>
+            </column>
+            <column name="vacancy_count" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-16">
+        <addForeignKeyConstraint baseColumnNames="project_id" baseTableName="columns" constraintName="fk6isidsjmp0457qd85n4x030cc" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="projects" validate="true"/>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-17">
+        <addForeignKeyConstraint baseColumnNames="project_id" baseTableName="project_metric" constraintName="fkhdq9jl4r3vbok24059ix21ybo" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="projects" validate="true"/>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-18">
+        <addForeignKeyConstraint baseColumnNames="column_id" baseTableName="tasks" constraintName="fkleqsyhtos46wpnhh7a1lpn38q" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="columns" validate="true"/>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779944544819-19">
+        <addForeignKeyConstraint baseColumnNames="plan_id" baseTableName="plan_tasks" constraintName="fkqg6xxd82otalo8dp740smfrin" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="strategic_plan" validate="true"/>
+    </changeSet>
+</databaseChangeLog>
