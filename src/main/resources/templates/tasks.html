@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Задачи плана | NeoProject Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at 0% 0%, #0f0c2a 0%, #1a1747 50%, #0f0c2a 100%);
+            min-height: 100vh;
+            padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(79, 70, 229, 0.15));
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+            filter: blur(12px);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.2; }
+            25% { transform: translateY(-40px) translateX(30px) rotate(90deg); opacity: 0.4; }
+            50% { transform: translateY(0) translateX(50px) rotate(180deg); opacity: 0.2; }
+            75% { transform: translateY(40px) translateX(30px) rotate(270deg); opacity: 0.4; }
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .top-navbar {
+            backdrop-filter: blur(20px);
+            background: rgba(15, 12, 42, 0.6);
+            border-radius: 1.5rem;
+            padding: 1rem 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(79, 70, 229, 0.9));
+            color: white;
+            text-decoration: none;
+            padding: 0.6rem 1.4rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+        }
+
+        .tasks-container {
+            background: rgba(15, 12, 42, 0.5);
+            backdrop-filter: blur(20px);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .plan-info-card {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(79, 70, 229, 0.1));
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            position: relative;
+        }
+
+        .plan-info-card h2 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #ffffff, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.8rem;
+        }
+
+        .plan-meta {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .edit-plan-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: rgba(139, 92, 246, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #c4b5fd;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .edit-plan-btn:hover {
+            background: rgba(139, 92, 246, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .task-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 1rem;
+            padding: 1rem 1.5rem;
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #c4b5fd, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 0.3rem;
+        }
+
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .tasks-header h3 {
+            font-size: 1.3rem;
+            color: white;
+        }
+
+        .add-task-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 2rem;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .add-task-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .task-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            transition: all 0.3s;
+        }
+
+        .task-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .task-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* Статусы задач - такой же стиль как на странице планирования */
+        .task-status {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .task-status.status-EXCEEDED { background: #10b981; color: white; }
+        .task-status.status-AS_PLANNED { background: #3b82f6; color: white; }
+        .task-status.status-HARDER { background: #ef4444; color: white; }
+        .task-status.status-NOT_STARTED { background: #6b7280; color: white; }
+        .task-status.status-IN_PROGRESS { background: #f59e0b; color: white; }
+
+        .task-description {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin: 0.5rem 0;
+            line-height: 1.5;
+        }
+
+        .task-comment {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.6rem;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            border-left: 3px solid #8b5cf6;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .edit-task-btn, .delete-task-btn {
+            padding: 0.3rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .edit-task-btn {
+            background: rgba(139, 92, 246, 0.3);
+            color: #c4b5fd;
+        }
+
+        .edit-task-btn:hover {
+            background: rgba(139, 92, 246, 0.6);
+        }
+
+        .delete-task-btn {
+            background: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .delete-task-btn:hover {
+            background: rgba(239, 68, 68, 0.6);
+        }
+
+        /* Статус плана */
+        .plan-status {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .plan-status.status-EXCEEDED { background: #10b981; color: white; }
+        .plan-status.status-AS_PLANNED { background: #3b82f6; color: white; }
+        .plan-status.status-HARDER { background: #ef4444; color: white; }
+        .plan-status.status-NOT_STARTED { background: #6b7280; color: white; }
+        .plan-status.status-IN_PROGRESS { background: #f59e0b; color: white; }
+
+        .fullscreen-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f0c2a 0%, #1a1747 100%);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .fullscreen-modal-container {
+            width: 90%;
+            max-width: 550px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+
+        .fullscreen-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .fullscreen-modal-header h2 {
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, #ffffff, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .close-modal-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+
+        .close-modal-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-radius: 1rem;
+            font-size: 0.95rem;
+            color: white;
+            font-family: inherit;
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.7rem 1.8rem;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .toast-message {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            z-index: 2001;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+<div class="app-container">
+    <div class="top-navbar">
+        <div class="logo"><span>✨</span> NeoProject Manager</div>
+        <a href="/page/planning" class="back-button"><span>←</span> Назад к планам</a>
+    </div>
+
+    <div class="tasks-container">
+        <div id="planInfo" class="plan-info-card">
+            <div class="loading">Загрузка информации о плане...</div>
+        </div>
+
+        <div id="taskStats" class="task-stats"></div>
+
+        <div class="tasks-header">
+            <h3>📋 Список задач</h3>
+            <button class="add-task-btn" id="addTaskBtn">➕ Добавить задачу</button>
+        </div>
+
+        <div id="tasksList">
+            <div class="loading">Загрузка задач...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = '/api/planning';
+    const PLAN_ID = [[${planId}]];
+    let currentPlan = null;
+
+    function createParticles() {
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 20; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const s = Math.random() * 150 + 50;
+            p.style.width = s + 'px';
+            p.style.height = s + 'px';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.top = Math.random() * 100 + '%';
+            p.style.animationDelay = Math.random() * 15 + 's';
+            p.style.animationDuration = Math.random() * 10 + 15 + 's';
+            container.appendChild(p);
+        }
+    }
+    createParticles();
+
+    function showToast(msg, isError = false) {
+        const existing = document.querySelector('.toast-message');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'toast-message';
+        toast.textContent = msg;
+        toast.style.background = isError ? 'rgba(185, 28, 28, 0.95)' : 'rgba(16, 185, 129, 0.95)';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2800);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '—';
+        return new Date(dateStr).toLocaleDateString('ru-RU');
+    }
+
+    function getPlanTypeName(type) {
+        const names = { WEEK: 'Неделя', MONTH: 'Месяц', QUARTER: 'Квартал', YEAR: 'Год' };
+        return names[type] || type;
+    }
+
+    function getStatusName(status) {
+        const names = {
+            EXCEEDED: '✅ Выше ожидаемого',
+            AS_PLANNED: '📊 Как планировал',
+            HARDER: '⚠️ Сложнее',
+            IN_PROGRESS: '🔄 В процессе',
+            NOT_STARTED: '❌ Не приступил'
+        };
+        return names[status] || status;
+    }
+
+    async function loadPlanInfo() {
+        try {
+            const response = await fetch(`${API_BASE}/${PLAN_ID}`);
+            if (!response.ok) throw new Error('Plan not found');
+            currentPlan = await response.json();
+
+            document.getElementById('planInfo').innerHTML = `
+                <h2>${escapeHtml(currentPlan.title)}</h2>
+                <div class="plan-meta">
+                    <span>🏷️ ${getPlanTypeName(currentPlan.planType)}</span>
+                    <span>📅 ${formatDate(currentPlan.startDate)} - ${formatDate(currentPlan.endDate)}</span>
+                    <span>📊 Статус: <span class="plan-status status-${currentPlan.status}">${getStatusName(currentPlan.status)}</span></span>
+                </div>
+                <button class="edit-plan-btn" onclick="openEditPlanModal()">✏️ Редактировать план</button>
+            `;
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('planInfo').innerHTML = '<div class="empty-state">❌ Ошибка загрузки плана</div>';
+        }
+    }
+
+    async function loadTasks() {
+        try {
+            const response = await fetch(`${API_BASE}/${PLAN_ID}/tasks`);
+            const tasks = await response.json();
+
+            const stats = {
+                total: tasks.length,
+                inProgress: tasks.filter(t => t.status === 'IN_PROGRESS').length,
+                completed: tasks.filter(t => t.status === 'EXCEEDED' || t.status === 'AS_PLANNED').length,
+                notStarted: tasks.filter(t => t.status === 'NOT_STARTED').length
+            };
+
+            document.getElementById('taskStats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.total}</div>
+                    <div class="stat-label">Всего задач</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.inProgress}</div>
+                    <div class="stat-label">В процессе</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.completed}</div>
+                    <div class="stat-label">Завершено</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.notStarted}</div>
+                    <div class="stat-label">Не начато</div>
+                </div>
+            `;
+
+            const tasksList = document.getElementById('tasksList');
+            if (tasks.length === 0) {
+                tasksList.innerHTML = '<div class="empty-state">📭 Нет задач. Создайте первую задачу!</div>';
+                return;
+            }
+
+            tasksList.innerHTML = tasks.map(task => `
+                <div class="task-card">
+                    <div class="task-header">
+                        <div class="task-title">${escapeHtml(task.title)}</div>
+                        <div class="task-status status-${task.status}">${getStatusName(task.status)}</div>
+                    </div>
+                    ${task.description ? `<div class="task-description">📝 ${escapeHtml(task.description)}</div>` : ''}
+                    ${task.comment ? `<div class="task-comment">💬 ${escapeHtml(task.comment)}</div>` : ''}
+                    <div class="task-actions">
+                        <button class="edit-task-btn" onclick="openTaskModal(${task.id})">✏️ Редактировать</button>
+                        <button class="delete-task-btn" onclick="deleteTask(${task.id})">🗑 Удалить</button>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('tasksList').innerHTML = '<div class="empty-state">❌ Ошибка загрузки задач</div>';
+        }
+    }
+
+    function openEditPlanModal() {
+        const modal = document.createElement('div');
+        modal.className = 'fullscreen-modal';
+        modal.innerHTML = `
+            <div class="fullscreen-modal-container">
+                <div class="fullscreen-modal-header">
+                    <h2>✏️ Редактирование плана</h2>
+                    <button class="close-modal-btn">✕</button>
+                </div>
+                <div class="fullscreen-form">
+                    <div class="form-group">
+                        <label>📌 Тип плана</label>
+                        <select id="planType">
+                            <option value="WEEK" ${currentPlan.planType === 'WEEK' ? 'selected' : ''}>Неделя</option>
+                            <option value="MONTH" ${currentPlan.planType === 'MONTH' ? 'selected' : ''}>Месяц</option>
+                            <option value="QUARTER" ${currentPlan.planType === 'QUARTER' ? 'selected' : ''}>Квартал</option>
+                            <option value="YEAR" ${currentPlan.planType === 'YEAR' ? 'selected' : ''}>Год</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>📝 Название</label>
+                        <input type="text" id="title" value="${escapeHtml(currentPlan.title)}">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>📅 Дата начала</label>
+                            <input type="date" id="startDate" value="${currentPlan.startDate || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>📅 Дата окончания</label>
+                            <input type="date" id="endDate" value="${currentPlan.endDate || ''}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>🎯 Статус</label>
+                        <select id="status">
+                            <option value="IN_PROGRESS" ${currentPlan.status === 'IN_PROGRESS' ? 'selected' : ''}>🔄 В процессе</option>
+                            <option value="EXCEEDED" ${currentPlan.status === 'EXCEEDED' ? 'selected' : ''}>✅ Выше ожидаемого</option>
+                            <option value="AS_PLANNED" ${currentPlan.status === 'AS_PLANNED' ? 'selected' : ''}>📊 Как планировал</option>
+                            <option value="HARDER" ${currentPlan.status === 'HARDER' ? 'selected' : ''}>⚠️ Сложнее</option>
+                            <option value="NOT_STARTED" ${currentPlan.status === 'NOT_STARTED' ? 'selected' : ''}>❌ Не приступил</option>
+                        </select>
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn-cancel" id="cancelBtn">Отмена</button>
+                        <button class="btn-save" id="saveBtn">💾 Сохранить</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const closeModal = () => modal.remove();
+        modal.querySelector('#cancelBtn').onclick = closeModal;
+        modal.querySelector('.close-modal-btn').onclick = closeModal;
+
+        modal.querySelector('#saveBtn').onclick = async () => {
+            const planData = {
+                planType: modal.querySelector('#planType').value,
+                title: modal.querySelector('#title').value,
+                startDate: modal.querySelector('#startDate').value,
+                endDate: modal.querySelector('#endDate').value,
+                status: modal.querySelector('#status').value
+            };
+
+            if (!planData.title) {
+                showToast('Введите название плана', true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/${PLAN_ID}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(planData)
+                });
+
+                if (response.ok) {
+                    showToast('✅ План обновлён!');
+                    closeModal();
+                    loadPlanInfo();
+                    document.title = `${planData.title} | Задачи плана`;
+                } else {
+                    showToast('Ошибка обновления', true);
+                }
+            } catch (error) {
+                showToast('Ошибка соединения', true);
+            }
+        };
+
+        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+    }
+
+    function openTaskModal(taskId = null) {
+        const modal = document.createElement('div');
+        modal.className = 'fullscreen-modal';
+
+        if (taskId) {
+            fetch(`${API_BASE}/tasks/${taskId}`)
+                .then(res => res.json())
+                .then(task => {
+                    modal.innerHTML = `
+                        <div class="fullscreen-modal-container">
+                            <div class="fullscreen-modal-header">
+                                <h2>✏️ Редактирование задачи</h2>
+                                <button class="close-modal-btn">✕</button>
+                            </div>
+                            <div class="fullscreen-form">
+                                <input type="hidden" id="taskId" value="${task.id}">
+                                <div class="form-group">
+                                    <label>📌 Название задачи</label>
+                                    <input type="text" id="taskTitle" value="${escapeHtml(task.title)}">
+                                </div>
+                                <div class="form-group">
+                                    <label>📝 Описание</label>
+                                    <textarea id="taskDescription">${escapeHtml(task.description || '')}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>🎯 Статус</label>
+                                    <select id="taskStatus">
+                                        <option value="IN_PROGRESS" ${task.status === 'IN_PROGRESS' ? 'selected' : ''}>🔄 В процессе</option>
+                                        <option value="EXCEEDED" ${task.status === 'EXCEEDED' ? 'selected' : ''}>✅ Выше ожидаемого</option>
+                                        <option value="AS_PLANNED" ${task.status === 'AS_PLANNED' ? 'selected' : ''}>📊 Как планировал</option>
+                                        <option value="HARDER" ${task.status === 'HARDER' ? 'selected' : ''}>⚠️ Сложнее</option>
+                                        <option value="NOT_STARTED" ${task.status === 'NOT_STARTED' ? 'selected' : ''}>❌ Не приступил</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>💬 Комментарий</label>
+                                    <textarea id="taskComment" rows="3">${escapeHtml(task.comment || '')}</textarea>
+                                </div>
+                                <div class="modal-buttons">
+                                    <button class="btn-cancel" id="cancelBtn">Отмена</button>
+                                    <button class="btn-save" id="saveBtn">💾 Сохранить</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    setupTaskModal(modal, taskId);
+                });
+        } else {
+            modal.innerHTML = `
+                <div class="fullscreen-modal-container">
+                    <div class="fullscreen-modal-header">
+                        <h2>➕ Создание задачи</h2>
+                        <button class="close-modal-btn">✕</button>
+                    </div>
+                    <div class="fullscreen-form">
+                        <div class="form-group">
+                            <label>📌 Название задачи</label>
+                            <input type="text" id="taskTitle" placeholder="Введите название задачи...">
+                        </div>
+                        <div class="form-group">
+                            <label>📝 Описание</label>
+                            <textarea id="taskDescription" rows="3" placeholder="Что нужно сделать..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>🎯 Статус</label>
+                            <select id="taskStatus">
+                                <option value="IN_PROGRESS" selected>🔄 В процессе</option>
+                                <option value="EXCEEDED">✅ Выше ожидаемого</option>
+                                <option value="AS_PLANNED">📊 Как планировал</option>
+                                <option value="HARDER">⚠️ Сложнее</option>
+                                <option value="NOT_STARTED">❌ Не приступил</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>💬 Комментарий</label>
+                            <textarea id="taskComment" rows="3" placeholder="Дополнительные детали..."></textarea>
+                        </div>
+                        <div class="modal-buttons">
+                            <button class="btn-cancel" id="cancelBtn">Отмена</button>
+                            <button class="btn-save" id="saveBtn">✨ Создать</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            setupTaskModal(modal, null);
+        }
+
+        document.body.appendChild(modal);
+
+        function setupTaskModal(modalEl, existingTaskId) {
+            const closeModal = () => modalEl.remove();
+            modalEl.querySelector('#cancelBtn').onclick = closeModal;
+            modalEl.querySelector('.close-modal-btn').onclick = closeModal;
+
+            modalEl.querySelector('#saveBtn').onclick = async () => {
+                const taskData = {
+                    title: modalEl.querySelector('#taskTitle').value,
+                    description: modalEl.querySelector('#taskDescription').value,
+                    status: modalEl.querySelector('#taskStatus').value,
+                    comment: modalEl.querySelector('#taskComment').value,
+                    orderIndex: 0
+                };
+
+                if (!taskData.title) {
+                    showToast('Введите название задачи', true);
+                    return;
+                }
+
+                try {
+                    let response;
+                    if (existingTaskId) {
+                        response = await fetch(`${API_BASE}/tasks/${existingTaskId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(taskData)
+                        });
+                    } else {
+                        response = await fetch(`${API_BASE}/${PLAN_ID}/tasks`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(taskData)
+                        });
+                    }
+
+                    if (response.ok) {
+                        showToast(existingTaskId ? '✅ Задача обновлена!' : '✅ Задача создана!');
+                        closeModal();
+                        loadTasks();
+                    } else {
+                        showToast('Ошибка сохранения', true);
+                    }
+                } catch (error) {
+                    showToast('Ошибка соединения', true);
+                }
+            };
+
+            modalEl.onclick = (e) => { if (e.target === modalEl) closeModal(); };
+        }
+    }
+
+    async function deleteTask(taskId) {
+        if (confirm('Удалить задачу?')) {
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showToast('✅ Задача удалена');
+                    loadTasks();
+                } else {
+                    showToast('Ошибка удаления', true);
+                }
+            } catch (error) {
+                showToast('Ошибка соединения', true);
+            }
+        }
+    }
+
+    document.getElementById('addTaskBtn').addEventListener('click', () => openTaskModal());
+
+    loadPlanInfo();
+    loadTasks();
+</script>
+</body>
+</html>

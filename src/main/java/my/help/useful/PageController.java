@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
@@ -71,5 +72,20 @@ public class PageController {
     public String projectsPage(Model model) {
         logger.info("Открыта страница с проектами");
         return "projects";
+    }
+
+    @GetMapping("/page/planning")
+    public String planningPage(Model model) {
+        model.addAttribute("pageTitle", "Дашборд стратегического планирования");
+        model.addAttribute("apiBaseUrl", "/api/planning");
+        return "planning";
+    }
+
+    @GetMapping("/page/planning/{planId}/tasks")
+    public String tasksPage(@PathVariable Long planId, Model model) {
+        model.addAttribute("pageTitle", "Задачи плана");
+        model.addAttribute("apiBaseUrl", "/api/planning");
+        model.addAttribute("planId", planId);
+        return "tasks";
     }
 }
