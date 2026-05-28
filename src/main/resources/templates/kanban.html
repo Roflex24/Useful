@@ -1282,7 +1282,8 @@
             const startStr = startDate.toISOString().split('T')[0];
             const endStr = endDate.toISOString().split('T')[0];
 
-            const response = await fetch(`${STATS_API}?start=${startStr}&end=${endStr}`);
+            // Добавляем projectId в запрос
+            const response = await fetch(`${STATS_API}?start=${startStr}&end=${endStr}&projectId=${PROJECT_ID}`);
             if (response.ok) {
                 const count = await response.json();
                 return count;

@@ -1,4 +1,6 @@
 package my.help.useful.key_rate;
 
-public record KeyRateModel(double keyRate, String date) {
+import java.time.LocalDate;
+
+public record KeyRateModel(double keyRate, LocalDate date) {
 }

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet author="Roflex" id="fix-key-rates-structure-1">
+        <dropTable tableName="key_rates"/>
+    </changeSet>
+
+    <changeSet author="Roflex" id="fix-key-rates-structure-2">
+        <createTable tableName="key_rates">
+            <column name="date" type="date">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="key_rates_pkey"/>
+            </column>
+            <column name="key_rate" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

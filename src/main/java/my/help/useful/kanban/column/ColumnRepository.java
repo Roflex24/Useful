@@ -9,5 +9,7 @@ import java.util.List;
 public interface ColumnRepository extends JpaRepository<ColumnEntity, Long> {
 
     List<ColumnEntity> findAllByProjectId(Long id);
+    ColumnEntity findByProjectIdAndOrderIndex(Long project_id, int orderIndex);
     void deleteByProjectId(Long id);
+
 }

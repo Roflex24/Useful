@@ -38,7 +38,7 @@ public class TaskController {
     }
 
     @GetMapping("/period")
-    ResponseEntity<Long> getCountTasksForPeriod(@RequestParam LocalDate start, @RequestParam LocalDate end) {
-        return ResponseEntity.ok(taskService.getTaskListForPeriod(start, end));
+    ResponseEntity<Long> getCountTasksForPeriod(@RequestParam LocalDate start, @RequestParam LocalDate end, @RequestParam Long projectId) {
+        return ResponseEntity.ok(taskService.getTaskListForPeriod(start, end, projectId));
     }
 }

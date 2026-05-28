@@ -28,7 +28,7 @@ public class KeyRateService {
             System.out.println("Запрашиваем ставку на дату: " + currentDate);
 
             // 2. Пытаемся найти запись в БД за сегодня
-            Optional<KeyRateEntity> existingEntity = keyRateRepository.findByActualDate(currentDate);
+            Optional<KeyRateEntity> existingEntity = keyRateRepository.findById(currentDate);
 
             if (existingEntity.isPresent()) {
                 System.out.println("Найдена запись в БД за сегодня: ставка = " + existingEntity.get().getKeyRate());
@@ -45,7 +45,7 @@ public class KeyRateService {
             e.printStackTrace();
         }
 
-        return new KeyRateModel(0, "0");
+        return new KeyRateModel(0, null);
     }
 
     private KeyRateModel fetchFromCbrAndSave() throws Exception {
@@ -82,12 +82,12 @@ public class KeyRateService {
 
         KeyRateEntity entity = new KeyRateEntity();
         entity.setKeyRate(rate);
-        entity.setDate(String.valueOf(rateDate));
+        entity.setDate(rateDate);
 
         KeyRateEntity saved = keyRateRepository.save(entity);
         System.out.println("Сохранена новая запись в БД: ставка = " + saved.getKeyRate());
 
-        return new KeyRateModel(rate, dateStr);
+        return new KeyRateModel(rate, rateDate);
     }
 
     public List<KeyRateModel> getKeyRateModels() {

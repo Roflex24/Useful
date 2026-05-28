@@ -7,5 +7,6 @@
 
     <include file="db/changelog/20260528-1-initial-schema.xml"/>
     <include file="db/changelog/20260528-2-add-close-date.xml"/>
+    <include file="db/changelog/20260528-3-fix-key-rates-structure.xml"/>
 
 </databaseChangeLog>

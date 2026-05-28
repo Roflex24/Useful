@@ -10,5 +10,5 @@ import java.util.List;
 public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
     void deleteByColumnId(Long columnId);
     List<TaskEntity> findByColumnId(Long columnId);
-    long countByCloseDateBetween(LocalDate startDate, LocalDate endDate);
+    List<TaskEntity> findByCloseDateBetweenAndColumnId(LocalDate closeDate, LocalDate closeDate2, Long columnId);
 }
