@@ -471,6 +471,7 @@
 
     function createParticles() {
         const container = document.getElementById('particles');
+        if (!container) return;
         for (let i = 0; i < 20; i++) {
             const p = document.createElement('div');
             p.className = 'particle';
@@ -537,6 +538,8 @@
 
     function renderPlans() {
         const container = document.getElementById('cardsContainer');
+        if (!container) return;
+
         let filteredPlans = currentFilter === 'ALL'
             ? allPlans
             : allPlans.filter(p => p.planType === currentFilter);
@@ -552,105 +555,14 @@
                 <div class="plan-title">${escapeHtml(plan.title || 'Без названия')}</div>
                 <div class="plan-dates">📅 ${formatDate(plan.startDate)} - ${formatDate(plan.endDate)}</div>
                 <div class="plan-status status-${plan.status}">${getStatusName(plan.status)}</div>
-                <div class="edit-icon" onclick="event.stopPropagation(); openEditPlanModal(${plan.id})">✏️</div>
+                <div class="edit-icon" onclick="event.stopPropagation(); window.openEditPlanModal(${plan.id})">✏️</div>
                 <div style="cursor: pointer; position: absolute; top: 0; left: 0; right: 0; bottom: 0;" onclick="window.location.href='/page/planning/${plan.id}/tasks'"></div>
             </div>
         `).join('');
     }
 
-    function showCreatePlanModal() {
-        const modal = document.createElement('div');
-        modal.className = 'fullscreen-modal';
-        modal.innerHTML = `
-            <div class="fullscreen-modal-container">
-                <div class="fullscreen-modal-header">
-                    <h2><span>➕</span> Создание плана</h2>
-                    <button class="close-modal-btn">✕</button>
-                </div>
-                <div class="fullscreen-form">
-                    <div class="form-group">
-                        <label>📌 Тип плана</label>
-                        <select id="planType">
-                            <option value="WEEK">Неделя</option>
-                            <option value="MONTH">Месяц</option>
-                            <option value="QUARTER">Квартал</option>
-                            <option value="YEAR">Год</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>📝 Название</label>
-                        <input type="text" id="title" placeholder="Введите название плана...">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>📅 Дата начала</label>
-                            <input type="date" id="startDate">
-                        </div>
-                        <div class="form-group">
-                            <label>📅 Дата окончания</label>
-                            <input type="date" id="endDate">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>🎯 Статус</label>
-                        <select id="status">
-                            <option value="IN_PROGRESS">🔄 В процессе</option>
-                            <option value="EXCEEDED">✅ Выше ожидаемого</option>
-                            <option value="AS_PLANNED">📊 Как планировал</option>
-                            <option value="HARDER">⚠️ Сложнее</option>
-                            <option value="NOT_STARTED">❌ Не приступил</option>
-                        </select>
-                    </div>
-                    <div class="modal-buttons">
-                        <button class="btn-cancel" id="cancelBtn">Отмена</button>
-                        <button class="btn-save" id="saveBtn">✨ Создать</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-
-        const closeModal = () => modal.remove();
-        modal.querySelector('#cancelBtn').onclick = closeModal;
-        modal.querySelector('.close-modal-btn').onclick = closeModal;
-
-        modal.querySelector('#saveBtn').onclick = async () => {
-            const planData = {
-                planType: modal.querySelector('#planType').value,
-                title: modal.querySelector('#title').value,
-                startDate: modal.querySelector('#startDate').value,
-                endDate: modal.querySelector('#endDate').value,
-                status: modal.querySelector('#status').value
-            };
-
-            if (!planData.title) {
-                showToast('Введите название плана', true);
-                return;
-            }
-
-            try {
-                const response = await fetch(API_BASE, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(planData)
-                });
-
-                if (response.ok) {
-                    showToast('✅ План создан!');
-                    closeModal();
-                    loadPlans();
-                } else {
-                    showToast('Ошибка создания', true);
-                }
-            } catch (error) {
-                showToast('Ошибка соединения', true);
-            }
-        };
-
-        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
-    }
-
-    async function openEditPlanModal(id) {
+    // Глобальная функция для открытия модального окна редактирования
+    window.openEditPlanModal = async function(id) {
         const plan = allPlans.find(p => p.id === id);
         if (!plan) return;
 
@@ -707,77 +619,206 @@
         document.body.appendChild(modal);
 
         const closeModal = () => modal.remove();
-        modal.querySelector('#cancelBtn').onclick = closeModal;
-        modal.querySelector('.close-modal-btn').onclick = closeModal;
 
-        modal.querySelector('#saveBtn').onclick = async () => {
-            const planData = {
-                planType: modal.querySelector('#planType').value,
-                title: modal.querySelector('#title').value,
-                startDate: modal.querySelector('#startDate').value,
-                endDate: modal.querySelector('#endDate').value,
-                status: modal.querySelector('#status').value
-            };
+        const cancelBtn = modal.querySelector('#cancelBtn');
+        const closeBtn = modal.querySelector('.close-modal-btn');
 
-            if (!planData.title) {
-                showToast('Введите название плана', true);
-                return;
-            }
+        if (cancelBtn) cancelBtn.onclick = closeModal;
+        if (closeBtn) closeBtn.onclick = closeModal;
 
-            try {
-                const response = await fetch(`${API_BASE}/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(planData)
-                });
+        const saveBtn = modal.querySelector('#saveBtn');
+        if (saveBtn) {
+            saveBtn.onclick = async () => {
+                const planData = {
+                    planType: modal.querySelector('#planType').value,
+                    title: modal.querySelector('#title').value,
+                    startDate: modal.querySelector('#startDate').value,
+                    endDate: modal.querySelector('#endDate').value,
+                    status: modal.querySelector('#status').value
+                };
 
-                if (response.ok) {
-                    showToast('✅ План обновлён!');
-                    closeModal();
-                    loadPlans();
-                } else {
-                    showToast('Ошибка обновления', true);
+                if (!planData.title) {
+                    showToast('Введите название плана', true);
+                    return;
                 }
-            } catch (error) {
-                showToast('Ошибка соединения', true);
-            }
-        };
 
-        modal.querySelector('#deleteBtn').onclick = async () => {
-            if (confirm('Удалить план и все его задачи?')) {
                 try {
                     const response = await fetch(`${API_BASE}/${id}`, {
-                        method: 'DELETE'
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(planData)
                     });
 
                     if (response.ok) {
-                        showToast('✅ План удалён');
+                        showToast('✅ План обновлён!');
                         closeModal();
-                        loadPlans();
+                        await loadPlans();
                     } else {
-                        showToast('Ошибка удаления', true);
+                        showToast('Ошибка обновления', true);
                     }
                 } catch (error) {
                     showToast('Ошибка соединения', true);
                 }
-            }
-        };
+            };
+        }
+
+        const deleteBtn = modal.querySelector('#deleteBtn');
+        if (deleteBtn) {
+            deleteBtn.onclick = async () => {
+                if (confirm('Удалить план и все его задачи?')) {
+                    try {
+                        const response = await fetch(`${API_BASE}/${id}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (response.ok) {
+                            showToast('✅ План удалён');
+                            closeModal();
+                            await loadPlans();
+                        } else {
+                            showToast('Ошибка удаления', true);
+                        }
+                    } catch (error) {
+                        showToast('Ошибка соединения', true);
+                    }
+                }
+            };
+        }
+
+        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+    };
+
+    function showCreatePlanModal() {
+        const modal = document.createElement('div');
+        modal.className = 'fullscreen-modal';
+        modal.innerHTML = `
+            <div class="fullscreen-modal-container">
+                <div class="fullscreen-modal-header">
+                    <h2><span>➕</span> Создание плана</h2>
+                    <button class="close-modal-btn">✕</button>
+                </div>
+                <div class="fullscreen-form">
+                    <div class="form-group">
+                        <label>📌 Тип плана</label>
+                        <select id="planType">
+                            <option value="WEEK">Неделя</option>
+                            <option value="MONTH">Месяц</option>
+                            <option value="QUARTER">Квартал</option>
+                            <option value="YEAR">Год</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>📝 Название</label>
+                        <input type="text" id="title" placeholder="Введите название плана...">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>📅 Дата начала</label>
+                            <input type="date" id="startDate">
+                        </div>
+                        <div class="form-group">
+                            <label>📅 Дата окончания</label>
+                            <input type="date" id="endDate">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>🎯 Статус</label>
+                        <select id="status">
+                            <option value="IN_PROGRESS">🔄 В процессе</option>
+                            <option value="EXCEEDED">✅ Выше ожидаемого</option>
+                            <option value="AS_PLANNED">📊 Как планировал</option>
+                            <option value="HARDER">⚠️ Сложнее</option>
+                            <option value="NOT_STARTED">❌ Не приступил</option>
+                        </select>
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn-cancel" id="cancelBtn">Отмена</button>
+                        <button class="btn-save" id="saveBtn">✨ Создать</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const closeModal = () => modal.remove();
+
+        const cancelBtn = modal.querySelector('#cancelBtn');
+        const closeBtn = modal.querySelector('.close-modal-btn');
+
+        if (cancelBtn) cancelBtn.onclick = closeModal;
+        if (closeBtn) closeBtn.onclick = closeModal;
+
+        const saveBtn = modal.querySelector('#saveBtn');
+        if (saveBtn) {
+            saveBtn.onclick = async () => {
+                const planData = {
+                    planType: modal.querySelector('#planType').value,
+                    title: modal.querySelector('#title').value,
+                    startDate: modal.querySelector('#startDate').value,
+                    endDate: modal.querySelector('#endDate').value,
+                    status: modal.querySelector('#status').value
+                };
+
+                if (!planData.title) {
+                    showToast('Введите название плана', true);
+                    return;
+                }
+
+                try {
+                    const response = await fetch(API_BASE, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(planData)
+                    });
+
+                    if (response.ok) {
+                        showToast('✅ План создан!');
+                        closeModal();
+                        await loadPlans();
+                    } else {
+                        showToast('Ошибка создания', true);
+                    }
+                } catch (error) {
+                    showToast('Ошибка соединения', true);
+                }
+            };
+        }
 
         modal.onclick = (e) => { if (e.target === modal) closeModal(); };
     }
 
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentFilter = btn.dataset.type;
-            renderPlans();
+    // Инициализация фильтров
+    function initFilters() {
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.type;
+                renderPlans();
+            });
         });
-    });
+    }
 
-    document.getElementById('addPlanBtn').addEventListener('click', () => showCreatePlanModal());
+    // Инициализация кнопки создания плана
+    function initAddButton() {
+        const addBtn = document.getElementById('addPlanBtn');
+        if (addBtn) {
+            // Удаляем старый обработчик, если есть
+            const newAddBtn = addBtn.cloneNode(true);
+            addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+            newAddBtn.addEventListener('click', () => showCreatePlanModal());
+        }
+    }
 
-    loadPlans();
+    // Запуск приложения
+    async function init() {
+        initFilters();
+        initAddButton();
+        await loadPlans();
+    }
+
+    init();
 </script>
 </body>
 </html>
