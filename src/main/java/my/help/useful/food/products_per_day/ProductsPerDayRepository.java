@@ -1,4 +1,4 @@
-package my.help.useful.calculate_calories.products_per_day;
+package my.help.useful.food.products_per_day;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

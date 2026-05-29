@@ -1,7 +1,7 @@
-package my.help.useful.calculate_calories.nutrients;
+package my.help.useful.food.nutrients;
 
 import lombok.*;
-import my.help.useful.calculate_calories.products_per_day.ProductsPerDayModel;
+import my.help.useful.food.products_per_day.ProductsPerDayModel;
 
 import java.time.LocalDate;
 import java.util.List;

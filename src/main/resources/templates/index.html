@@ -140,97 +140,8 @@
             background: linear-gradient(135deg, #ea580c, #c2410c);
         }
 
-        .choices-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            margin: 40px 0;
-        }
-
-        .choice-card {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-
-        .choice-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .choice-header {
-            padding: 30px;
-            text-align: center;
-            color: white;
-        }
-
-        .food-choice .choice-header {
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
-        }
-
-        .deadlock-choice .choice-header {
-            background: linear-gradient(to right, #1a1a2e, #16213e);
-        }
-
-        .choice-icon {
-            font-size: 3.5rem;
-            margin-bottom: 15px;
-        }
-
-        .choice-title {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-        }
-
-        .choice-stats {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .choice-body {
-            padding: 25px;
-            text-align: center;
-        }
-
-        .choice-description {
-            color: #666;
-            line-height: 1.6;
-            font-size: 1rem;
-            margin-bottom: 20px;
-        }
-
-        .choice-button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 1rem;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .food-choice .choice-button {
-            background: #ff7e5f;
-        }
-
-        .deadlock-choice .choice-button {
-            background: #1a1a2e;
-        }
-
-        .choice-button:hover {
-            transform: scale(1.05);
-        }
+        /* РАНДОМАЙЗЕРЫ УДАЛЕНЫ — этот блок больше не используется */
+        /* choices-grid полностью убран из HTML */
 
         .motivation-box {
             background: linear-gradient(120deg, #f0f4ff 0%, #e9efff 100%);
@@ -750,28 +661,28 @@
 </a>
 
 <div class="dashboard">
-    <!-- ЛЕВАЯ ЧАСТЬ: Решатель + дата/зодиак -->
+    <!-- ЛЕВАЯ ЧАСТЬ: Решатель (рандомайзеры для еды и дедлока удалены) -->
     <div class="container">
         <header>
-            <h1><i class="fas fa-random"></i> Решатель важных вопросов</h1>
-            <p class="subtitle">Не можете решить? Доверьтесь случайности!</p>
+            <h1><i class="fas fa-chart-line"></i> Информационный центр</h1>
+            <p class="subtitle">Актуальные данные, погода, курсы валют и аналитика</p>
         </header>
 
         <div class="main-content">
-            <!-- НОВАЯ КНОПКА: Переход к проектам -->
+            <!-- КНОПКИ НАВИГАЦИИ -->
             <a href="/page/projects" class="projects-link-btn">
                 <i class="fas fa-tasks"></i>
                 <span>📊 Управление проектами</span>
                 <i class="fas fa-arrow-right"></i>
             </a>
 
-            <!-- Кнопка перехода на калькулятор калорий -->
             <a href="/page/calculate/calories" class="calorie-link-btn">
                 <i class="fas fa-apple-alt"></i>
                 <span>🥗 Калькулятор калорий</span>
                 <i class="fas fa-arrow-right"></i>
             </a>
 
+            <!-- БЛОК МОТИВАЦИИ (оставлен) -->
             <div class="motivation-box">
                 <div class="motivation-header">
                     <h3><i class="fas fa-bolt"></i> Слово поддержки от системы</h3>
@@ -785,6 +696,7 @@
                 </div>
             </div>
 
+            <!-- Астрокалендарь -->
             <div class="astro-date-card" id="astroDateCard">
                 <div class="astro-date-header">
                     <i class="fas fa-moon-stars"></i>
@@ -803,40 +715,16 @@
                 </div>
             </div>
 
-            <div class="choices-grid">
-                <a href="/page/food" class="choice-card food-choice">
-                    <div class="choice-header">
-                        <div class="choice-icon">🍔</div>
-                        <h2 class="choice-title">Можно ли вкусняшки?</h2>
-                        <div class="choice-stats">Шанс: 25% ДА • 75% НЕТ</div>
-                    </div>
-                    <div class="choice-body">
-                        <p class="choice-description">Не уверены, можно ли сегодня побаловать себя сладостями? Система поможет принять решение!</p>
-                        <button class="choice-button"><i class="fas fa-cookie-bite"></i> Проверить</button>
-                    </div>
-                </a>
-                <a href="/page/deadlock" class="choice-card deadlock-choice">
-                    <div class="choice-header">
-                        <div class="choice-icon">🎮</div>
-                        <h2 class="choice-title">Можно ли в Deadlock?</h2>
-                        <div class="choice-stats">Шанс: 10% ДА • 90% НЕТ</div>
-                    </div>
-                    <div class="choice-body">
-                        <p class="choice-description">Хотите поиграть, но не уверены? Дайте случаю решить!</p>
-                        <button class="choice-button"><i class="fas fa-gamepad"></i> Проверить</button>
-                    </div>
-                </a>
-            </div>
-
+            <!-- ИНФОРМАЦИОННЫЙ БЛОК (без рандомайзеров) -->
             <div class="info-box">
-                <h2><i class="fas fa-question-circle"></i> Как это работает?</h2>
-                <p>Каждая система использует случайный генератор чисел с заданными вероятностями. Просто выберите нужный вопрос, нажмите кнопку проверки, и система мгновенно выдаст вам решение.</p>
+                <h2><i class="fas fa-info-circle"></i> Что вы здесь найдёте?</h2>
+                <p>Текущая погода, количество вакансий на сегодня, ключевая ставка ЦБ РФ и курсы валют. Мы полностью убрали генераторы случайных решений для еды и игр — теперь только полезная и актуальная информация.</p>
             </div>
         </div>
-        <footer><p>© 2025 Decision Maker | Вероятностный помощник</p></footer>
+        <footer><p>© 2025 Decision Hub | Актуальные данные без рандомайзеров</p></footer>
     </div>
 
-    <!-- ПРАВАЯ ЧАСТЬ: ПОГОДА + ВАКАНСИИ + СТАВКИ + КУРСЫ -->
+    <!-- ПРАВАЯ ЧАСТЬ: ПОГОДА + ВАКАНСИИ + СТАВКИ + КУРСЫ (полностью сохранена) -->
     <div class="weather-panel">
         <div class="weather-header">
             <h2><i class="fas fa-cloud-sun"></i> Погода сейчас</h2>
@@ -897,7 +785,7 @@
 </div>
 
 <script>
-    // --------------------------- 1. ТЕКУЩАЯ ПОГОДА (с учётом поля actual) ---------------------------------
+    // --------------------------- 1. ТЕКУЩАЯ ПОГОДА ---------------------------------
     const weatherNowContainer = document.getElementById('weatherNowContainer');
     const cityDisplaySpan = document.getElementById('cityDisplay');
 
@@ -1021,7 +909,7 @@
     document.getElementById('refreshWeatherNowBtn')?.addEventListener('click', fetchCurrentWeather);
     fetchCurrentWeather();
 
-    // --------------------------- 2. КОЛИЧЕСТВО ВАКАНСИЙ ---------------------------------
+    // --------------------------- 2. ВАКАНСИИ ---------------------------------
     const vacancyContainer = document.getElementById('vacancyContent');
     async function loadVacancyCount() {
         if (vacancyContainer) {
@@ -1146,13 +1034,6 @@
 
     loadDateInfo();
     document.getElementById('astroDateCard')?.addEventListener('click', () => loadDateInfo());
-
-    // Обработчики для кнопок выбора
-    document.querySelectorAll('.choice-button').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-    });
 </script>
 </body>
 </html>

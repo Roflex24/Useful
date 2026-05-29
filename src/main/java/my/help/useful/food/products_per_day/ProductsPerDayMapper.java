@@ -1,6 +1,6 @@
-package my.help.useful.calculate_calories.products_per_day;
+package my.help.useful.food.products_per_day;
 
-import my.help.useful.calculate_calories.product.ProductModel;
+import my.help.useful.food.product.ProductModel;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

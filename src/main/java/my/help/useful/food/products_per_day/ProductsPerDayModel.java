@@ -1,4 +1,4 @@
-package my.help.useful.calculate_calories.products_per_day;
+package my.help.useful.food.products_per_day;
 
 import lombok.*;
 

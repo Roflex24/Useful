@@ -1,4 +1,4 @@
-package my.help.useful.calculate_calories.product;
+package my.help.useful.food.product;
 
 import lombok.Getter;
 

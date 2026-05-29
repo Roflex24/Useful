@@ -1,13 +1,12 @@
-package my.help.useful.calculate_calories.nutrients;
+package my.help.useful.food.nutrients;
 
 import lombok.RequiredArgsConstructor;
-import my.help.useful.ai.LlamaService;
-import my.help.useful.calculate_calories.products_per_day.ProductsPerDayEntity;
-import my.help.useful.calculate_calories.products_per_day.ProductsPerDayMapper;
-import my.help.useful.calculate_calories.products_per_day.ProductsPerDayService;
-import my.help.useful.calculate_calories.products_per_day.ProductsPerDayModel;
-import my.help.useful.calculate_calories.product.ProductModel;
-import my.help.useful.calculate_calories.product.ProductService;
+import my.help.useful.food.products_per_day.ProductsPerDayEntity;
+import my.help.useful.food.products_per_day.ProductsPerDayMapper;
+import my.help.useful.food.products_per_day.ProductsPerDayService;
+import my.help.useful.food.products_per_day.ProductsPerDayModel;
+import my.help.useful.food.product.ProductModel;
+import my.help.useful.food.product.ProductService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;

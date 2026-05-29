@@ -1,4 +1,4 @@
-package my.help.useful.calculate_calories.nutrients;
+package my.help.useful.food.nutrients;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
