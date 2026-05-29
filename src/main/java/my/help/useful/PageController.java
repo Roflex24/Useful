@@ -25,12 +25,6 @@ public class PageController {
         return "food";
     }
 
-    @GetMapping("/page/deadlock")
-    public String deadlockPage(Model model) {
-        logger.info("Открыта страница Deadlock");
-        return "deadlock";
-    }
-
     @GetMapping("/page/weather")
     public String weatherPage(Model model) {
         logger.info("Открыта страница с погодой");
