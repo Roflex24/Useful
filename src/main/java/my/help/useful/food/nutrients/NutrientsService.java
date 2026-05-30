@@ -38,7 +38,7 @@ public class NutrientsService {
     }
 
     public NutrientsModel getNutrientsPerDate(LocalDate localDate) {
-        NutrientsPerDayEntity nutrientsPerDayEntity = null;
+        NutrientsPerDayEntity nutrientsPerDayEntity;
         if (nutrientsRepository.findById(localDate).isPresent()) {
             nutrientsPerDayEntity = nutrientsRepository.findById(localDate).get();
         } else {
