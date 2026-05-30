@@ -21,7 +21,7 @@ public class PageController {
 
     @GetMapping("/page/food")
     public String foodPage(Model model) {
-        logger.info("Открыта страница вкусняшек");
+        logger.info("Открыта страница с едой");
         return "food";
     }
 
@@ -47,12 +47,6 @@ public class PageController {
     public String vacancyPage(Model model) {
         logger.info("Открыта страница с вакансиями");
         return "vacancy";
-    }
-
-    @GetMapping("/page/calculate/calories")
-    public String productPage(Model model) {
-        logger.info("Открыта страница с продуктами");
-        return "calculate_calories";
     }
 
     @GetMapping("/page/kanban")
