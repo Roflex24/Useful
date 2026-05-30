@@ -1,5 +1,6 @@
 package my.help.useful.kanban.task;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import my.help.useful.kanban.column.ColumnEntity;
 import my.help.useful.kanban.column.ColumnRepository;
@@ -18,10 +19,22 @@ public class TaskService {
     private final TaskMapper taskMapper;
     private final ColumnRepository columnRepository;
 
+    private static final int DAYS_LIMIT_FOR_ARCHIVE = 7;
+
     public List<TaskModel> getTasksByColumn(Long columnId) {
-        return taskMapper.toModelList(
-                taskRepository.findByColumnId(columnId)
-        );
+        ColumnEntity column = columnRepository.findById(columnId).orElseThrow(() -> new EntityNotFoundException(
+                String.format("Column with id %d not found", columnId)));
+
+        List<TaskModel> list = taskMapper.toModelList(
+                taskRepository.findByColumnId(columnId));
+
+        if (column.getOrderIndex() == 3) {
+            return list.stream()
+                    .filter(e -> e.getCloseDate().isAfter(LocalDate.now().minusDays(DAYS_LIMIT_FOR_ARCHIVE)))
+                    .toList();
+        } else {
+            return list;
+        }
     }
 
     public void createTask(TaskRq rq) {
