@@ -11,4 +11,5 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
     void deleteByColumnId(Long columnId);
     List<TaskEntity> findByColumnId(Long columnId);
     List<TaskEntity> findByCloseDateBetweenAndColumnId(LocalDate closeDate, LocalDate closeDate2, Long columnId);
+    List<TaskEntity> findByCloseDateBetween(LocalDate closeDate, LocalDate closeDate2);
 }

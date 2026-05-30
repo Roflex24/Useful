@@ -107,6 +107,7 @@
             border-radius: 1.5rem;
             padding: 2rem;
             border: 1px solid rgba(139, 92, 246, 0.3);
+            margin-bottom: 1.5rem;
         }
 
         .plan-info-card {
@@ -217,6 +218,58 @@
             box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
         }
 
+        .period-tasks-section {
+            background: rgba(15, 12, 42, 0.5);
+            backdrop-filter: blur(20px);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .period-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .period-header h3 {
+            font-size: 1.3rem;
+            color: white;
+            margin: 0;
+        }
+
+        .period-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(139, 92, 246, 0.2);
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #c4b5fd;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            backdrop-filter: blur(4px);
+        }
+
+        .period-counter .counter-number {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            background: rgba(139, 92, 246, 0.3);
+            padding: 0.1rem 0.5rem;
+            border-radius: 1rem;
+            min-width: 2rem;
+            text-align: center;
+        }
+
+        .period-counter .counter-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
         .task-card {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 1rem;
@@ -246,7 +299,6 @@
             color: white;
         }
 
-        /* Статусы задач - такой же стиль как на странице планирования */
         .task-status {
             display: inline-block;
             padding: 0.3rem 0.8rem;
@@ -266,6 +318,26 @@
             font-size: 0.9rem;
             margin: 0.5rem 0;
             line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-dates {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            flex-wrap: wrap;
+        }
+
+        .task-dates span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
         }
 
         .task-comment {
@@ -312,7 +384,6 @@
             background: rgba(239, 68, 68, 0.6);
         }
 
-        /* Статус плана */
         .plan-status {
             display: inline-block;
             padding: 0.3rem 0.8rem;
@@ -497,8 +568,8 @@
 <div class="particles" id="particles"></div>
 <div class="app-container">
     <div class="top-navbar">
-        <div class="logo"><span>✨</span> NeoProject Manager</div>
-        <a href="/page/planning" class="back-button"><span>←</span> Назад к планам</a>
+        <div class="logo">✨ NeoProject Manager</div>
+        <a href="/page/planning" class="back-button">← Назад к планам</a>
     </div>
 
     <div class="tasks-container">
@@ -509,12 +580,25 @@
         <div id="taskStats" class="task-stats"></div>
 
         <div class="tasks-header">
-            <h3>📋 Список задач</h3>
+            <h3>📋 Список задач плана</h3>
             <button class="add-task-btn" id="addTaskBtn">➕ Добавить задачу</button>
         </div>
 
         <div id="tasksList">
             <div class="loading">Загрузка задач...</div>
+        </div>
+    </div>
+
+    <div class="period-tasks-section">
+        <div class="period-header">
+            <h3>📅 Задачи за период</h3>
+            <div class="period-counter">
+                <span class="counter-label">Всего:</span>
+                <span class="counter-number" id="periodTasksCount">0</span>
+            </div>
+        </div>
+        <div id="periodTasksList">
+            <div class="loading">Загрузка задач за период...</div>
         </div>
     </div>
 </div>
@@ -558,7 +642,7 @@
     }
 
     function formatDate(dateStr) {
-        if (!dateStr) return '—';
+        if (!dateStr) return '';
         return new Date(dateStr).toLocaleDateString('ru-RU');
     }
 
@@ -578,6 +662,16 @@
         return names[status] || status;
     }
 
+    function getDifficultyName(difficulty) {
+        const names = {
+            LOW: '🟢 Низкая',
+            MEDIUM: '🟡 Средняя',
+            HIGH: '🔴 Высокая',
+            URGENT: '🔥 Безумие'
+        };
+        return names[difficulty] || difficulty;
+    }
+
     async function loadPlanInfo() {
         try {
             const response = await fetch(`${API_BASE}/${PLAN_ID}`);
@@ -593,6 +687,20 @@
                 </div>
                 <button class="edit-plan-btn" onclick="openEditPlanModal()">✏️ Редактировать план</button>
             `;
+
+            if (currentPlan.startDate && currentPlan.endDate) {
+                const periodHeaderTitle = document.querySelector('.period-header h3');
+                if (periodHeaderTitle) {
+                    const startFormatted = formatDate(currentPlan.startDate);
+                    const endFormatted = formatDate(currentPlan.endDate);
+                    periodHeaderTitle.innerHTML = `📅 Задачи за период (${startFormatted} — ${endFormatted})`;
+                }
+                await loadTasksByPeriod(currentPlan.startDate, currentPlan.endDate);
+            } else {
+                document.getElementById('periodTasksList').innerHTML = '<div class="empty-state">❌ У плана не указаны даты начала и окончания</div>';
+                const counterSpan = document.getElementById('periodTasksCount');
+                if (counterSpan) counterSpan.textContent = '0';
+            }
         } catch (error) {
             console.error('Error:', error);
             document.getElementById('planInfo').innerHTML = '<div class="empty-state">❌ Ошибка загрузки плана</div>';
@@ -653,6 +761,85 @@
         } catch (error) {
             console.error('Error:', error);
             document.getElementById('tasksList').innerHTML = '<div class="empty-state">❌ Ошибка загрузки задач</div>';
+        }
+    }
+
+    async function loadTasksByPeriod(startDate, endDate) {
+        const periodTasksList = document.getElementById('periodTasksList');
+        const counterSpan = document.getElementById('periodTasksCount');
+
+        if (counterSpan) counterSpan.textContent = '...';
+        periodTasksList.innerHTML = '<div class="loading">⏳ Загрузка задач за период...</div>';
+
+        try {
+            const url = `/tasks/period?start=${startDate}&end=${endDate}`;
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const tasks = await response.json();
+            const totalCount = tasks.length;
+
+            if (counterSpan) {
+                counterSpan.textContent = totalCount;
+            }
+
+            if (tasks.length === 0) {
+                periodTasksList.innerHTML = '<div class="empty-state">📭 Нет задач за выбранный период</div>';
+                return;
+            }
+
+            periodTasksList.innerHTML = tasks.map(task => {
+                let statusHtml = '';
+                if (task.status) {
+                    statusHtml = `<div class="task-status status-${task.status}">${getStatusName(task.status)}</div>`;
+                }
+
+                let descriptionHtml = '';
+                if (task.description) {
+                    descriptionHtml = `<div class="task-description">📝 ${escapeHtml(task.description)}</div>`;
+                }
+
+                let datesHtml = '';
+                const hasDates = task.createDate || task.closeDate || task.difficulty;
+                if (hasDates) {
+                    datesHtml = '<div class="task-dates">';
+                    if (task.createDate) {
+                        datesHtml += `<span>📅 Создана: ${formatDate(task.createDate)}</span>`;
+                    }
+                    if (task.closeDate) {
+                        datesHtml += `<span>✅ Закрыта: ${formatDate(task.closeDate)}</span>`;
+                    }
+                    if (task.difficulty) {
+                        datesHtml += `<span>⚡ Сложность: ${getDifficultyName(task.difficulty)}</span>`;
+                    }
+                    datesHtml += '</div>';
+                }
+
+                let commentHtml = '';
+                if (task.comment) {
+                    commentHtml = `<div class="task-comment">💬 ${escapeHtml(task.comment)}</div>`;
+                }
+
+                return `
+                    <div class="task-card">
+                        <div class="task-header">
+                            <div class="task-title">${escapeHtml(task.title)}</div>
+                            ${statusHtml}
+                        </div>
+                        ${descriptionHtml}
+                        ${datesHtml}
+                        ${commentHtml}
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Error loading period tasks:', error);
+            periodTasksList.innerHTML = '<div class="empty-state">❌ Ошибка загрузки задач за период</div>';
+            showToast('Ошибка загрузки задач за период', true);
+            if (counterSpan) counterSpan.textContent = '0';
         }
     }
 
@@ -877,6 +1064,9 @@
                         showToast(existingTaskId ? '✅ Задача обновлена!' : '✅ Задача создана!');
                         closeModal();
                         loadTasks();
+                        if (currentPlan?.startDate && currentPlan?.endDate) {
+                            await loadTasksByPeriod(currentPlan.startDate, currentPlan.endDate);
+                        }
                     } else {
                         showToast('Ошибка сохранения', true);
                     }
@@ -899,6 +1089,9 @@
                 if (response.ok) {
                     showToast('✅ Задача удалена');
                     loadTasks();
+                    if (currentPlan?.startDate && currentPlan?.endDate) {
+                        await loadTasksByPeriod(currentPlan.startDate, currentPlan.endDate);
+                    }
                 } else {
                     showToast('Ошибка удаления', true);
                 }

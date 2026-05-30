@@ -65,10 +65,14 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
-    public long getTaskListForPeriod(LocalDate start, LocalDate end, Long projectId) {
+    public long getTaskCountForPeriod(LocalDate start, LocalDate end, Long projectId) {
         List<TaskEntity> taskEntityList = taskRepository.findByCloseDateBetweenAndColumnId(
                 start, end, columnRepository.findByProjectIdAndOrderIndex(projectId, 3).getId());
 
         return taskEntityList.size();
+    }
+
+    public List<TaskModel> getTaskListForPeriod(LocalDate start, LocalDate end) {
+        return taskMapper.toModelList(taskRepository.findByCloseDateBetween(start, end));
     }
 }
