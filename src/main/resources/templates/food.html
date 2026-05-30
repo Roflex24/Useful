@@ -64,6 +64,34 @@
             font-size: 0.85rem;
         }
 
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .analyze-week-btn {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            padding: 10px 24px;
+            border-radius: 60px;
+            color: white;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: 0.25s ease;
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .analyze-week-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        }
+
         .back-home {
             background: rgba(255,255,255,0.12);
             padding: 10px 24px;
@@ -563,7 +591,7 @@
             background: linear-gradient(135deg, #ffffff, #fffaf5);
             border-radius: 48px;
             padding: 0;
-            max-width: 550px;
+            max-width: 700px;
             width: 90%;
             max-height: 85vh;
             overflow-y: auto;
@@ -662,7 +690,29 @@
             transform: translateY(-2px);
         }
 
-        /* ПРАВОЕ ОКОШКО (DRAWER) */
+        .analysis-content {
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+        }
+
+        .copy-analysis-btn {
+            background: linear-gradient(95deg, #3b82f6, #2563eb);
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        .copy-analysis-btn:hover {
+            background: linear-gradient(95deg, #2563eb, #1d4ed8);
+        }
+
         .drawer-panel {
             position: fixed;
             bottom: 90px;
@@ -1032,7 +1082,7 @@
             gap: 8px;
             font-size: 0.9rem;
             white-space: nowrap;
-            min-width: 0; /* Важно для flex-детей */
+            min-width: 0;
         }
 
         .save-diet-btn {
@@ -1085,7 +1135,10 @@
             <h1><i class="fas fa-leaf"></i> CalculateCalories</h1>
             <p><i class="fas fa-chart-line"></i> Анализ рациона + расчёт норм в панели</p>
         </div>
-        <a href="/" class="back-home"><i class="fas fa-arrow-left"></i> Главная</a>
+        <div class="header-actions">
+            <button id="analyzeWeekBtn" class="analyze-week-btn"><i class="fas fa-chart-line"></i> 📊 Анализ недели</button>
+            <a href="/" class="back-home"><i class="fas fa-arrow-left"></i> Главная</a>
+        </div>
     </div>
 
     <div class="columns-container">
@@ -1232,9 +1285,23 @@
     </div>
 </div>
 
+<!-- Модальное окно для анализа недели -->
+<div id="analysisModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-chart-line"></i> Анализ рациона за неделю</h3>
+            <button class="modal-close" id="closeAnalysisModalBtn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div id="analysisText" class="analysis-content"></div>
+            <button id="copyAnalysisBtn" class="drawer-btn copy-analysis-btn"><i class="fas fa-copy"></i> 📋 Скопировать анализ</button>
+        </div>
+    </div>
+</div>
+
 <div id="toastMsg" class="toast-notify"><i class="fas fa-check-circle"></i> <span>Готово</span></div>
 
-<!-- ПРАВОЕ ОКОШКО КАЛЬКУЛЯТОРА -->
+<!-- Правое окошко калькулятора -->
 <div class="drawer-wrapper">
     <button class="drawer-toggle" id="drawerToggleBtn"><i class="fas fa-calculator"></i></button>
     <div class="drawer-panel" id="drawerPanel">
@@ -1256,7 +1323,6 @@
             <div class="drawer-field"><label><i class="fas fa-ruler"></i> Рост (см)</label><input type="number" id="drawerHeight" value="170" step="0.5"></div>
             <div class="drawer-field"><label><i class="fas fa-calendar"></i> Возраст (лет)</label><input type="number" id="drawerAge" value="25"></div>
             <div class="drawer-field"><label><i class="fas fa-shoe-prints"></i> Шаги за день</label><input type="number" id="drawerSteps" value="15000"></div>
-
             <div class="drawer-field">
                 <label><i class="fas fa-bullseye"></i> Цель</label>
                 <div class="custom-select">
@@ -1271,7 +1337,6 @@
                     </select>
                 </div>
             </div>
-
             <button id="drawerCalculateBtn" class="drawer-btn"><i class="fas fa-calculator"></i> Рассчитать нормы</button>
             <div id="drawerResultArea" style="display: none;"></div>
             <div id="drawerError" class="error-text"></div>
@@ -1280,13 +1345,11 @@
 </div>
 
 <script>
-    // Глобальные переменные
     let allProducts = [];
     let selectedProducts = [];
     let shopsMap = {};
-    let currentOpenDate = null; // Глобальная переменная для отслеживания открытого дня
+    let currentOpenDate = null;
 
-    // DOM элементы
     const sourceList = document.getElementById('sourceList');
     const selectedList = document.getElementById('selectedList');
     const totalKcalDisplay = document.getElementById('totalKcalDisplay');
@@ -1298,6 +1361,11 @@
     const prodShopSelect = document.getElementById('prodShop');
     const editShopSelect = document.getElementById('editShop');
     const historyTableBody = document.getElementById('historyTableBody');
+    const analyzeWeekBtn = document.getElementById('analyzeWeekBtn');
+    const analysisModal = document.getElementById('analysisModal');
+    const analysisText = document.getElementById('analysisText');
+    const closeAnalysisModalBtn = document.getElementById('closeAnalysisModalBtn');
+    const copyAnalysisBtn = document.getElementById('copyAnalysisBtn');
 
     const showToast = (msg) => {
         const toast = document.getElementById('toastMsg');
@@ -1451,11 +1519,9 @@
     const addProductToSelected = (product) => {
         const existing = selectedProducts.find(p => p.id === product.id);
         if(existing) {
-            // Если продукт уже есть и он в граммах - добавляем 50г, иначе +1
             const increment = existing.unit === '100г' ? 50 : 1;
             existing.quantity = (existing.quantity || 1) + increment;
         } else {
-            // Начальное количество: 100 для граммов, 1 для остальных
             const initialQuantity = product.unit === '100г' ? 100 : 1;
             selectedProducts.push({ ...product, quantity: initialQuantity });
         }
@@ -1465,6 +1531,77 @@
         showToast(`✅ ${product.name} добавлен`);
     };
 
+    // Функция для анализа недели
+    const analyzeWeek = async () => {
+        try {
+            showToast("📊 Загружаем данные за неделю...");
+
+            const response = await fetch('http://localhost:8080/nutrients/week', {
+                method: 'GET',
+                headers: { 'accept': '*/*' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const weeklyData = await response.json();
+
+            // Формируем текст с JSON для анализа диетологом
+            const analysisTextContent = `Проанализируй этот JSON как диетолог: для каждого дня напиши, что хорошо, что плохо, и дай 2-3 конкретные подсказки по улучшению. В конце — главные выводы и топ-3 совета. Рацион уже довольно чистый, но можно сделать лучше. JSON:\n\n${JSON.stringify(weeklyData, null, 2)}`;
+
+            if (analysisText) {
+                analysisText.textContent = analysisTextContent;
+            }
+
+            if (analysisModal) {
+                analysisModal.classList.add('active');
+            }
+
+            showToast("✅ Данные загружены!");
+        } catch (error) {
+            console.error('Ошибка при получении данных за неделю:', error);
+            showToast(`❌ Ошибка: ${error.message}`);
+        }
+    };
+
+    // Копирование текста
+    const copyAnalysisToClipboard = () => {
+        if (analysisText && analysisText.textContent) {
+            navigator.clipboard.writeText(analysisText.textContent).then(() => {
+                showToast("📋 Текст скопирован в буфер обмена!");
+            }).catch(() => {
+                showToast("❌ Не удалось скопировать текст");
+            });
+        }
+    };
+
+    // Закрытие модального окна анализа
+    if (closeAnalysisModalBtn) {
+        closeAnalysisModalBtn.addEventListener('click', () => {
+            analysisModal.classList.remove('active');
+        });
+    }
+
+    // Клик вне модального окна для закрытия
+    if (analysisModal) {
+        analysisModal.addEventListener('click', (e) => {
+            if (e.target === analysisModal) {
+                analysisModal.classList.remove('active');
+            }
+        });
+    }
+
+    // Кнопка копирования
+    if (copyAnalysisBtn) {
+        copyAnalysisBtn.addEventListener('click', copyAnalysisToClipboard);
+    }
+
+    // Кнопка анализа недели
+    if (analyzeWeekBtn) {
+        analyzeWeekBtn.addEventListener('click', analyzeWeek);
+    }
+
     const fetchProducts = async () => {
         try {
             const macronutrient = filterMacronutrient.value;
@@ -1472,13 +1609,11 @@
             const name = filterName.value.trim() || '';
 
             let url = `http://localhost:8080/product/all?`;
-// Добавляем macronutrient только если выбрано НЕ название (NAME)
             if (macronutrient && macronutrient !== 'NAME') {
                 url += `macronutrient=${encodeURIComponent(macronutrient)}&`;
             }
             if(shop) url += `shop=${encodeURIComponent(shop)}&`;
             if(name) url += `name=${encodeURIComponent(name)}&`;
-// Убираем последний & если есть
             url = url.replace(/&$/, '');
 
             const response = await fetch(url);
@@ -1619,7 +1754,6 @@
             const data = await response.json();
             filterMacronutrient.innerHTML = '';
 
-            // Добавляем опцию "По названию"
             const nameOption = document.createElement('option');
             nameOption.value = 'NAME';
             nameOption.textContent = '📝 По названию';
@@ -1634,6 +1768,82 @@
             }
         } catch(e) {
             console.error('Ошибка загрузки макронутриентов:', e);
+        }
+    };
+
+    const loadDayProducts = async (date, container) => {
+        try {
+            const response = await fetch(`http://localhost:8080/nutrients/${date}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const dayData = await response.json();
+
+            if (dayData.productsPerDay && Array.isArray(dayData.productsPerDay) && dayData.productsPerDay.length > 0) {
+                const productsHtml = dayData.productsPerDay.map(product => {
+                    const photoHtml = product.photoUrl ?
+                        `<img src="${product.photoUrl}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\' style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;\'>🍽️</div>'">` :
+                        '<div class="photo-fallback" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🍽️</div>';
+                    return `
+                        <div class="inline-product-item">
+                            <div class="inline-product-photo">${photoHtml}</div>
+                            <div class="inline-product-info">
+                                <div class="inline-product-name">${escapeHtml(product.name)}</div>
+                                <div class="inline-product-nutrients">
+                                    <span>🔥 ${product.calories} ккал</span>
+                                    <span>🥩 ${product.protein}г</span>
+                                    <span>🧈 ${product.fat}г</span>
+                                    <span>🍚 ${product.carbohydrate}г</span>
+                                    <span>🌾 ${product.fiber || 0}г</span>
+                                </div>
+                            </div>
+                            <div class="inline-product-quantity">
+                                ${product.quantity} ${product.unit === '100г' ? 'г' : (product.unit || 'шт')}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                container.innerHTML = productsHtml;
+            } else {
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;"><i class="fas fa-box-open"></i> Нет продуктов в этом рационе</div>';
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки продуктов дня:', e);
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки продуктов</div>';
+        }
+    };
+
+    const loadDayToSelected = async (date) => {
+        try {
+            showToast(`📦 Загружаем рацион за ${date}...`);
+            const response = await fetch(`http://localhost:8080/nutrients/${date}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const dayData = await response.json();
+            if (dayData.productsPerDay && Array.isArray(dayData.productsPerDay)) {
+                const newSelectedProducts = dayData.productsPerDay.map(product => ({
+                    id: product.id,
+                    name: product.name,
+                    calories: product.calories,
+                    protein: product.protein,
+                    fat: product.fat,
+                    carbohydrate: product.carbohydrate,
+                    fiber: product.fiber || 0,
+                    unit: product.unit,
+                    photoUrl: product.photoUrl || '',
+                    shop: product.shop || null,
+                    quantity: product.quantity
+                }));
+                selectedProducts = newSelectedProducts;
+                renderSelectedList();
+                updateTotalCalories(true);
+                saveToLocalStorage();
+                showToast(`✅ Рацион за ${date} загружен (${selectedProducts.length} продуктов)`);
+                document.querySelector('.column:last-child').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                showToast(`⚠️ Нет данных о продуктах за ${date}`);
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки рациона:', e);
+            showToast(`❌ Не удалось загрузить рацион за ${date}`);
         }
     };
 
@@ -1654,7 +1864,7 @@
                         <i class="fas fa-chevron-down expand-icon" style="margin-right: 12px; color: #f97316; transition: transform 0.3s ease;"></i>
                         <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #f97316;"></i>
                         ${rec.date || '—'}
-                     </td>
+                       </td>
                     <td style="text-align: center;">🔥 ${Math.round(rec.calories || 0)} ккал</td>
                     <td style="text-align: center;">🥩 ${(rec.protein || 0).toFixed(1)} г</td>
                     <td style="text-align: center;">🧈 ${(rec.fat || 0).toFixed(1)} г</td>
@@ -1677,19 +1887,13 @@
                 </tr>
             `).join('');
 
-                // Добавляем обработчики кликов на основные строки (раскрытие/закрытие)
                 document.querySelectorAll('.history-row').forEach(row => {
                     const date = row.dataset.date;
                     const detailsRow = document.querySelector(`.details-row[data-date="${date}"]`);
                     const expandIcon = row.querySelector('.expand-icon');
-
                     row.addEventListener('click', async (e) => {
-                        // Предотвращаем всплытие если кликнули на кнопку внутри строки
                         if (e.target.closest('.load-day-btn')) return;
-
                         e.stopPropagation();
-
-                        // Закрываем предыдущий открытый день
                         if (currentOpenDate && currentOpenDate !== date) {
                             const prevDetailsRow = document.querySelector(`.details-row[data-date="${currentOpenDate}"]`);
                             const prevExpandIcon = document.querySelector(`.history-row[data-date="${currentOpenDate}"] .expand-icon`);
@@ -1698,10 +1902,7 @@
                                 if (prevExpandIcon) prevExpandIcon.classList.remove('expanded');
                             }
                         }
-
-                        // Открываем/закрываем текущий
                         if (detailsRow.style.display === 'none') {
-                            // Загружаем продукты если ещё не загружены
                             const productsContainer = document.getElementById(`products-${date.replace(/-/g, '')}`);
                             if (productsContainer && productsContainer.innerHTML.includes('Загрузка продуктов')) {
                                 await loadDayProducts(date, productsContainer);
@@ -1715,17 +1916,8 @@
                             currentOpenDate = null;
                         }
                     });
-
-                    // Добавляем наведение
-                    row.addEventListener('mouseenter', () => {
-                        row.style.backgroundColor = '#fff9f0';
-                    });
-                    row.addEventListener('mouseleave', () => {
-                        row.style.backgroundColor = '';
-                    });
                 });
 
-                // Добавляем обработчики на кнопки загрузки
                 document.querySelectorAll('.load-day-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
                         e.stopPropagation();
@@ -1742,153 +1934,11 @@
         }
     };
 
-    const loadDayProducts = async (date, container) => {
-        try {
-            const response = await fetch(`http://localhost:8080/nutrients/${date}`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-            const dayData = await response.json();
-
-            if (dayData.productsPerDay && Array.isArray(dayData.productsPerDay) && dayData.productsPerDay.length > 0) {
-                const productsHtml = dayData.productsPerDay.map(product => {
-                    const photoHtml = product.photoUrl ?
-                        `<img src="${product.photoUrl}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\' style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;\'>🍽️</div>'">` :
-                        '<div class="photo-fallback" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🍽️</div>';
-
-                    return `
-                    <div class="inline-product-item">
-                        <div class="inline-product-photo">${photoHtml}</div>
-                        <div class="inline-product-info">
-                            <div class="inline-product-name">${escapeHtml(product.name)}</div>
-                            <div class="inline-product-nutrients">
-                                <span>🔥 ${product.calories} ккал</span>
-                                <span>🥩 ${product.protein}г</span>
-                                <span>🧈 ${product.fat}г</span>
-                                <span>🍚 ${product.carbohydrate}г</span>
-                                <span>🌾 ${product.fiber || 0}г</span>
-                            </div>
-                        </div>
-                        <div class="inline-product-quantity">
-                            ${product.quantity} ${product.unit === '100г' ? 'г' : (product.unit || 'шт')}
-                        </div>
-                    </div>
-                `;
-                }).join('');
-
-                container.innerHTML = productsHtml;
-            } else {
-                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;"><i class="fas fa-box-open"></i> Нет продуктов в этом рационе</div>';
-            }
-        } catch (e) {
-            console.error('Ошибка загрузки продуктов дня:', e);
-            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки продуктов</div>';
-        }
-    };
-
-    const loadDayToSelected = async (date) => {
-        try {
-            showToast(`📦 Загружаем рацион за ${date}...`);
-
-            const response = await fetch(`http://localhost:8080/nutrients/${date}`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-            const dayData = await response.json();
-
-            if (dayData.productsPerDay && Array.isArray(dayData.productsPerDay)) {
-                const newSelectedProducts = dayData.productsPerDay.map(product => ({
-                    id: product.id,
-                    name: product.name,
-                    calories: product.calories,
-                    protein: product.protein,
-                    fat: product.fat,
-                    carbohydrate: product.carbohydrate,
-                    fiber: product.fiber || 0,
-                    unit: product.unit,
-                    photoUrl: product.photoUrl || '',
-                    shop: product.shop || null,
-                    quantity: product.quantity
-                }));
-
-                // Заменяем текущий рацион
-                selectedProducts = newSelectedProducts;
-                renderSelectedList();
-                updateTotalCalories(true);
-                saveToLocalStorage();
-
-                // Показываем уведомление и скроллим к рациону
-                showToast(`✅ Рацион за ${date} загружен (${selectedProducts.length} продуктов)`);
-
-                // Плавно скроллим к колонке рациона
-                document.querySelector('.column:last-child').scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-
-                // Добавляем анимацию подсветки
-                const selectedList = document.getElementById('selectedList');
-                selectedList.style.animation = 'none';
-                setTimeout(() => {
-                    selectedList.style.animation = 'pulse 0.5s ease-in-out';
-                }, 10);
-            } else {
-                showToast(`⚠️ Нет данных о продуктах за ${date}`);
-            }
-        } catch (e) {
-            console.error('Ошибка загрузки рациона:', e);
-            showToast(`❌ Не удалось загрузить рацион за ${date}`);
-        }
-    };
-
-    // Добавить новую функцию
-    const loadDayDetails = async (date) => {
-        try {
-            showToast(`📅 Загружаем рацион за ${date}...`);
-
-            const response = await fetch(`http://localhost:8080/nutrients/${date}`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-            const dayData = await response.json();
-
-            // Преобразуем productsPerDay в формат selectedProducts
-            if (dayData.productsPerDay && Array.isArray(dayData.productsPerDay)) {
-                const newSelectedProducts = dayData.productsPerDay.map(product => ({
-                    id: product.id,
-                    name: product.name,
-                    calories: product.calories,
-                    protein: product.protein,
-                    fat: product.fat,
-                    carbohydrate: product.carbohydrate,
-                    fiber: product.fiber,
-                    unit: product.unit,
-                    photoUrl: product.photoUrl || '',
-                    shop: product.shop || null,
-                    quantity: product.quantity
-                }));
-
-                // Заменяем текущий рацион
-                selectedProducts = newSelectedProducts;
-                renderSelectedList();
-                updateTotalCalories(true);
-                saveToLocalStorage();
-
-                showToast(`✅ Загружен рацион за ${date} (${selectedProducts.length} продуктов)`);
-            } else {
-                showToast(`⚠️ Нет данных о продуктах за ${date}`);
-            }
-        } catch (e) {
-            console.error('Ошибка загрузки деталей дня:', e);
-            showToast(`❌ Не удалось загрузить рацион за ${date}`);
-        }
-    };
-
-    // Обновленная функция сохранения с параметром даты
     const saveDietForDate = async (date, dateLabel) => {
         if (!selectedProducts.length) {
             showToast('⚠️ Рацион пуст');
             return false;
         }
-
-        // Подсчёт суммарных значений
         let total = 0, protein = 0, fat = 0, carbs = 0, fiber = 0;
         selectedProducts.forEach(p => {
             const m = getMultiplier(p);
@@ -1898,8 +1948,6 @@
             carbs += (p.carbohydrate || 0) * m;
             fiber += (p.fiber || 0) * m;
         });
-
-        // Формируем массив productsPerDay
         const productsPerDay = selectedProducts.map(p => ({
             id: p.id,
             name: p.name,
@@ -1913,7 +1961,6 @@
             shop: p.shop || null,
             quantity: p.quantity || 1
         }));
-
         const payload = {
             date: date,
             calories: total,
@@ -1923,21 +1970,18 @@
             fiber: fiber,
             productsPerDay: productsPerDay
         };
-
         try {
             const response = await fetch('http://localhost:8080/nutrients', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
-
             showToast(`✅ Рацион сохранён на ${dateLabel}`);
-            await loadHistory(); // Обновляем историю
+            await loadHistory();
             return true;
         } catch (e) {
             console.error('Ошибка сохранения:', e);
@@ -1946,14 +1990,12 @@
         }
     };
 
-    // Функция сохранения на сегодня
     const saveCurrentDiet = () => {
         const today = new Date().toISOString().split('T')[0];
         const todayFormatted = new Date().toLocaleDateString('ru-RU');
         saveDietForDate(today, `сегодня (${todayFormatted})`);
     };
 
-    // Функция сохранения на завтра
     const saveTomorrowDiet = () => {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -2110,8 +2152,6 @@
                     return;
                 }
                 errorDiv.innerText = '';
-
-                // Показываем индикатор загрузки
                 resultDiv.innerHTML = '<div class="drawer-result" style="text-align:center;"><i class="fas fa-spinner fa-pulse"></i> Расчет...</div>';
                 resultDiv.style.display = 'block';
 
@@ -2130,13 +2170,6 @@
                     });
                     if(!res.ok) throw new Error(`HTTP ${res.status}`);
                     const data = await res.json();
-
-                    // Используем правильные названия полей из бэкенда:
-                    // - recommendedCalories (целевые калории)
-                    // - totalCalories (общий расход TDEE)
-                    // - stepCalories (калории от шагов)
-                    // - recommendedProtein, recommendedFat, recommendedCarbohydrate, recommendedFiber
-
                     resultDiv.innerHTML = `
                         <div class="drawer-result">
                             <div class="result-card">

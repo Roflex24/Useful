@@ -24,6 +24,12 @@ public class NutrientsController {
         return ResponseEntity.ok(nutrientsService.getNutrientsPerDate(date));
     }
 
+    @GetMapping("/week")
+    public ResponseEntity<List<NutrientsModel>> getNutrientsPerDateForWeek() {
+        return ResponseEntity.ok(nutrientsService.getNutrientsPerDateForWeek());
+    }
+
+
     @PostMapping()
     public ResponseEntity<NutrientsModel> addNutrientsPerDay(@RequestBody NutrientsModel nutrientsModel) {
         return ResponseEntity.ok(nutrientsService.addNutrientsPerDay(nutrientsModel));

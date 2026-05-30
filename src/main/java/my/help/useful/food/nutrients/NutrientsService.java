@@ -41,6 +41,8 @@ public class NutrientsService {
         NutrientsPerDayEntity nutrientsPerDayEntity = null;
         if (nutrientsRepository.findById(localDate).isPresent()) {
             nutrientsPerDayEntity = nutrientsRepository.findById(localDate).get();
+        } else {
+            return null;
         }
         NutrientsModel nutrientsModel = nutrientsMapper.toModel(nutrientsPerDayEntity);
         List<ProductsPerDayEntity> productsPerDayEntityList = productsPerDayService.getProductsPerDate(localDate);
@@ -52,6 +54,14 @@ public class NutrientsService {
         productsPerDayModelList.sort(Comparator.comparing(ProductsPerDayModel::getName));
         nutrientsModel.setProductsPerDay(productsPerDayModelList);
         return nutrientsModel;
+    }
+
+    public List<NutrientsModel> getNutrientsPerDateForWeek() {
+        List<NutrientsModel> list = new ArrayList<>();
+        for (int i=0; i<=7; i++) {
+            list.add(getNutrientsPerDate(LocalDate.now().minusDays(i)));
+        }
+        return list;
     }
 
 
