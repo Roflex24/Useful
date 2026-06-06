@@ -398,18 +398,21 @@
         .plan-status.status-NOT_STARTED { background: #6b7280; color: white; }
         .plan-status.status-IN_PROGRESS { background: #f59e0b; color: white; }
 
+        /* Улучшенное модальное окно - БЛОКИРУЕТ СЛУЧАЙНЫЕ ЗАКРЫТИЯ */
         .fullscreen-modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0f0c2a 0%, #1a1747 100%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
             z-index: 2000;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow-y: auto;
+            /* ВАЖНО: больше НЕТ onclick на overlay - закрытие только по кнопкам! */
         }
 
         .fullscreen-modal-container {
@@ -417,6 +420,16 @@
             max-width: 550px;
             margin: 2rem auto;
             padding: 2rem;
+            background: linear-gradient(135deg, #0f0c2a 0%, #1a1747 100%);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: modalFadeIn 0.2s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .fullscreen-modal-header {
@@ -446,10 +459,13 @@
             cursor: pointer;
             font-size: 1.2rem;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .close-modal-btn:hover {
-            background: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.5);
             transform: rotate(90deg);
         }
 
@@ -843,6 +859,8 @@
         }
     }
 
+    // === УЛУЧШЕННЫЕ МОДАЛЬНЫЕ ОКНА - БЕЗ СЛУЧАЙНЫХ ЗАКРЫТИЙ ===
+
     function openEditPlanModal() {
         const modal = document.createElement('div');
         modal.className = 'fullscreen-modal';
@@ -850,7 +868,7 @@
             <div class="fullscreen-modal-container">
                 <div class="fullscreen-modal-header">
                     <h2>✏️ Редактирование плана</h2>
-                    <button class="close-modal-btn">✕</button>
+                    <button class="close-modal-btn" id="modalCloseBtn">✕</button>
                 </div>
                 <div class="fullscreen-form">
                     <div class="form-group">
@@ -895,187 +913,172 @@
         `;
         document.body.appendChild(modal);
 
+        // Закрытие ТОЛЬКО через кнопки или крестик (нет onclick на overlay)
         const closeModal = () => modal.remove();
-        modal.querySelector('#cancelBtn').onclick = closeModal;
-        modal.querySelector('.close-modal-btn').onclick = closeModal;
 
-        modal.querySelector('#saveBtn').onclick = async () => {
-            const planData = {
-                planType: modal.querySelector('#planType').value,
-                title: modal.querySelector('#title').value,
-                startDate: modal.querySelector('#startDate').value,
-                endDate: modal.querySelector('#endDate').value,
-                status: modal.querySelector('#status').value
-            };
+        const closeBtn = modal.querySelector('#modalCloseBtn');
+        const cancelBtn = modal.querySelector('#cancelBtn');
 
-            if (!planData.title) {
-                showToast('Введите название плана', true);
-                return;
-            }
+        if (closeBtn) closeBtn.onclick = closeModal;
+        if (cancelBtn) cancelBtn.onclick = closeModal;
 
-            try {
-                const response = await fetch(`${API_BASE}/${PLAN_ID}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(planData)
-                });
+        const saveBtn = modal.querySelector('#saveBtn');
+        if (saveBtn) {
+            saveBtn.onclick = async () => {
+                const planData = {
+                    planType: modal.querySelector('#planType').value,
+                    title: modal.querySelector('#title').value,
+                    startDate: modal.querySelector('#startDate').value,
+                    endDate: modal.querySelector('#endDate').value,
+                    status: modal.querySelector('#status').value
+                };
 
-                if (response.ok) {
-                    showToast('✅ План обновлён!');
-                    closeModal();
-                    loadPlanInfo();
-                    document.title = `${planData.title} | Задачи плана`;
-                } else {
-                    showToast('Ошибка обновления', true);
+                if (!planData.title) {
+                    showToast('Введите название плана', true);
+                    return;
                 }
-            } catch (error) {
-                showToast('Ошибка соединения', true);
-            }
-        };
 
-        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+                try {
+                    const response = await fetch(`${API_BASE}/${PLAN_ID}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(planData)
+                    });
+
+                    if (response.ok) {
+                        showToast('✅ План обновлён!');
+                        closeModal();
+                        loadPlanInfo();
+                        document.title = `${planData.title} | Задачи плана`;
+                    } else {
+                        showToast('Ошибка обновления', true);
+                    }
+                } catch (error) {
+                    showToast('Ошибка соединения', true);
+                }
+            };
+        }
+
+        // Убираем overlay click - модальное окно НЕ закрывается при клике на фон!
+        // modal.onclick = (e) => { if (e.target === modal) closeModal(); }; // ЗАКОММЕНТИРОВАНО - теперь случайное нажатие вне окна не закроет его!
     }
 
     function openTaskModal(taskId = null) {
         const modal = document.createElement('div');
         modal.className = 'fullscreen-modal';
 
-        if (taskId) {
-            fetch(`${API_BASE}/tasks/${taskId}`)
-                .then(res => res.json())
-                .then(task => {
-                    modal.innerHTML = `
-                        <div class="fullscreen-modal-container">
-                            <div class="fullscreen-modal-header">
-                                <h2>✏️ Редактирование задачи</h2>
-                                <button class="close-modal-btn">✕</button>
-                            </div>
-                            <div class="fullscreen-form">
-                                <input type="hidden" id="taskId" value="${task.id}">
-                                <div class="form-group">
-                                    <label>📌 Название задачи</label>
-                                    <input type="text" id="taskTitle" value="${escapeHtml(task.title)}">
-                                </div>
-                                <div class="form-group">
-                                    <label>📝 Описание</label>
-                                    <textarea id="taskDescription">${escapeHtml(task.description || '')}</textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label>🎯 Статус</label>
-                                    <select id="taskStatus">
-                                        <option value="IN_PROGRESS" ${task.status === 'IN_PROGRESS' ? 'selected' : ''}>🔄 В процессе</option>
-                                        <option value="EXCEEDED" ${task.status === 'EXCEEDED' ? 'selected' : ''}>✅ Выше ожидаемого</option>
-                                        <option value="AS_PLANNED" ${task.status === 'AS_PLANNED' ? 'selected' : ''}>📊 Как планировал</option>
-                                        <option value="HARDER" ${task.status === 'HARDER' ? 'selected' : ''}>⚠️ Сложнее</option>
-                                        <option value="NOT_STARTED" ${task.status === 'NOT_STARTED' ? 'selected' : ''}>❌ Не приступил</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>💬 Комментарий</label>
-                                    <textarea id="taskComment" rows="3">${escapeHtml(task.comment || '')}</textarea>
-                                </div>
-                                <div class="modal-buttons">
-                                    <button class="btn-cancel" id="cancelBtn">Отмена</button>
-                                    <button class="btn-save" id="saveBtn">💾 Сохранить</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    setupTaskModal(modal, taskId);
-                });
-        } else {
+        const processModal = (task = null) => {
+            const isEdit = !!taskId;
             modal.innerHTML = `
                 <div class="fullscreen-modal-container">
                     <div class="fullscreen-modal-header">
-                        <h2>➕ Создание задачи</h2>
-                        <button class="close-modal-btn">✕</button>
+                        <h2>${isEdit ? '✏️ Редактирование задачи' : '➕ Создание задачи'}</h2>
+                        <button class="close-modal-btn" id="modalCloseBtn">✕</button>
                     </div>
                     <div class="fullscreen-form">
+                        ${isEdit ? '<input type="hidden" id="taskId" value="' + task.id + '">' : ''}
                         <div class="form-group">
                             <label>📌 Название задачи</label>
-                            <input type="text" id="taskTitle" placeholder="Введите название задачи...">
+                            <input type="text" id="taskTitle" placeholder="Введите название задачи..." value="${task ? escapeHtml(task.title) : ''}">
                         </div>
                         <div class="form-group">
                             <label>📝 Описание</label>
-                            <textarea id="taskDescription" rows="3" placeholder="Что нужно сделать..."></textarea>
+                            <textarea id="taskDescription" rows="3" placeholder="Что нужно сделать...">${task ? escapeHtml(task.description || '') : ''}</textarea>
                         </div>
                         <div class="form-group">
                             <label>🎯 Статус</label>
                             <select id="taskStatus">
-                                <option value="IN_PROGRESS" selected>🔄 В процессе</option>
-                                <option value="EXCEEDED">✅ Выше ожидаемого</option>
-                                <option value="AS_PLANNED">📊 Как планировал</option>
-                                <option value="HARDER">⚠️ Сложнее</option>
-                                <option value="NOT_STARTED">❌ Не приступил</option>
+                                <option value="IN_PROGRESS" ${task && task.status === 'IN_PROGRESS' ? 'selected' : !task ? 'selected' : ''}>🔄 В процессе</option>
+                                <option value="EXCEEDED" ${task && task.status === 'EXCEEDED' ? 'selected' : ''}>✅ Выше ожидаемого</option>
+                                <option value="AS_PLANNED" ${task && task.status === 'AS_PLANNED' ? 'selected' : ''}>📊 Как планировал</option>
+                                <option value="HARDER" ${task && task.status === 'HARDER' ? 'selected' : ''}>⚠️ Сложнее</option>
+                                <option value="NOT_STARTED" ${task && task.status === 'NOT_STARTED' ? 'selected' : ''}>❌ Не приступил</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>💬 Комментарий</label>
-                            <textarea id="taskComment" rows="3" placeholder="Дополнительные детали..."></textarea>
+                            <textarea id="taskComment" rows="3" placeholder="Дополнительные детали...">${task ? escapeHtml(task.comment || '') : ''}</textarea>
                         </div>
                         <div class="modal-buttons">
                             <button class="btn-cancel" id="cancelBtn">Отмена</button>
-                            <button class="btn-save" id="saveBtn">✨ Создать</button>
+                            <button class="btn-save" id="saveBtn">${isEdit ? '💾 Сохранить' : '✨ Создать'}</button>
                         </div>
                     </div>
                 </div>
             `;
-            setupTaskModal(modal, null);
-        }
+            document.body.appendChild(modal);
 
-        document.body.appendChild(modal);
+            // Закрытие ТОЛЬКО через кнопки (НЕТ клика по overlay)
+            const closeModal = () => modal.remove();
 
-        function setupTaskModal(modalEl, existingTaskId) {
-            const closeModal = () => modalEl.remove();
-            modalEl.querySelector('#cancelBtn').onclick = closeModal;
-            modalEl.querySelector('.close-modal-btn').onclick = closeModal;
+            const closeBtn = modal.querySelector('#modalCloseBtn');
+            const cancelBtn = modal.querySelector('#cancelBtn');
 
-            modalEl.querySelector('#saveBtn').onclick = async () => {
-                const taskData = {
-                    title: modalEl.querySelector('#taskTitle').value,
-                    description: modalEl.querySelector('#taskDescription').value,
-                    status: modalEl.querySelector('#taskStatus').value,
-                    comment: modalEl.querySelector('#taskComment').value,
-                    orderIndex: 0
-                };
+            if (closeBtn) closeBtn.onclick = closeModal;
+            if (cancelBtn) cancelBtn.onclick = closeModal;
 
-                if (!taskData.title) {
-                    showToast('Введите название задачи', true);
-                    return;
-                }
+            const saveBtn = modal.querySelector('#saveBtn');
+            if (saveBtn) {
+                saveBtn.onclick = async () => {
+                    const taskData = {
+                        title: modal.querySelector('#taskTitle').value,
+                        description: modal.querySelector('#taskDescription').value,
+                        status: modal.querySelector('#taskStatus').value,
+                        comment: modal.querySelector('#taskComment').value,
+                        orderIndex: 0
+                    };
 
-                try {
-                    let response;
-                    if (existingTaskId) {
-                        response = await fetch(`${API_BASE}/tasks/${existingTaskId}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(taskData)
-                        });
-                    } else {
-                        response = await fetch(`${API_BASE}/${PLAN_ID}/tasks`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(taskData)
-                        });
+                    if (!taskData.title) {
+                        showToast('Введите название задачи', true);
+                        return;
                     }
 
-                    if (response.ok) {
-                        showToast(existingTaskId ? '✅ Задача обновлена!' : '✅ Задача создана!');
-                        closeModal();
-                        loadTasks();
-                        if (currentPlan?.startDate && currentPlan?.endDate) {
-                            await loadTasksByPeriod(currentPlan.startDate, currentPlan.endDate);
+                    try {
+                        let response;
+                        if (isEdit) {
+                            response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(taskData)
+                            });
+                        } else {
+                            response = await fetch(`${API_BASE}/${PLAN_ID}/tasks`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(taskData)
+                            });
                         }
-                    } else {
-                        showToast('Ошибка сохранения', true);
-                    }
-                } catch (error) {
-                    showToast('Ошибка соединения', true);
-                }
-            };
 
-            modalEl.onclick = (e) => { if (e.target === modalEl) closeModal(); };
+                        if (response.ok) {
+                            showToast(isEdit ? '✅ Задача обновлена!' : '✅ Задача создана!');
+                            closeModal();
+                            loadTasks();
+                            if (currentPlan?.startDate && currentPlan?.endDate) {
+                                await loadTasksByPeriod(currentPlan.startDate, currentPlan.endDate);
+                            }
+                        } else {
+                            showToast('Ошибка сохранения', true);
+                        }
+                    } catch (error) {
+                        showToast('Ошибка соединения', true);
+                    }
+                };
+            }
+
+            // Убираем overlay click - модальное окно НЕ закрывается при клике на фон!
+            // modal.onclick = (e) => { if (e.target === modal) closeModal(); }; // ЗАКОММЕНТИРОВАНО
+        };
+
+        if (taskId) {
+            fetch(`${API_BASE}/tasks/${taskId}`)
+                .then(res => res.json())
+                .then(task => processModal(task))
+                .catch(() => {
+                    showToast('Ошибка загрузки задачи', true);
+                    processModal(null);
+                });
+        } else {
+            processModal(null);
         }
     }
 

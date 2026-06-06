@@ -14,37 +14,37 @@ public class PageController {
     private static final Logger logger = LoggerFactory.getLogger(PageController.class);
 
     @GetMapping("/")
-    public String index(Model model) {
+    public String index() {
         logger.info("Открыта главная страница");
         return "index";
     }
 
     @GetMapping("/page/food")
-    public String foodPage(Model model) {
+    public String foodPage() {
         logger.info("Открыта страница с едой");
         return "food";
     }
 
     @GetMapping("/page/weather")
-    public String weatherPage(Model model) {
+    public String weatherPage() {
         logger.info("Открыта страница с погодой");
         return "weather";
     }
 
     @GetMapping("/page/key/rate")
-    public String keyratePage(Model model) {
+    public String keyratePage() {
         logger.info("Открыта страница с ключевой ставкой");
         return "keyrate";
     }
 
     @GetMapping("/page/currency/rate")
-    public String currencyRatePage(Model model) {
+    public String currencyRatePage() {
         logger.info("Открыта страница с курсами валют");
         return "currencyrate";
     }
 
     @GetMapping("/page/vacancy")
-    public String vacancyPage(Model model) {
+    public String vacancyPage() {
         logger.info("Открыта страница с вакансиями");
         return "vacancy";
     }
@@ -57,7 +57,7 @@ public class PageController {
     }
 
     @GetMapping("/page/projects")
-    public String projectsPage(Model model) {
+    public String projectsPage() {
         logger.info("Открыта страница с проектами");
         return "projects";
     }
@@ -75,5 +75,10 @@ public class PageController {
         model.addAttribute("apiBaseUrl", "/api/planning");
         model.addAttribute("planId", planId);
         return "tasks";
+    }
+
+    @GetMapping("/page/finance")
+    public String financePage() {
+        return "finance";
     }
 }

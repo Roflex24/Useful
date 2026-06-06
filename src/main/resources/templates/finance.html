@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Финансовый менеджер - Все типы счетов (Карты/Вклады/Инвестиции)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f2f8 0%, #e8edf5 100%);
+            color: #1a2634;
+            padding: 32px 24px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 28px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e3c72, #2b4c7c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .home-btn {
+            background: linear-gradient(135deg, #2c6e9e, #235b84);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            text-decoration: none;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .home-btn:hover {
+            background: linear-gradient(135deg, #235b84, #1a4a6e);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(44,110,158,0.3);
+        }
+
+        .home-btn i {
+            font-size: 1.1rem;
+        }
+
+        .sub {
+            color: #5a6e7c;
+            margin-top: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        /* Stats row */
+        .stats-row {
+            background: white;
+            border-radius: 28px;
+            padding: 20px 28px;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .total-amount {
+            background: linear-gradient(145deg, #f9fbfd, #ffffff);
+            padding: 12px 24px;
+            border-radius: 60px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .total-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            color: #5b7a9a;
+        }
+
+        .total-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #1f4e7a;
+            line-height: 1.2;
+        }
+
+        .refresh-btn {
+            background: #eef2f9;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+        }
+
+        .refresh-btn:hover {
+            background: #e2e8f2;
+            transform: scale(0.97);
+        }
+
+        /* Charts grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 28px;
+            margin-bottom: 40px;
+        }
+
+        .chart-card {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 20px 20px 28px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid rgba(166, 188, 210, 0.15);
+        }
+
+        .chart-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1f3b4c;
+            border-left: 4px solid #3a7ca5;
+            padding-left: 16px;
+        }
+
+        .chart-sub {
+            font-size: 0.75rem;
+            color: #6e8faa;
+            margin-bottom: 20px;
+            margin-left: 20px;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        canvas {
+            max-height: 260px;
+        }
+
+        /* Accounts section with CRUD */
+        .accounts-section {
+            background: white;
+            border-radius: 32px;
+            padding: 24px 28px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+            gap: 16px;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f3b4c;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2c6e9e, #235b84);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #235b84, #1a4a6e);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(44,110,158,0.3);
+        }
+
+        .btn-secondary {
+            background: #eef2f9;
+            color: #2c5a82;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f2;
+        }
+
+        .accounts-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .accounts-table th {
+            text-align: left;
+            padding: 14px 8px 12px 0;
+            font-weight: 600;
+            color: #3a6582;
+            border-bottom: 2px solid #e2ebf3;
+        }
+
+        .accounts-table td {
+            padding: 14px 8px 14px 0;
+            border-bottom: 1px solid #edf2f7;
+            vertical-align: middle;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .edit-btn, .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .edit-btn {
+            color: #2c6e9e;
+        }
+
+        .edit-btn:hover {
+            background: #e3f0fa;
+            transform: scale(1.05);
+        }
+
+        .delete-btn {
+            color: #dc2626;
+        }
+
+        .delete-btn:hover {
+            background: #fee2e2;
+            transform: scale(1.05);
+        }
+
+        .type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .type-card { background: #e0f2fe; color: #0369a1; }
+        .type-deposit { background: #dcfce7; color: #166534; }
+        .type-investment { background: #fef3c7; color: #92400e; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 32px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-header h3 {
+            font-size: 1.5rem;
+            color: #1f3b4c;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #7c94a8;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover {
+            color: #dc2626;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c5a82;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #2c6e9e;
+            box-shadow: 0 0 0 3px rgba(44,110,158,0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .loader {
+            text-align: center;
+            padding: 40px;
+            color: #2c6e9e;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #7c94a8;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            .accounts-table { font-size: 0.8rem; }
+            .action-buttons { flex-direction: column; gap: 4px; }
+            .stats-row { flex-direction: column; align-items: stretch; }
+            .header-top { flex-direction: column; align-items: stretch; }
+            .home-btn { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-top">
+            <h1><i class="fas fa-chart-pie"></i> Финансовый менеджер</h1>
+            <button onclick="window.location.href='http://localhost:8080/'" class="home-btn">
+                <i class="fas fa-home"></i> На главную
+            </button>
+        </div>
+        <div class="sub">Управление счетами: карты, вклады, инвестиции + аналитика</div>
+    </div>
+
+    <div class="stats-row">
+        <div class="total-amount">
+            <div class="total-label"><i class="fas fa-coins"></i> ИТОГО АКТИВОВ</div>
+            <div class="total-number" id="totalAmountDisplay">0 ₽</div>
+        </div>
+        <button id="refreshDataBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Обновить данные</button>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-university"></i> Распределение по банкам</div>
+            <div class="chart-sub">Доля средств в разных банках</div>
+            <div class="canvas-wrapper"><canvas id="bankPieChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-layer-group"></i> По типам счетов</div>
+            <div class="chart-sub">Карты / Вклады / Инвестиции</div>
+            <div class="canvas-wrapper"><canvas id="typePieChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="accounts-section">
+        <div class="section-header">
+            <h2><i class="fas fa-list-ul"></i> Мои счета</h2>
+            <button id="createAccountBtn" class="btn-primary"><i class="fas fa-plus"></i> Создать счёт</button>
+        </div>
+        <div id="accountsTableContainer">
+            <div class="loader"><i class="fas fa-spinner fa-pulse"></i> Загрузка счетов...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal для создания/редактирования -->
+<div id="accountModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Создание счёта</h3>
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+        </div>
+        <form id="accountForm">
+            <input type="hidden" id="accountId">
+            <div class="form-group">
+                <label><i class="fas fa-building"></i> Название банка *</label>
+                <input type="text" id="bankName" required placeholder="Тинькофф, Сбер, Альфа-Банк..." maxlength="100">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-ruble-sign"></i> Сумма *</label>
+                <input type="number" id="amount" step="0.01" min="0.01" required placeholder="1000.00">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-tag"></i> Тип счёта *</label>
+                <select id="type" required>
+                    <option value="CARD">💳 Карта/счёт (CARD)</option>
+                    <option value="DEPOSIT">🏦 Вклад (DEPOSIT)</option>
+                    <option value="INVESTMENT">📈 Инвестиции (INVESTMENT)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-comment"></i> Комментарий</label>
+                <textarea id="comment" rows="3" placeholder="Дополнительная информация о счёте..."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Отмена</button>
+                <button type="submit" class="btn-primary" id="saveBtn">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let bankChart = null, typeChart = null;
+    let currentEditId = null;
+    const API_BASE = '/api/finance';
+
+    function formatCurrency(amount) {
+        let num = parseFloat(amount);
+        if (isNaN(num)) num = 0;
+        return new Intl.NumberFormat('ru-RU', {
+            style: 'currency',
+            currency: 'RUB',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(num);
+    }
+
+    // Получение описания типа для отображения
+    function getTypeDescription(type) {
+        const types = {
+            'CARD': '💳 Карта/счёт',
+            'DEPOSIT': '🏦 Вклад',
+            'INVESTMENT': '📈 Инвестиции'
+        };
+        return types[type] || type;
+    }
+
+    function getTypeClass(type) {
+        const classes = {
+            'CARD': 'type-card',
+            'DEPOSIT': 'type-deposit',
+            'INVESTMENT': 'type-investment'
+        };
+        return classes[type] || 'type-card';
+    }
+
+    async function fetchSummaryAndAccounts() {
+        try {
+            const [summaryRes, accountsRes] = await Promise.all([
+                fetch(`${API_BASE}/summary`),
+                fetch(`${API_BASE}/accounts`)
+            ]);
+            if (!summaryRes.ok) throw new Error(`Ошибка сводки: ${summaryRes.status}`);
+            if (!accountsRes.ok) throw new Error(`Ошибка получения счетов: ${accountsRes.status}`);
+
+            const summary = await summaryRes.json();
+            const accounts = await accountsRes.json();
+
+            document.getElementById('totalAmountDisplay').innerText = formatCurrency(summary.totalAmount || 0);
+            updateCharts(summary);
+            renderAccountsTable(accounts);
+        } catch (err) {
+            console.error('Fetch error:', err);
+            document.getElementById('accountsTableContainer').innerHTML = `<div class="loader" style="color:#c7423f;"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки: ${err.message}<br><small>Убедитесь, что backend запущен на том же хосте</small></div>`;
+        }
+    }
+
+    function updateCharts(summary) {
+        // Данные по банкам
+        let bankLabels = [], bankValues = [];
+        if (summary.amountByBank && Object.keys(summary.amountByBank).length) {
+            for (let [bank, amount] of Object.entries(summary.amountByBank)) {
+                let val = parseFloat(amount);
+                if (val > 0) {
+                    bankLabels.push(bank);
+                    bankValues.push(val);
+                }
+            }
+        }
+        if (bankLabels.length === 0) {
+            bankLabels = ['Нет данных'];
+            bankValues = [1];
+        }
+
+        // Данные по типам (теперь с поддержкой CARD, DEPOSIT, INVESTMENT)
+        let typeLabels = [], typeValues = [];
+        if (summary.amountByType && Object.keys(summary.amountByType).length) {
+            for (let [type, amount] of Object.entries(summary.amountByType)) {
+                let val = parseFloat(amount);
+                if (val > 0) {
+                    typeLabels.push(getTypeDescription(type));
+                    typeValues.push(val);
+                }
+            }
+        }
+        if (typeLabels.length === 0) {
+            typeLabels = ['Нет счетов'];
+            typeValues = [1];
+        }
+
+        // Цвета для типов
+        const typeColors = {
+            '💳 Карта/счёт': '#3b82f6',
+            '🏦 Вклад': '#10b981',
+            '📈 Инвестиции': '#f59e0b'
+        };
+
+        const backgroundColors = typeLabels.map(label => typeColors[label] || '#8b5cf6');
+
+        // Обновляем диаграмму банков
+        const bankCtx = document.getElementById('bankPieChart').getContext('2d');
+        if (bankChart) {
+            bankChart.data.labels = bankLabels;
+            bankChart.data.datasets[0].data = bankValues;
+            bankChart.update();
+        } else {
+            bankChart = new Chart(bankCtx, {
+                type: 'pie',
+                data: {
+                    labels: bankLabels,
+                    datasets: [{
+                        data: bankValues,
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a', '#06b6d4', '#84cc16'],
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 11, family: 'Inter' }, boxWidth: 12 } },
+                        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${formatCurrency(ctx.raw)}` } }
+                    }
+                }
+            });
+        }
+
+        // Обновляем диаграмму типов
+        const typeCtx = document.getElementById('typePieChart').getContext('2d');
+        if (typeChart) {
+            typeChart.data.labels = typeLabels;
+            typeChart.data.datasets[0].data = typeValues;
+            typeChart.data.datasets[0].backgroundColor = backgroundColors;
+            typeChart.update();
+        } else {
+            typeChart = new Chart(typeCtx, {
+                type: 'pie',
+                data: {
+                    labels: typeLabels,
+                    datasets: [{
+                        data: typeValues,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 11, family: 'Inter' } } },
+                        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${formatCurrency(ctx.raw)}` } }
+                    }
+                }
+            });
+        }
+    }
+
+    function renderAccountsTable(accounts) {
+        const container = document.getElementById('accountsTableContainer');
+        if (!accounts || accounts.length === 0) {
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-inbox" style="font-size: 3rem; opacity: 0.5;"></i><p style="margin-top: 16px;">Нет доступных счетов. Создайте первый счёт!</p></div>`;
+            return;
+        }
+
+        let html = `<table class="accounts-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Банк</th>
+                    <th>Тип счёта</th>
+                    <th>Сумма</th>
+                    <th>Комментарий</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        accounts.forEach(acc => {
+            const typeDesc = getTypeDescription(acc.type);
+            const typeClass = getTypeClass(acc.type);
+            html += `
+                <tr>
+                    <td style="font-weight: 500;">${acc.id}</td>
+                    <td><strong>${escapeHtml(acc.bankName)}</strong></td>
+                    <td><span class="type-badge ${typeClass}">${typeDesc}</span></td>
+                    <td style="font-weight: 600; color: #1f4e7a;">${formatCurrency(acc.amount)}</td>
+                    <td style="color: #6e8faa; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(acc.comment || '—')}</td>
+                    <td class="action-buttons">
+                        <button class="edit-btn" onclick="editAccount(${acc.id})" title="Редактировать"><i class="fas fa-edit"></i></button>
+                        <button class="delete-btn" onclick="deleteAccount(${acc.id})" title="Удалить"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `</tbody>`;
+        html += `</table>`;
+        container.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    }
+
+    // CRUD операции
+    async function createAccount(data) {
+        const res = await fetch(`${API_BASE}/accounts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+            const error = await res.text();
+            throw new Error(`Ошибка создания: ${res.status} - ${error}`);
+        }
+        return await res.json();
+    }
+
+    async function updateAccount(id, data) {
+        const res = await fetch(`${API_BASE}/accounts/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+            const error = await res.text();
+            throw new Error(`Ошибка обновления: ${res.status} - ${error}`);
+        }
+        return await res.json();
+    }
+
+    async function deleteAccount(id) {
+        if (!confirm('Вы уверены, что хотите удалить этот счёт? Данные будут потеряны.')) return;
+        try {
+            const res = await fetch(`${API_BASE}/accounts/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(`Ошибка удаления: ${res.status}`);
+            await fetchSummaryAndAccounts();
+        } catch (err) {
+            alert('Ошибка удаления: ' + err.message);
+        }
+    }
+
+    // Модальные окна
+    function openModal(title, accountData = null) {
+        document.getElementById('modalTitle').innerText = title;
+        if (accountData) {
+            document.getElementById('accountId').value = accountData.id;
+            document.getElementById('bankName').value = accountData.bankName;
+            document.getElementById('amount').value = accountData.amount;
+            document.getElementById('type').value = accountData.type;
+            document.getElementById('comment').value = accountData.comment || '';
+        } else {
+            document.getElementById('accountId').value = '';
+            document.getElementById('bankName').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('type').value = 'CARD';
+            document.getElementById('comment').value = '';
+        }
+        document.getElementById('accountModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('accountModal').classList.remove('active');
+        document.getElementById('accountForm').reset();
+        currentEditId = null;
+    }
+
+    window.editAccount = async (id) => {
+        try {
+            const res = await fetch(`${API_BASE}/accounts/${id}`);
+            if (!res.ok) throw new Error('Не удалось загрузить данные счёта');
+            const account = await res.json();
+            openModal('Редактирование счёта', account);
+        } catch (err) {
+            alert('Ошибка загрузки: ' + err.message);
+        }
+    };
+
+    // Обработка формы
+    document.getElementById('accountForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('accountId').value;
+        const bankName = document.getElementById('bankName').value.trim();
+        const amount = parseFloat(document.getElementById('amount').value);
+        const type = document.getElementById('type').value;
+        const comment = document.getElementById('comment').value.trim();
+
+        if (!bankName) {
+            alert('Введите название банка');
+            return;
+        }
+        if (isNaN(amount) || amount < 0.01) {
+            alert('Сумма должна быть больше 0');
+            return;
+        }
+
+        const payload = { bankName, amount, type, comment: comment || null };
+
+        try {
+            if (id) {
+                await updateAccount(parseInt(id), payload);
+            } else {
+                await createAccount(payload);
+            }
+            closeModal();
+            await fetchSummaryAndAccounts();
+        } catch (err) {
+            alert('Ошибка: ' + err.message);
+        }
+    });
+
+    // Кнопки
+    document.getElementById('createAccountBtn').addEventListener('click', () => openModal('Создание нового счёта'));
+    document.getElementById('refreshDataBtn').addEventListener('click', () => fetchSummaryAndAccounts());
+
+    // Закрытие модалки по клику вне
+    window.onclick = function(event) {
+        const modal = document.getElementById('accountModal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    };
+
+    // Инициализация
+    fetchSummaryAndAccounts();
+</script>
+</body>
+</html>

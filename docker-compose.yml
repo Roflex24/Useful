@@ -8,7 +8,7 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    extra_hosts:                      # ← добавляем этот блок
+    extra_hosts:
       - "host.docker.internal:host-gateway"
 
   grafana:
@@ -18,5 +18,5 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-    extra_hosts:                      # ← и сюда тоже
+    extra_hosts:
       - "host.docker.internal:host-gateway"
