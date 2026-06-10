@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Финансовый менеджер - Счета и Кешбек</title>
+    <title>Финансовый менеджер - Счета, Кешбек и История</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -87,7 +87,7 @@
             background: white;
             border-radius: 28px;
             padding: 20px 28px;
-            margin-bottom: 32px;
+            margin-bottom: 20px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.05);
             display: flex;
             flex-wrap: wrap;
@@ -135,6 +135,73 @@
         .refresh-btn:hover {
             background: #e2e8f2;
             transform: scale(0.97);
+        }
+
+        /* History controls */
+        .history-controls {
+            background: white;
+            border-radius: 28px;
+            padding: 16px 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .history-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .history-select {
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            min-width: 220px;
+        }
+
+        .history-select:disabled {
+            background: #f1f5f9;
+            cursor: not-allowed;
+        }
+
+        .history-badge {
+            background: #fef3c7;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            color: #92400e;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #2c6e9e;
+            color: #2c6e9e;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-outline:hover {
+            background: #2c6e9e;
+            color: white;
         }
 
         /* Charts grid */
@@ -189,7 +256,7 @@
             max-height: 260px;
         }
 
-        /* Accounts section */
+        /* Sections */
         .accounts-section {
             background: white;
             border-radius: 32px;
@@ -198,7 +265,6 @@
             box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04);
         }
 
-        /* Cashback summary section */
         .cashback-summary-section {
             background: white;
             border-radius: 32px;
@@ -236,10 +302,15 @@
             transition: all 0.2s;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: linear-gradient(135deg, #235b84, #1a4a6e);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(44,110,158,0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .btn-secondary {
@@ -257,24 +328,16 @@
             background: #e2e8f2;
         }
 
-        .btn-success {
-            background: linear-gradient(135deg, #10b981, #059669);
+        .btn-danger {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
             color: white;
         }
 
-        .btn-success:hover {
-            background: linear-gradient(135deg, #059669, #047857);
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #b91c1c, #991b1b);
         }
 
-        .btn-warning {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-        }
-
-        .btn-warning:hover {
-            background: linear-gradient(135deg, #d97706, #b45309);
-        }
-
+        /* Tables */
         .accounts-table, .cashback-table {
             width: 100%;
             border-collapse: collapse;
@@ -314,7 +377,7 @@
             color: #2c6e9e;
         }
 
-        .edit-btn:hover {
+        .edit-btn:hover:not(:disabled) {
             background: #e3f0fa;
             transform: scale(1.05);
         }
@@ -323,7 +386,7 @@
             color: #dc2626;
         }
 
-        .delete-btn:hover {
+        .delete-btn:hover:not(:disabled) {
             background: #fee2e2;
             transform: scale(1.05);
         }
@@ -332,9 +395,14 @@
             color: #10b981;
         }
 
-        .cashback-btn:hover {
+        .cashback-btn:hover:not(:disabled) {
             background: #d1fae5;
             transform: scale(1.05);
+        }
+
+        .edit-btn:disabled, .delete-btn:disabled, .cashback-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
 
         .type-badge {
@@ -363,7 +431,7 @@
             color: #92400e;
         }
 
-        /* Expandable row */
+        /* Expandable rows */
         .expandable-row {
             cursor: pointer;
         }
@@ -389,20 +457,23 @@
             margin: 0;
             padding-left: 20px;
         }
-        .cashback-list li {
-            margin: 8px 0;
+        .cashback-item {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 12px;
+            margin-bottom: 8px;
         }
         .cashback-percent {
             font-weight: 700;
             color: #059669;
         }
 
-        /* Modal */
+        /* Modals */
         .modal {
             display: none;
             position: fixed;
@@ -520,14 +591,45 @@
             color: #7c94a8;
         }
 
+        /* Toast */
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 2000;
+            font-size: 0.9rem;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Global loader */
+        .global-loader {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 16px;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-size: 1rem;
+        }
+
         @media (max-width: 768px) {
             body { padding: 16px; }
             .accounts-table, .cashback-table { font-size: 0.75rem; }
             .action-buttons { flex-direction: column; gap: 4px; }
-            .stats-row { flex-direction: column; align-items: stretch; }
-            .header-top { flex-direction: column; align-items: stretch; }
-            .home-btn { justify-content: center; }
             .form-row { grid-template-columns: 1fr; }
+            .history-group { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
@@ -543,6 +645,7 @@
         <div class="sub">Управление счетами: карты, вклады, инвестиции + КЕШБЕК по банкам</div>
     </div>
 
+    <!-- Stats row -->
     <div class="stats-row">
         <div class="total-amount">
             <div class="total-label"><i class="fas fa-coins"></i> ИТОГО АКТИВОВ</div>
@@ -551,6 +654,30 @@
         <button id="refreshDataBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Обновить данные</button>
     </div>
 
+    <!-- History controls -->
+    <div class="history-controls">
+        <div class="history-group">
+            <i class="fas fa-history" style="color: #2c6e9e; font-size: 1.2rem;"></i>
+            <span style="font-weight: 600;">Исторические данные:</span>
+            <select id="historyMonthSelect" class="history-select">
+                <option value="">-- загрузка... --</option>
+            </select>
+            <button id="loadHistoryBtn" class="btn-outline">
+                <i class="fas fa-calendar-alt"></i> Показать
+            </button>
+        </div>
+        <div class="history-group">
+            <div id="historyInfoBadge" style="display: none;" class="history-badge">
+                <i class="fas fa-clock"></i>
+                <span id="historyDateText"></span>
+            </div>
+            <button id="showCurrentBtn" class="btn-primary" style="display: none;">
+                <i class="fas fa-chart-line"></i> Текущие данные
+            </button>
+        </div>
+    </div>
+
+    <!-- Charts -->
     <div class="charts-grid">
         <div class="chart-card">
             <div class="chart-title"><i class="fas fa-university"></i> Распределение по банкам</div>
@@ -564,7 +691,7 @@
         </div>
     </div>
 
-    <!-- Сводка кешбека по банкам -->
+    <!-- Cashback summary section -->
     <div class="cashback-summary-section" id="cashbackSummarySection" style="display: none;">
         <div class="section-header">
             <h2><i class="fas fa-percent"></i> Кешбек по банкам</h2>
@@ -575,6 +702,7 @@
         </div>
     </div>
 
+    <!-- Accounts section -->
     <div class="accounts-section">
         <div class="section-header">
             <h2><i class="fas fa-list-ul"></i> Мои счета</h2>
@@ -586,7 +714,7 @@
     </div>
 </div>
 
-<!-- Modal для создания/редактирования счёта -->
+<!-- Modal for account -->
 <div id="accountModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -617,13 +745,13 @@
             </div>
             <div class="modal-buttons">
                 <button type="button" class="btn-secondary" onclick="closeAccountModal()">Отмена</button>
-                <button type="submit" class="btn-primary" id="saveBtn">Сохранить</button>
+                <button type="submit" class="btn-primary">Сохранить</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Modal для создания/редактирования кешбека -->
+<!-- Modal for cashback -->
 <div id="cashbackModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -639,7 +767,7 @@
             </div>
             <div class="form-group">
                 <label><i class="fas fa-tag"></i> Категория *</label>
-                <input type="text" id="cashbackCategory" required placeholder="Супермаркеты, Такси, Рестораны, Аптеки...">
+                <input type="text" id="cashbackCategory" required placeholder="Супермаркеты, Такси, Рестораны...">
             </div>
             <div class="form-group">
                 <label><i class="fas fa-percent"></i> Процент кешбека *</label>
@@ -667,13 +795,13 @@
             </div>
             <div class="modal-buttons">
                 <button type="button" class="btn-secondary" onclick="closeCashbackModal()">Отмена</button>
-                <button type="submit" class="btn-primary" id="saveCashbackBtn">Сохранить</button>
+                <button type="submit" class="btn-primary">Сохранить</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Modal для просмотра всех кешбеков -->
+<!-- Modal for all cashbacks -->
 <div id="allCashbacksModal" class="modal">
     <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header">
@@ -686,9 +814,25 @@
     </div>
 </div>
 
+<!-- Toast -->
+<div id="toastNotification" class="toast-notification"></div>
+
+<!-- Global loader -->
+<div id="globalLoader" class="global-loader">
+    <i class="fas fa-spinner fa-pulse"></i> Загрузка...
+</div>
+
 <script>
+    // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
     let bankChart = null, typeChart = null;
+    let isHistoryMode = false;
+    let currentSnapshotDate = null;
+    let availableSnapshots = [];
+
     const API_BASE = '/api/finance';
+    const API_HISTORY = '/api/finance/history';
+
+    // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 
     function formatCurrency(amount) {
         let num = parseFloat(amount);
@@ -719,8 +863,50 @@
         return classes[type] || 'type-card';
     }
 
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    }
+
+    function formatDateToRussian(dateString) {
+        const date = new Date(dateString);
+        const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+            'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+        return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    function getMonthName(month) {
+        const months = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+            'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+        return months[month - 1];
+    }
+
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('toastNotification');
+        const colors = {
+            success: '#10b981',
+            error: '#ef4444',
+            info: '#3b82f6',
+            warning: '#f59e0b'
+        };
+        toast.style.borderLeft = `4px solid ${colors[type] || colors.info}`;
+        toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i> ${message}`;
+        toast.style.display = 'flex';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3000);
+    }
+
+    function showLoading(show) {
+        const loader = document.getElementById('globalLoader');
+        loader.style.display = show ? 'flex' : 'none';
+    }
+
+    // ==================== ЗАГРУЗКА ДАННЫХ (ТЕКУЩИЕ) ====================
+
     async function fetchSummaryAndAccounts() {
         try {
+            showLoading(true);
             const [summaryRes, accountsRes, cashbackSummaryRes] = await Promise.all([
                 fetch(`${API_BASE}/summary`),
                 fetch(`${API_BASE}/accounts`),
@@ -733,11 +919,10 @@
             const summary = await summaryRes.json();
             const accounts = await accountsRes.json();
 
-            document.getElementById('totalAmountDisplay').innerText = formatCurrency(summary.totalAmount || 0);
+            document.getElementById('totalAmountDisplay').innerHTML = formatCurrency(summary.totalAmount || 0);
             updateCharts(summary);
-            renderAccountsTable(accounts);
+            renderAccountsTable(accounts, false);
 
-            // Загружаем данные по кешбеку, если они доступны
             if (cashbackSummaryRes.ok) {
                 const cashbackSummary = await cashbackSummaryRes.json();
                 renderCashbackSummary(cashbackSummary);
@@ -747,9 +932,15 @@
             }
         } catch (err) {
             console.error('Fetch error:', err);
-            document.getElementById('accountsTableContainer').innerHTML = `<div class="loader" style="color:#c7423f;"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки: ${err.message}<br><small>Убедитесь, что backend запущен и добавлены эндпоинты для кешбека</small></div>`;
+            document.getElementById('accountsTableContainer').innerHTML =
+                `<div class="loader" style="color:#c7423f;"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки: ${err.message}</div>`;
+            showToast('Ошибка загрузки данных: ' + err.message, 'error');
+        } finally {
+            showLoading(false);
         }
     }
+
+    // ==================== ГРАФИКИ ====================
 
     function updateCharts(summary) {
         // Данные по банкам
@@ -851,6 +1042,141 @@
         }
     }
 
+    function updateChartsFromSummary(summary) {
+        if (bankChart && summary.amountByBank) {
+            const bankLabels = Object.keys(summary.amountByBank);
+            const bankValues = Object.values(summary.amountByBank);
+            if (bankLabels.length === 0 || bankValues.every(v => v === 0)) {
+                bankChart.data.labels = ['Нет данных'];
+                bankChart.data.datasets[0].data = [1];
+            } else {
+                bankChart.data.labels = bankLabels;
+                bankChart.data.datasets[0].data = bankValues;
+            }
+            bankChart.update();
+        }
+
+        if (typeChart && summary.amountByType) {
+            const typeLabels = Object.keys(summary.amountByType).map(t => getTypeDescription(t));
+            const typeValues = Object.values(summary.amountByType);
+            if (typeLabels.length === 0 || typeValues.every(v => v === 0)) {
+                typeChart.data.labels = ['Нет данных'];
+                typeChart.data.datasets[0].data = [1];
+            } else {
+                typeChart.data.labels = typeLabels;
+                typeChart.data.datasets[0].data = typeValues;
+            }
+            typeChart.update();
+        }
+    }
+
+    // ==================== ОТОБРАЖЕНИЕ ТАБЛИЦ ====================
+
+    function renderAccountsTable(accounts, isHistorical = false) {
+        const container = document.getElementById('accountsTableContainer');
+
+        if (!accounts || accounts.length === 0) {
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-inbox" style="font-size: 3rem; opacity: 0.5;"></i><p style="margin-top: 16px;">${isHistorical ? 'Нет счетов за выбранный период' : 'Нет доступных счетов. Создайте первый счёт!'}</p></div>`;
+            return;
+        }
+
+        let html = `<table class="accounts-table">
+            <thead>
+                <tr>
+                    <th style="width: 30px;"></th>
+                    <th>ID</th>
+                    <th>Банк</th>
+                    <th>Тип счёта</th>
+                    <th>Сумма</th>
+                    <th>Комментарий</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        for (const acc of accounts) {
+            const typeDesc = getTypeDescription(acc.type);
+            const typeClass = getTypeClass(acc.type);
+            const isCard = acc.type === 'CARD';
+
+            const actionsDisabled = isHistorical ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : '';
+            const cashbackButton = isCard && !isHistorical ?
+                `<button class="cashback-btn" onclick="event.stopPropagation(); openAddCashbackModal(${acc.id}, '${escapeHtml(acc.bankName)}')" title="Добавить кешбек"><i class="fas fa-percent"></i></button>` : '';
+
+            html += `
+                <tr class="expandable-row" data-account-id="${acc.id}" onclick="${isCard ? `toggleCashbackDetails(${acc.id})` : ''}" style="${!isCard ? 'cursor: default;' : ''}">
+                    <td>${isCard ? '<i class="fas fa-chevron-right expand-icon" id="expand-icon-' + acc.id + '"></i>' : '<span style="opacity: 0.3;"><i class="fas fa-lock"></i></span>'}</td>
+                    <td style="font-weight: 500;">${acc.id}</td>
+                    <td><strong>${escapeHtml(acc.bankName)}</strong></td>
+                    <td><span class="type-badge ${typeClass}">${typeDesc}</span></td>
+                    <td style="font-weight: 600; color: #1f4e7a;">${formatCurrency(acc.amount)}</td>
+                    <td style="color: #6e8faa; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(acc.comment || '—')}</td>
+                    <td class="action-buttons" onclick="event.stopPropagation()">
+                        ${cashbackButton}
+                        <button class="edit-btn" onclick="editAccount(${acc.id})" ${actionsDisabled} title="${isHistorical ? 'Недоступно в историческом режиме' : 'Редактировать'}"><i class="fas fa-edit"></i></button>
+                        <button class="delete-btn" onclick="deleteAccount(${acc.id})" ${actionsDisabled} title="${isHistorical ? 'Недоступно в историческом режиме' : 'Удалить'}"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                </tr>
+            `;
+
+            if (isCard) {
+                html += `
+                    <tr class="detail-row" id="detail-row-${acc.id}">
+                        <td colspan="7" class="detail-cell">
+                            <div id="cashbacks-${acc.id}">
+                                ${renderCashbacksList(acc.cashbacks, acc.id, isHistorical)}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                html += `
+                    <tr class="detail-row" id="detail-row-${acc.id}" style="display: none;">
+                        <td colspan="7" class="detail-cell">
+                            <div style="color: #7c94a8; padding: 8px;">
+                                <i class="fas fa-info-circle"></i> Кешбек доступен только для карт/счетов (тип CARD)
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        html += `</tbody>`;
+        container.innerHTML = html;
+    }
+
+    function renderCashbacksList(cashbacks, accountId, isHistorical = false) {
+        if (!cashbacks || cashbacks.length === 0) {
+            return `<div style="color: #7c94a8; padding: 8px;"><i class="fas fa-info-circle"></i> Нет кешбеков${isHistorical ? ' на эту дату' : ''}.</div>`;
+        }
+
+        let html = `<div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-weight: 600; margin-bottom: 8px;"><i class="fas fa-percent"></i> Кешбеки по карте:</div>`;
+
+        for (const cb of cashbacks) {
+            const actionsDisabled = isHistorical ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : '';
+            html += `
+                <div class="cashback-item">
+                    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+                        <span><i class="fas fa-tag"></i> <strong>${escapeHtml(cb.category)}</strong></span>
+                        <span class="cashback-percent">${parseInt(cb.percentage)}%</span>
+                        ${cb.maxAmount ? `<span><i class="fas fa-chart-line"></i> до ${formatCurrency(cb.maxAmount)}/мес</span>` : ''}
+                        ${cb.validFrom ? `<span><i class="fas fa-calendar-alt"></i> с ${cb.validFrom}</span>` : ''}
+                        ${cb.validTo ? `<span><i class="fas fa-calendar-times"></i> до ${cb.validTo}</span>` : ''}
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="edit-btn" onclick="editCashback(${cb.id}, ${accountId})" ${actionsDisabled}><i class="fas fa-edit"></i></button>
+                        <button class="delete-btn" onclick="deleteCashback(${cb.id})" ${actionsDisabled}><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            `;
+        }
+
+        html += `</div>`;
+        return html;
+    }
+
     function renderCashbackSummary(cashbackSummary) {
         const container = document.getElementById('cashbackSummaryContainer');
         if (!cashbackSummary || cashbackSummary.length === 0) {
@@ -860,20 +1186,14 @@
 
         let html = `<table class="cashback-table">
             <thead>
-                <tr>
-                    <th>Банк</th>
-                    <th>Категорий</th>
-                    <th>Лучший кешбек</th>
-                    <th>Категории</th>
-                </tr>
+                <tr><th>Банк</th><th>Категорий</th><th>Лучший кешбек</th><th>Категории</th></tr>
             </thead>
             <tbody>`;
 
-        cashbackSummary.forEach(bank => {
+        for (const bank of cashbackSummary) {
             let categoriesHtml = '';
             if (bank.cashbackByCategory) {
-                const items = Object.entries(bank.cashbackByCategory);
-                categoriesHtml = items.map(([cat, perc]) =>
+                categoriesHtml = Object.entries(bank.cashbackByCategory).map(([cat, perc]) =>
                     `<span class="cashback-badge"><i class="fas fa-tag"></i> ${escapeHtml(cat)}: ${parseInt(perc)}%</span>`
                 ).join(' ');
             }
@@ -886,146 +1206,173 @@
                     <td><div style="display: flex; flex-wrap: wrap; gap: 6px;">${categoriesHtml || '—'}</div></td>
                 </tr>
             `;
-        });
+        }
 
         html += `</tbody>`;
         container.innerHTML = html;
-    }
-
-    function renderAccountsTable(accounts) {
-        const container = document.getElementById('accountsTableContainer');
-        if (!accounts || accounts.length === 0) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-inbox" style="font-size: 3rem; opacity: 0.5;"></i><p style="margin-top: 16px;">Нет доступных счетов. Создайте первый счёт!</p></div>`;
-            return;
-        }
-
-        let html = `<table class="accounts-table">
-        <thead>
-            <tr>
-                <th style="width: 30px;"></th>
-                <th>ID</th>
-                <th>Банк</th>
-                <th>Тип счёта</th>
-                <th>Сумма</th>
-                <th>Комментарий</th>
-                <th>Действия</th>
-            </tr>
-        </thead>
-        <tbody>`;
-
-        accounts.forEach(acc => {
-            const typeDesc = getTypeDescription(acc.type);
-            const typeClass = getTypeClass(acc.type);
-            const isCard = acc.type === 'CARD';
-
-            // Кнопка кешбека показывается только для карт
-            const cashbackButton = isCard ?
-                `<button class="cashback-btn" onclick="openAddCashbackModal(${acc.id}, '${escapeHtml(acc.bankName)}')" title="Добавить кешбек"><i class="fas fa-percent"></i></button>` : '';
-
-            html += `
-            <tr class="expandable-row" data-account-id="${acc.id}" onclick="${isCard ? `toggleCashbackDetails(${acc.id})` : ''}" style="${!isCard ? 'cursor: default;' : ''}">
-                <td>${isCard ? '<i class="fas fa-chevron-right expand-icon" id="expand-icon-' + acc.id + '"></i>' : '<span style="opacity: 0.3;"><i class="fas fa-lock"></i></span>'}</td>
-                <td style="font-weight: 500;">${acc.id}</td>
-                <td><strong>${escapeHtml(acc.bankName)}</strong></td>
-                <td><span class="type-badge ${typeClass}">${typeDesc}</span></td>
-                <td style="font-weight: 600; color: #1f4e7a;">${formatCurrency(acc.amount)}</td>
-                <td style="color: #6e8faa; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(acc.comment || '—')}</td>
-                <td class="action-buttons" onclick="event.stopPropagation()">
-                    ${cashbackButton}
-                    <button class="edit-btn" onclick="editAccount(${acc.id})" title="Редактировать"><i class="fas fa-edit"></i></button>
-                    <button class="delete-btn" onclick="deleteAccount(${acc.id})" title="Удалить"><i class="fas fa-trash-alt"></i></button>
-                 </td>             </tr>`;
-
-            // Детальная строка с кешбеками только для карт
-            if (isCard) {
-                html += `
-                <tr class="detail-row" id="detail-row-${acc.id}">
-                    <td colspan="7" class="detail-cell">
-                        <div id="cashbacks-${acc.id}">
-                            ${renderCashbacksList(acc.cashbacks, acc.id)}
-                        </div>
-                     </td>
-                 </tr>
-            `;
-            } else {
-                // Для не-card счетов показываем информационное сообщение
-                html += `
-                <tr class="detail-row" id="detail-row-${acc.id}" style="display: none;">
-                    <td colspan="7" class="detail-cell">
-                        <div style="color: #7c94a8; padding: 8px;">
-                            <i class="fas fa-info-circle"></i> Кешбек доступен только для карт/счетов (тип CARD)
-                        </div>
-                     </td>
-                 </tr>
-            `;
-            }
-        });
-
-        html += `</tbody>`;
-        container.innerHTML = html;
-    }
-
-    function renderCashbacksList(cashbacks, accountId) {
-        if (!cashbacks || cashbacks.length === 0) {
-            return `<div style="color: #7c94a8; padding: 8px;"><i class="fas fa-info-circle"></i> Нет кешбеков для этого счёта. Нажмите <i class="fas fa-percent"></i> чтобы добавить.</div>`;
-        }
-
-        let html = `<div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="font-weight: 600; margin-bottom: 8px;"><i class="fas fa-percent"></i> Кешбеки по карте:</div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">`;
-
-        cashbacks.forEach(cb => {
-            html += `
-                <div style="background: #f8fafc; border-radius: 16px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
-                        <span><i class="fas fa-tag"></i> <strong>${escapeHtml(cb.category)}</strong></span>
-                        <span style="color: #059669; font-weight: 700;">${parseInt(cb.percentage)}%</span>
-                        ${cb.maxAmount ? `<span><i class="fas fa-chart-line"></i> до ${formatCurrency(cb.maxAmount)}/мес</span>` : ''}
-                        ${cb.validFrom ? `<span><i class="fas fa-calendar-alt"></i> с ${cb.validFrom}</span>` : ''}
-                        ${cb.validTo ? `<span><i class="fas fa-calendar-times"></i> до ${cb.validTo}</span>` : ''}
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="edit-btn" onclick="editCashback(${cb.id}, ${accountId})" style="padding: 4px 8px;" title="Редактировать"><i class="fas fa-edit"></i></button>
-                        <button class="delete-btn" onclick="deleteCashback(${cb.id})" style="padding: 4px 8px;" title="Удалить"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                </div>
-            `;
-        });
-
-        html += `</div></div>`;
-        return html;
     }
 
     function toggleCashbackDetails(accountId) {
         const detailRow = document.getElementById(`detail-row-${accountId}`);
         const icon = document.getElementById(`expand-icon-${accountId}`);
         if (detailRow && icon) {
-            if (detailRow.classList.contains('show')) {
-                detailRow.classList.remove('show');
-                icon.classList.remove('rotated');
-            } else {
-                detailRow.classList.add('show');
-                icon.classList.add('rotated');
-            }
+            detailRow.classList.toggle('show');
+            icon.classList.toggle('rotated');
         }
     }
 
-    async function refreshAccountCashbacks(accountId) {
+    // ==================== ИСТОРИЧЕСКИЕ ДАННЫЕ ====================
+
+    async function loadAvailableSnapshots() {
         try {
-            const res = await fetch(`${API_BASE}/accounts/${accountId}`);
-            if (res.ok) {
-                const account = await res.json();
-                const container = document.getElementById(`cashbacks-${accountId}`);
-                if (container) {
-                    container.innerHTML = renderCashbacksList(account.cashbacks, accountId);
-                }
+            const response = await fetch(`${API_HISTORY}/snapshots`);
+            if (!response.ok) throw new Error('Failed to load snapshots');
+
+            availableSnapshots = await response.json();
+            const select = document.getElementById('historyMonthSelect');
+
+            if (!availableSnapshots || availableSnapshots.length === 0) {
+                select.innerHTML = '<option value="">Нет исторических данных</option>';
+                select.disabled = true;
+                return;
+            }
+
+            select.disabled = false;
+            select.innerHTML = '<option value="">-- выберите месяц --</option>';
+
+            for (const snapshot of availableSnapshots) {
+                const option = document.createElement('option');
+                // Сохраняем и year и month в value через разделитель
+                option.value = `${snapshot.year}|${snapshot.month}`;
+                option.textContent = `${snapshot.formattedDate} (${snapshot.accountsCount} счетов, ${snapshot.cashbacksCount} кешбеков)`;
+                // Сохраняем данные в data-атрибутах на всякий случай
+                option.dataset.year = snapshot.year;
+                option.dataset.month = snapshot.month;
+                option.dataset.yearMonth = snapshot.yearMonth;
+                select.appendChild(option);
             }
         } catch (err) {
-            console.error('Failed to refresh cashbacks:', err);
+            console.error('Failed to load snapshots:', err);
+            const select = document.getElementById('historyMonthSelect');
+            select.innerHTML = '<option value="">Ошибка загрузки</option>';
+            showToast('Ошибка загрузки исторических данных: ' + err.message, 'error');
         }
     }
 
-    // Account CRUD
+    async function loadHistoricalData() {
+        const select = document.getElementById('historyMonthSelect');
+        const selectedValue = select.value;
+
+        if (!selectedValue) {
+            showToast('Выберите месяц', 'warning');
+            return;
+        }
+
+        let year, month;
+
+        // Проверяем, сохранён ли год и месяц в value
+        if (selectedValue.includes('|')) {
+            // Формат "2026|5"
+            const parts = selectedValue.split('|');
+            year = parseInt(parts[0]);
+            month = parseInt(parts[1]);
+        } else {
+            // Пробуем получить из data-атрибутов выбранной опции
+            const selectedOption = select.options[select.selectedIndex];
+            year = parseInt(selectedOption.dataset.year);
+            month = parseInt(selectedOption.dataset.month);
+
+            // Если всё ещё нет, пробуем распарсить yearMonth
+            if (isNaN(year) || isNaN(month)) {
+                const yearMonth = selectedOption.dataset.yearMonth;
+                if (yearMonth) {
+                    const [y, m] = yearMonth.split('-');
+                    year = parseInt(y);
+                    month = parseInt(m);
+                }
+            }
+        }
+
+        // Проверка на валидность
+        if (isNaN(year) || isNaN(month) || !year || !month) {
+            console.error('Invalid year/month:', { year, month, selectedValue });
+            showToast('Ошибка: не удалось определить год и месяц', 'error');
+            return;
+        }
+
+        console.log(`Loading historical data for year=${year}, month=${month}`);
+
+        try {
+            showLoading(true);
+            const response = await fetch(`${API_HISTORY}/data?year=${year}&month=${month}`);
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    showToast('Нет данных за выбранный месяц', 'warning');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return;
+            }
+
+            const historicalData = await response.json();
+            console.log('Historical data received:', historicalData);
+
+            if (!historicalData || !historicalData.accounts) {
+                showToast('Некорректные данные от сервера', 'error');
+                return;
+            }
+
+            isHistoryMode = true;
+            currentSnapshotDate = historicalData.snapshotDate;
+
+            // Обновляем UI
+            document.getElementById('showCurrentBtn').style.display = 'inline-flex';
+            document.getElementById('historyInfoBadge').style.display = 'inline-flex';
+            document.getElementById('historyDateText').innerHTML = formatDateToRussian(historicalData.snapshotDate);
+
+            // Обновляем отображение
+            document.getElementById('totalAmountDisplay').innerHTML = formatCurrency(historicalData.summary?.totalAmount || 0);
+            updateChartsFromSummary(historicalData.summary);
+            renderAccountsTable(historicalData.accounts, true);
+
+            // Проверяем наличие кешбек сводки
+            if (historicalData.cashbackSummary && historicalData.cashbackSummary.length > 0) {
+                renderCashbackSummary(historicalData.cashbackSummary);
+                document.getElementById('cashbackSummarySection').style.display = 'block';
+            } else {
+                document.getElementById('cashbackSummarySection').style.display = 'none';
+            }
+
+            // Блокируем кнопку создания
+            document.getElementById('createAccountBtn').disabled = true;
+            document.getElementById('createAccountBtn').title = 'Недоступно в историческом режиме';
+
+            showToast(`Загружены данные на ${formatDateToRussian(historicalData.snapshotDate)}`, 'success');
+
+        } catch (err) {
+            console.error('Error loading historical data:', err);
+            showToast('Ошибка загрузки исторических данных: ' + err.message, 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function loadCurrentData() {
+        isHistoryMode = false;
+        currentSnapshotDate = null;
+
+        document.getElementById('showCurrentBtn').style.display = 'none';
+        document.getElementById('historyInfoBadge').style.display = 'none';
+        document.getElementById('createAccountBtn').disabled = false;
+        document.getElementById('createAccountBtn').title = '';
+
+        fetchSummaryAndAccounts();
+        showToast('Загружены актуальные данные', 'info');
+    }
+
+    // ==================== CRUD ОПЕРАЦИИ ====================
+
     async function createAccount(data) {
         const res = await fetch(`${API_BASE}/accounts`, {
             method: 'POST',
@@ -1058,12 +1405,13 @@
             const res = await fetch(`${API_BASE}/accounts/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(`Ошибка удаления: ${res.status}`);
             await fetchSummaryAndAccounts();
+            await loadAvailableSnapshots();
+            showToast('Счёт успешно удалён', 'success');
         } catch (err) {
-            alert('Ошибка удаления: ' + err.message);
+            showToast('Ошибка удаления: ' + err.message, 'error');
         }
     }
 
-    // Cashback CRUD
     async function createCashback(data) {
         const res = await fetch(`${API_BASE}/cashbacks`, {
             method: 'POST',
@@ -1096,12 +1444,15 @@
             const res = await fetch(`${API_BASE}/cashbacks/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(`Ошибка удаления кешбека: ${res.status}`);
             await fetchSummaryAndAccounts();
+            await loadAvailableSnapshots();
+            showToast('Кешбек успешно удалён', 'success');
         } catch (err) {
-            alert('Ошибка удаления: ' + err.message);
+            showToast('Ошибка удаления: ' + err.message, 'error');
         }
     }
 
-    // Modal handlers
+    // ==================== МОДАЛЬНЫЕ ОКНА ====================
+
     function openAccountModal(title, accountData = null) {
         document.getElementById('modalTitle').innerText = title;
         if (accountData) {
@@ -1125,10 +1476,7 @@
         document.getElementById('accountForm').reset();
     }
 
-    let currentCashbackAccountId = null;
-
     function openAddCashbackModal(accountId, bankName) {
-        currentCashbackAccountId = accountId;
         document.getElementById('cashbackModalTitle').innerText = 'Добавить кешбек';
         document.getElementById('cashbackId').value = '';
         document.getElementById('cashbackAccountId').value = accountId;
@@ -1150,7 +1498,6 @@
             const cashback = cashbacks.find(cb => cb.id === id);
             if (!cashback) throw new Error('Cashback not found');
 
-            currentCashbackAccountId = accountId;
             document.getElementById('cashbackModalTitle').innerText = 'Редактировать кешбек';
             document.getElementById('cashbackId').value = cashback.id;
             document.getElementById('cashbackAccountId').value = accountId;
@@ -1163,17 +1510,17 @@
             document.getElementById('cashbackDescription').value = cashback.description || '';
             document.getElementById('cashbackModal').classList.add('active');
         } catch (err) {
-            alert('Ошибка загрузки кешбека: ' + err.message);
+            showToast('Ошибка загрузки кешбека: ' + err.message, 'error');
         }
     }
 
     function closeCashbackModal() {
         document.getElementById('cashbackModal').classList.remove('active');
         document.getElementById('cashbackForm').reset();
-        currentCashbackAccountId = null;
     }
 
-    async function loadAllCashbacks() {
+    async function openAllCashbacksModal() {
+        document.getElementById('allCashbacksModal').classList.add('active');
         try {
             const res = await fetch(`${API_BASE}/cashbacks`);
             if (!res.ok) throw new Error('Failed to fetch cashbacks');
@@ -1186,9 +1533,7 @@
             }
 
             let html = `<table class="cashback-table">
-                <thead>
-                    <tr><th>ID</th><th>Банк</th><th>Категория</th><th>%</th><th>Макс/мес</th><th>Действует с</th><th>Действует до</th><th>Действия</th></tr>
-                </thead>
+                <thead><tr><th>ID</th><th>Банк</th><th>Категория</th><th>%</th><th>Макс/мес</th><th>Действует с</th><th>Действует до</th><th>Действия</th></tr></thead>
                 <tbody>`;
 
             for (const cb of cashbacks) {
@@ -1216,11 +1561,6 @@
         }
     }
 
-    function openAllCashbacksModal() {
-        document.getElementById('allCashbacksModal').classList.add('active');
-        loadAllCashbacks();
-    }
-
     function closeAllCashbacksModal() {
         document.getElementById('allCashbacksModal').classList.remove('active');
     }
@@ -1232,11 +1572,12 @@
             const account = await res.json();
             openAccountModal('Редактирование счёта', account);
         } catch (err) {
-            alert('Ошибка загрузки: ' + err.message);
+            showToast('Ошибка загрузки: ' + err.message, 'error');
         }
     };
 
-    // Form submissions
+    // ==================== ОБРАБОТЧИКИ ФОРМ ====================
+
     document.getElementById('accountForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = document.getElementById('accountId').value;
@@ -1246,26 +1587,32 @@
         const comment = document.getElementById('comment').value.trim();
 
         if (!bankName) {
-            alert('Введите название банка');
+            showToast('Введите название банка', 'warning');
             return;
         }
         if (isNaN(amount) || amount < 0.01) {
-            alert('Сумма должна быть больше 0');
+            showToast('Сумма должна быть больше 0', 'warning');
             return;
         }
 
         const payload = { bankName, amount, type, comment: comment || null };
 
         try {
+            showLoading(true);
             if (id) {
                 await updateAccount(parseInt(id), payload);
+                showToast('Счёт успешно обновлён', 'success');
             } else {
                 await createAccount(payload);
+                showToast('Счёт успешно создан', 'success');
             }
             closeAccountModal();
             await fetchSummaryAndAccounts();
+            await loadAvailableSnapshots();
         } catch (err) {
-            alert('Ошибка: ' + err.message);
+            showToast('Ошибка: ' + err.message, 'error');
+        } finally {
+            showLoading(false);
         }
     });
 
@@ -1281,35 +1628,43 @@
         const description = document.getElementById('cashbackDescription').value.trim() || null;
 
         if (!category) {
-            alert('Введите категорию');
+            showToast('Введите категорию', 'warning');
             return;
         }
         if (isNaN(percentage) || percentage < 1 || percentage > 100) {
-            alert('Процент должен быть целым числом от 1 до 100');
+            showToast('Процент должен быть целым числом от 1 до 100', 'warning');
             return;
         }
 
         const payload = { accountId, category, percentage, maxAmount, validFrom, validTo, description };
 
         try {
+            showLoading(true);
             if (id) {
                 await updateCashback(parseInt(id), payload);
+                showToast('Кешбек успешно обновлён', 'success');
             } else {
                 await createCashback(payload);
+                showToast('Кешбек успешно добавлен', 'success');
             }
             closeCashbackModal();
             await fetchSummaryAndAccounts();
+            await loadAvailableSnapshots();
         } catch (err) {
-            alert('Ошибка: ' + err.message);
+            showToast('Ошибка: ' + err.message, 'error');
+        } finally {
+            showLoading(false);
         }
     });
 
-    // Buttons
+    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+
     document.getElementById('createAccountBtn').addEventListener('click', () => openAccountModal('Создание нового счёта'));
     document.getElementById('refreshDataBtn').addEventListener('click', () => fetchSummaryAndAccounts());
     document.getElementById('viewAllCashbacksBtn').addEventListener('click', () => openAllCashbacksModal());
+    document.getElementById('loadHistoryBtn').addEventListener('click', loadHistoricalData);
+    document.getElementById('showCurrentBtn').addEventListener('click', loadCurrentData);
 
-    // Close modals on outside click
     window.onclick = function(event) {
         const accountModal = document.getElementById('accountModal');
         const cashbackModal = document.getElementById('cashbackModal');
@@ -1319,12 +1674,8 @@
         if (event.target === allCashbacksModal) closeAllCashbacksModal();
     };
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
-    }
-
-    // Initialization
+    // Запуск
+    loadAvailableSnapshots();
     fetchSummaryAndAccounts();
 </script>
 </body>

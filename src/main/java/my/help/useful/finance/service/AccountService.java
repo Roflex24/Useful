@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.help.useful.finance.dto.AccountRequestDto;
 import my.help.useful.finance.dto.AccountResponseDto;
+import my.help.useful.finance.dto.HistoricalDataResponseDto;
 import my.help.useful.finance.entity.Account;
 import my.help.useful.finance.entity.AccountType;
 import my.help.useful.finance.mapper.AccountMapper;
@@ -11,6 +12,8 @@ import my.help.useful.finance.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.YearMonth;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,6 +26,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final CashbackService cashbackService;
+    private final FinanceSnapshotService snapshotService;
 
     public List<AccountResponseDto> getAllAccounts() {
         log.debug("Fetching all accounts");
@@ -112,5 +116,14 @@ public class AccountService {
 
         accountRepository.deleteById(id);
         log.info("Account deleted successfully with id: {}", id);
+    }
+
+    /**
+     * Получить исторические счета за указанный месяц
+     */
+    @Transactional(readOnly = true)
+    public List<AccountResponseDto> getHistoricalAccounts(YearMonth yearMonth) {
+        HistoricalDataResponseDto historicalData = snapshotService.getHistoricalData(yearMonth);
+        return historicalData != null ? historicalData.getAccounts() : Collections.emptyList();
     }
 }
