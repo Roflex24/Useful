@@ -39,13 +39,12 @@ public class CashbackService {
     public List<CashbackResponseDto> getCashbacksByAccount(Long accountId) {
         log.debug("Fetching cashbacks for account: {}", accountId);
 
-        // Проверяем, что счёт существует и имеет тип CARD
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found with id: " + accountId));
 
         if (account.getType() != AccountType.CARD) {
             log.warn("Attempt to get cashbacks for non-card account: {} (type: {})", accountId, account.getType());
-            return Collections.emptyList(); // У не-card счетов нет кешбека
+            return Collections.emptyList();
         }
 
         return cashbackRepository.findByAccountId(accountId)
@@ -58,7 +57,6 @@ public class CashbackService {
     public CashbackResponseDto createCashback(CashbackRequestDto requestDto) {
         log.info("Creating cashback for account: {}", requestDto.getAccountId());
 
-        // Проверяем, что счёт существует и имеет тип CARD
         Account account = accountRepository.findById(requestDto.getAccountId())
                 .orElseThrow(() -> new RuntimeException("Account not found with id: " + requestDto.getAccountId()));
 
@@ -80,7 +78,6 @@ public class CashbackService {
         Cashback existingCashback = cashbackRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cashback not found with id: " + id));
 
-        // Проверяем, что связанный счёт всё ещё имеет тип CARD
         Account account = existingCashback.getAccount();
         if (account.getType() != AccountType.CARD) {
             throw new RuntimeException("Cannot update cashback for non-card account");
@@ -88,10 +85,6 @@ public class CashbackService {
 
         existingCashback.setCategory(requestDto.getCategory());
         existingCashback.setPercentage(requestDto.getPercentage());
-        existingCashback.setMaxAmount(requestDto.getMaxAmount());
-        existingCashback.setValidFrom(requestDto.getValidFrom());
-        existingCashback.setValidTo(requestDto.getValidTo());
-        existingCashback.setDescription(requestDto.getDescription());
 
         Cashback updatedCashback = cashbackRepository.save(existingCashback);
         log.info("Cashback updated successfully with id: {}", id);
@@ -114,7 +107,6 @@ public class CashbackService {
     public List<BankCashbackSummaryDto> getCashbackSummaryByBank() {
         log.debug("Calculating cashback summary by bank");
 
-        // Получаем только CARD счета
         List<Account> cardAccounts = accountRepository.findAll().stream()
                 .filter(account -> account.getType() == AccountType.CARD)
                 .toList();
@@ -159,7 +151,6 @@ public class CashbackService {
     public Map<String, BigDecimal> getBestCashbackForCategories() {
         log.debug("Getting best cashback offers for each category");
 
-        // Получаем активные кешбеки только для CARD счетов
         List<Cashback> activeCashbacks = cashbackRepository.findAll().stream()
                 .filter(cb -> cb.getAccount().getType() == AccountType.CARD)
                 .toList();
@@ -182,7 +173,7 @@ public class CashbackService {
         return bestCashbackByCategory;
     }
 
-    public List<my.help.useful.finance.entity.Cashback> getCashbacksByAccountEntity(Long accountId) {
+    public List<Cashback> getCashbacksByAccountEntity(Long accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 

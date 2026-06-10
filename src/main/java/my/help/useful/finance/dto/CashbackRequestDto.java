@@ -9,7 +9,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 @Data
 @Builder
@@ -25,9 +24,4 @@ public class CashbackRequestDto {
     @NotNull(message = "Процент кешбека обязателен")
     @DecimalMin(value = "0.01", message = "Процент должен быть больше 0")
     private BigDecimal percentage;
-
-    private BigDecimal maxAmount;
-    private LocalDate validFrom;
-    private LocalDate validTo;
-    private String description;
 }

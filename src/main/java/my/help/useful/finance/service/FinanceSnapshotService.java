@@ -75,10 +75,6 @@ public class FinanceSnapshotService {
                             .id(cb.getId())
                             .category(cb.getCategory())
                             .percentage(cb.getPercentage())
-                            .maxAmount(cb.getMaxAmount())
-                            .validFrom(cb.getValidFrom())
-                            .validTo(cb.getValidTo())
-                            .description(cb.getDescription())
                             .build())
                     .collect(Collectors.toList());
 
@@ -207,10 +203,6 @@ public class FinanceSnapshotService {
                                 .bankName(snapshot.getBankName())
                                 .category(dto.getCategory())
                                 .percentage(dto.getPercentage())
-                                .maxAmount(dto.getMaxAmount())
-                                .validFrom(dto.getValidFrom())
-                                .validTo(dto.getValidTo())
-                                .description(dto.getDescription())
                                 .build())
                         .collect(Collectors.toList());
 
@@ -297,10 +289,6 @@ public class FinanceSnapshotService {
                                 .bankName(snapshot.getBankName())
                                 .category(dto.getCategory())
                                 .percentage(dto.getPercentage())
-                                .maxAmount(dto.getMaxAmount())
-                                .validFrom(dto.getValidFrom())
-                                .validTo(dto.getValidTo())
-                                .description(dto.getDescription())
                                 .build())
                         .collect(Collectors.toList());
 
