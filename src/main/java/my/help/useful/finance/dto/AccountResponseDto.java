@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import my.help.useful.finance.entity.AccountType;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @Builder
@@ -18,4 +19,6 @@ public class AccountResponseDto {
     private BigDecimal amount;
     private AccountType type;
     private String comment;
+
+    private List<CashbackResponseDto> cashbacks;
 }

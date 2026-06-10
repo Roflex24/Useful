@@ -15,11 +15,15 @@ public class KeyRateController {
 
     private final KeyRateService keyRateService;
 
+    //TODO на выходных ключевая ставка не обнолвяется поэтому работает не корректно.
+    /*
+
     @GetMapping()
     public ResponseEntity<KeyRateModel> getKeyRate() {
         KeyRateModel rate = keyRateService.getKeyRateModel();
         return ResponseEntity.ok(rate);
     }
+*/
 
     @GetMapping("/all")
     public ResponseEntity<List<KeyRateModel>> getAllKeyRate() {

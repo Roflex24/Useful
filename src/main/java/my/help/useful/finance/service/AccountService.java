@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import my.help.useful.finance.dto.AccountRequestDto;
 import my.help.useful.finance.dto.AccountResponseDto;
 import my.help.useful.finance.entity.Account;
+import my.help.useful.finance.entity.AccountType;
 import my.help.useful.finance.mapper.AccountMapper;
 import my.help.useful.finance.repository.AccountRepository;
 import org.springframework.stereotype.Service;
@@ -21,12 +22,22 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
+    private final CashbackService cashbackService;
 
     public List<AccountResponseDto> getAllAccounts() {
         log.debug("Fetching all accounts");
         return accountRepository.findAll()
                 .stream()
-                .map(accountMapper::toResponseDto)
+                .map(account -> {
+                    AccountResponseDto dto = accountMapper.toResponseDto(account);
+                    // Показываем кешбеки только для CARD счетов
+                    if (account.getType() == AccountType.CARD) {
+                        dto.setCashbacks(cashbackService.getCashbacksByAccount(account.getId()));
+                    } else {
+                        dto.setCashbacks(List.of()); // Пустой список для не-card счетов
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -34,7 +45,14 @@ public class AccountService {
         log.debug("Fetching account with id: {}", id);
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
-        return accountMapper.toResponseDto(account);
+        AccountResponseDto dto = accountMapper.toResponseDto(account);
+        // Показываем кешбеки только для CARD счетов
+        if (account.getType() == AccountType.CARD) {
+            dto.setCashbacks(cashbackService.getCashbacksByAccount(id));
+        } else {
+            dto.setCashbacks(List.of());
+        }
+        return dto;
     }
 
     @Transactional
@@ -45,7 +63,9 @@ public class AccountService {
         Account savedAccount = accountRepository.save(account);
         log.info("Account created successfully with id: {}", savedAccount.getId());
 
-        return accountMapper.toResponseDto(savedAccount);
+        AccountResponseDto dto = accountMapper.toResponseDto(savedAccount);
+        dto.setCashbacks(List.of());
+        return dto;
     }
 
     @Transactional
@@ -55,11 +75,31 @@ public class AccountService {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
 
+        // Если тип меняется с CARD на другой, нужно удалить связанные кешбеки
+        AccountType oldType = existingAccount.getType();
+        AccountType newType = requestDto.getType();
+
         accountMapper.updateEntity(existingAccount, requestDto);
+
+        // Если тип меняется с CARD на другой, удаляем все кешбеки
+        if (oldType == AccountType.CARD && newType != AccountType.CARD) {
+            List<my.help.useful.finance.entity.Cashback> cashbacks = cashbackService.getCashbacksByAccountEntity(id);
+            for (var cb : cashbacks) {
+                cashbackService.deleteCashback(cb.getId());
+            }
+            log.info("Deleted all cashbacks for account {} because type changed from CARD to {}", id, newType);
+        }
+
         Account updatedAccount = accountRepository.save(existingAccount);
         log.info("Account updated successfully with id: {}", id);
 
-        return accountMapper.toResponseDto(updatedAccount);
+        AccountResponseDto dto = accountMapper.toResponseDto(updatedAccount);
+        if (updatedAccount.getType() == AccountType.CARD) {
+            dto.setCashbacks(cashbackService.getCashbacksByAccount(id));
+        } else {
+            dto.setCashbacks(List.of());
+        }
+        return dto;
     }
 
     @Transactional

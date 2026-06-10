@@ -2,6 +2,7 @@ package my.help.useful.finance.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.help.useful.finance.dto.BankCashbackSummaryDto;
 import my.help.useful.finance.dto.FinanceSummaryDto;
 import my.help.useful.finance.entity.AccountType;
 import my.help.useful.finance.repository.AccountRepository;
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -20,6 +22,7 @@ import java.util.Map;
 public class FinanceSummaryService {
 
     private final AccountRepository accountRepository;
+    private final CashbackService cashbackService;
 
     public FinanceSummaryDto getFinanceSummary() {
         log.debug("Calculating finance summary");
@@ -28,10 +31,22 @@ public class FinanceSummaryService {
         Map<String, BigDecimal> amountByBank = calculateAmountByBank();
         Map<AccountType, BigDecimal> amountByType = calculateAmountByType();
 
+        // Добавляем информацию о кешбеке
+        List<BankCashbackSummaryDto> cashbackSummaries = cashbackService.getCashbackSummaryByBank();
+        Map<String, BankCashbackSummaryDto> cashbackSummaryByBank = cashbackSummaries.stream()
+                .collect(Collectors.toMap(
+                        BankCashbackSummaryDto::getBankName,
+                        summary -> summary
+                ));
+
+        Map<String, BigDecimal> bestCashbackByCategory = cashbackService.getBestCashbackForCategories();
+
         return FinanceSummaryDto.builder()
                 .totalAmount(totalAmount)
                 .amountByBank(amountByBank)
                 .amountByType(amountByType)
+                .cashbackSummaryByBank(cashbackSummaryByBank)
+                .bestCashbackByCategory(bestCashbackByCategory)
                 .build();
     }
 
