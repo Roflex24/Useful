@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Финансовый менеджер - Счета, Кешбек и История</title>
+    <title>Финансовый менеджер - Счета, Кешбек и История | 3D Диаграммы</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -185,10 +185,10 @@
             color: white;
         }
 
-        /* Charts grid */
+        /* Charts grid - 3D стиль */
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
             gap: 28px;
             margin-bottom: 40px;
         }
@@ -234,7 +234,14 @@
         }
 
         canvas {
-            max-height: 260px;
+            max-height: 280px;
+            max-width: 100%;
+            filter: drop-shadow(8px 12px 16px rgba(0,0,0,0.15));
+            transition: filter 0.3s ease;
+        }
+
+        .chart-card:hover canvas {
+            filter: drop-shadow(10px 15px 20px rgba(0,0,0,0.2));
         }
 
         /* Sections */
@@ -628,7 +635,7 @@
                 <i class="fas fa-home"></i> На главную
             </button>
         </div>
-        <div class="sub">Управление счетами: карты, вклады, инвестиции + КЕШБЕК по банкам</div>
+        <div class="sub">Управление счетами: карты, вклады, инвестиции + КЕШБЕК по банкам | 3D-эффектные диаграммы</div>
     </div>
 
     <!-- Stats row -->
@@ -662,16 +669,16 @@
         </div>
     </div>
 
-    <!-- Charts -->
+    <!-- Charts - 3D стиль -->
     <div class="charts-grid">
         <div class="chart-card">
             <div class="chart-title"><i class="fas fa-university"></i> Распределение по банкам</div>
-            <div class="chart-sub">Доля средств в разных банках</div>
+            <div class="chart-sub">Доля средств в разных банках — объёмная 3D визуализация</div>
             <div class="canvas-wrapper"><canvas id="bankPieChart"></canvas></div>
         </div>
         <div class="chart-card">
             <div class="chart-title"><i class="fas fa-layer-group"></i> По типам счетов</div>
-            <div class="chart-sub">Карты / Вклады / Инвестиции</div>
+            <div class="chart-sub">Карты / Вклады / Инвестиции — эффект глубины</div>
             <div class="canvas-wrapper"><canvas id="typePieChart"></canvas></div>
         </div>
     </div>
@@ -788,7 +795,7 @@
 </div>
 
 <script>
-    // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
+    // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (ПОЛНАЯ СТАРАЯ ЛОГИКА) ====================
     let bankChart = null, typeChart = null;
     let isHistoryMode = false;
     let currentSnapshotDate = null;
@@ -798,7 +805,6 @@
     const API_HISTORY = '/api/finance/history';
 
     // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
-
     function formatCurrency(amount) {
         let num = parseFloat(amount);
         if (isNaN(num)) num = 0;
@@ -861,8 +867,126 @@
         loader.style.display = show ? 'flex' : 'none';
     }
 
-    // ==================== ЗАГРУЗКА ДАННЫХ (ТЕКУЩИЕ) ====================
+    // ==================== КРАСИВЫЕ 3D-СТИЛЬ ДЛЯ ГРАФИКОВ (НО ПОЛНАЯ СОВМЕСТИМОСТЬ) ====================
+    function create3DStyledChart(ctx, labels, data, colors) {
+        return new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                    hoverOffset: 15,
+                    cutout: '0%',
+                    borderRadius: 10,
+                    spacing: 4,
+                    offset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 12, family: 'Inter', weight: '500' }, usePointStyle: true, boxWidth: 10, padding: 14 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const total = ctx.dataset.data.reduce((a,b) => a + b, 0);
+                                const percent = ((ctx.raw / total) * 100).toFixed(1);
+                                return `${ctx.label}: ${formatCurrency(ctx.raw)} (${percent}%)`;
+                            }
+                        },
+                        backgroundColor: 'rgba(0,0,0,0.85)',
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        padding: 12,
+                        cornerRadius: 12,
+                        displayColors: true
+                    }
+                },
+                layout: { padding: 12 },
+                elements: {
+                    arc: {
+                        borderWidth: 0,
+                        shadowOffsetX: 4,
+                        shadowOffsetY: 6,
+                        shadowBlur: 15,
+                        shadowColor: 'rgba(0,0,0,0.25)'
+                    }
+                },
+                animation: { duration: 1000, easing: 'easeOutCubic' }
+            }
+        });
+    }
 
+    function updateCharts(summary) {
+        // Данные по банкам
+        let bankLabels = [], bankValues = [];
+        if (summary.amountByBank && Object.keys(summary.amountByBank).length) {
+            for (let [bank, amount] of Object.entries(summary.amountByBank)) {
+                let val = parseFloat(amount);
+                if (val > 0) {
+                    bankLabels.push(bank);
+                    bankValues.push(val);
+                }
+            }
+        }
+        if (bankLabels.length === 0) {
+            bankLabels = ['Нет данных'];
+            bankValues = [1];
+        }
+
+        const bankColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a', '#06b6d4', '#84cc16', '#f97316', '#6366f1'];
+        const bankColorPalette = bankLabels.map((_, i) => bankColors[i % bankColors.length]);
+
+        // Данные по типам
+        let typeLabels = [], typeValues = [];
+        const typeMap = { 'CARD': '💳 Карта/счёт', 'DEPOSIT': '🏦 Вклад', 'INVESTMENT': '📈 Инвестиции' };
+        if (summary.amountByType && Object.keys(summary.amountByType).length) {
+            for (let [type, amount] of Object.entries(summary.amountByType)) {
+                let val = parseFloat(amount);
+                if (val > 0) {
+                    typeLabels.push(typeMap[type] || type);
+                    typeValues.push(val);
+                }
+            }
+        }
+        if (typeLabels.length === 0) {
+            typeLabels = ['Нет счетов'];
+            typeValues = [1];
+        }
+
+        const typeColorsMap = { '💳 Карта/счёт': '#3b82f6', '🏦 Вклад': '#10b981', '📈 Инвестиции': '#f59e0b' };
+        const typeColorPalette = typeLabels.map(label => typeColorsMap[label] || '#8b5cf6');
+
+        // Банковская диаграмма
+        const bankCtx = document.getElementById('bankPieChart').getContext('2d');
+        if (bankChart) {
+            bankChart.data.labels = bankLabels;
+            bankChart.data.datasets[0].data = bankValues;
+            bankChart.data.datasets[0].backgroundColor = bankColorPalette;
+            bankChart.update();
+        } else {
+            bankChart = create3DStyledChart(bankCtx, bankLabels, bankValues, bankColorPalette);
+        }
+
+        // Диаграмма типов
+        const typeCtx = document.getElementById('typePieChart').getContext('2d');
+        if (typeChart) {
+            typeChart.data.labels = typeLabels;
+            typeChart.data.datasets[0].data = typeValues;
+            typeChart.data.datasets[0].backgroundColor = typeColorPalette;
+            typeChart.update();
+        } else {
+            typeChart = create3DStyledChart(typeCtx, typeLabels, typeValues, typeColorPalette);
+        }
+    }
+
+    // ==================== ЗАГРУЗКА ДАННЫХ (ТЕКУЩИЕ) ====================
     async function fetchSummaryAndAccounts() {
         try {
             showLoading(true);
@@ -899,134 +1023,7 @@
         }
     }
 
-    // ==================== ГРАФИКИ ====================
-
-    function updateCharts(summary) {
-        let bankLabels = [], bankValues = [];
-        if (summary.amountByBank && Object.keys(summary.amountByBank).length) {
-            for (let [bank, amount] of Object.entries(summary.amountByBank)) {
-                let val = parseFloat(amount);
-                if (val > 0) {
-                    bankLabels.push(bank);
-                    bankValues.push(val);
-                }
-            }
-        }
-        if (bankLabels.length === 0) {
-            bankLabels = ['Нет данных'];
-            bankValues = [1];
-        }
-
-        let typeLabels = [], typeValues = [];
-        if (summary.amountByType && Object.keys(summary.amountByType).length) {
-            for (let [type, amount] of Object.entries(summary.amountByType)) {
-                let val = parseFloat(amount);
-                if (val > 0) {
-                    typeLabels.push(getTypeDescription(type));
-                    typeValues.push(val);
-                }
-            }
-        }
-        if (typeLabels.length === 0) {
-            typeLabels = ['Нет счетов'];
-            typeValues = [1];
-        }
-
-        const typeColors = {
-            '💳 Карта/счёт': '#3b82f6',
-            '🏦 Вклад': '#10b981',
-            '📈 Инвестиции': '#f59e0b'
-        };
-        const backgroundColors = typeLabels.map(label => typeColors[label] || '#8b5cf6');
-
-        const bankCtx = document.getElementById('bankPieChart').getContext('2d');
-        if (bankChart) {
-            bankChart.data.labels = bankLabels;
-            bankChart.data.datasets[0].data = bankValues;
-            bankChart.update();
-        } else {
-            bankChart = new Chart(bankCtx, {
-                type: 'pie',
-                data: {
-                    labels: bankLabels,
-                    datasets: [{
-                        data: bankValues,
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a', '#06b6d4', '#84cc16'],
-                        borderWidth: 0,
-                        hoverOffset: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { font: { size: 11, family: 'Inter' }, boxWidth: 12 } },
-                        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${formatCurrency(ctx.raw)}` } }
-                    }
-                }
-            });
-        }
-
-        const typeCtx = document.getElementById('typePieChart').getContext('2d');
-        if (typeChart) {
-            typeChart.data.labels = typeLabels;
-            typeChart.data.datasets[0].data = typeValues;
-            typeChart.data.datasets[0].backgroundColor = backgroundColors;
-            typeChart.update();
-        } else {
-            typeChart = new Chart(typeCtx, {
-                type: 'pie',
-                data: {
-                    labels: typeLabels,
-                    datasets: [{
-                        data: typeValues,
-                        backgroundColor: backgroundColors,
-                        borderWidth: 0,
-                        hoverOffset: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { font: { size: 11, family: 'Inter' } } },
-                        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${formatCurrency(ctx.raw)}` } }
-                    }
-                }
-            });
-        }
-    }
-
-    function updateChartsFromSummary(summary) {
-        if (bankChart && summary.amountByBank) {
-            const bankLabels = Object.keys(summary.amountByBank);
-            const bankValues = Object.values(summary.amountByBank);
-            if (bankLabels.length === 0 || bankValues.every(v => v === 0)) {
-                bankChart.data.labels = ['Нет данных'];
-                bankChart.data.datasets[0].data = [1];
-            } else {
-                bankChart.data.labels = bankLabels;
-                bankChart.data.datasets[0].data = bankValues;
-            }
-            bankChart.update();
-        }
-
-        if (typeChart && summary.amountByType) {
-            const typeLabels = Object.keys(summary.amountByType).map(t => getTypeDescription(t));
-            const typeValues = Object.values(summary.amountByType);
-            if (typeLabels.length === 0 || typeValues.every(v => v === 0)) {
-                typeChart.data.labels = ['Нет данных'];
-                typeChart.data.datasets[0].data = [1];
-            } else {
-                typeChart.data.labels = typeLabels;
-                typeChart.data.datasets[0].data = typeValues;
-            }
-            typeChart.update();
-        }
-    }
-
-    // ==================== ОТОБРАЖЕНИЕ ТАБЛИЦ ====================
-
+    // ==================== ОТОБРАЖЕНИЕ ТАБЛИЦ (ПОЛНАЯ ЛОГИКА) ====================
     function renderAccountsTable(accounts, isHistorical = false) {
         const container = document.getElementById('accountsTableContainer');
 
@@ -1037,8 +1034,8 @@
 
         let html = `<table class="accounts-table">
         <thead>
-            <tr><th style="width: 30px;"></th><th>ID</th><th>Банк</th><th>Тип счёта</th><th>Сумма</th><th>Комментарий</th><th style="min-width: 120px;">Действия</th></tr>
-        </thead>
+            <tr><th style="width: 30px;"></th><th>ID</th><th>Банк</th><th>Тип счёта</th><th>Сумма</th><th>Комментарий</th><th style="min-width: 120px;">Действия</th>
+            </thead>
         <tbody>`;
 
         for (const acc of accounts) {
@@ -1047,14 +1044,10 @@
             const isCard = acc.type === 'CARD';
 
             const actionsDisabled = isHistorical ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : '';
-
-            // Определяем, показывать ли кнопку кешбека (только для карт и не в историческом режиме)
             const showCashbackButton = isCard && !isHistorical;
-
-            // Кнопка кешбека или пустой placeholder для сохранения ширины
             const cashbackButtonHtml = showCashbackButton ?
                 `<button class="cashback-btn" onclick="event.stopPropagation(); openAddCashbackModal(${acc.id}, '${escapeHtml(acc.bankName)}')" title="Добавить кешбек"><i class="fas fa-percent"></i></button>` :
-                `<button class="cashback-btn" disabled style="opacity:0; cursor:default; visibility:hidden;"><i class="fas fa-percent"></i></button>`;
+                `<button class="cashback-btn" disabled style="visibility:hidden;"><i class="fas fa-percent"></i></button>`;
 
             html += `
             <tr class="expandable-row" data-account-id="${acc.id}" onclick="${isCard ? `toggleCashbackDetails(${acc.id})` : ''}" style="${!isCard ? 'cursor: default;' : ''}">
@@ -1170,7 +1163,6 @@
     }
 
     // ==================== ИСТОРИЧЕСКИЕ ДАННЫЕ ====================
-
     async function loadAvailableSnapshots() {
         try {
             const response = await fetch(`${API_HISTORY}/snapshots`);
@@ -1194,7 +1186,6 @@
                 option.textContent = `${snapshot.formattedDate} (${snapshot.accountsCount} счетов, ${snapshot.cashbacksCount} кешбеков)`;
                 option.dataset.year = snapshot.year;
                 option.dataset.month = snapshot.month;
-                option.dataset.yearMonth = snapshot.yearMonth;
                 select.appendChild(option);
             }
         } catch (err) {
@@ -1224,14 +1215,6 @@
             const selectedOption = select.options[select.selectedIndex];
             year = parseInt(selectedOption.dataset.year);
             month = parseInt(selectedOption.dataset.month);
-            if (isNaN(year) || isNaN(month)) {
-                const yearMonth = selectedOption.dataset.yearMonth;
-                if (yearMonth) {
-                    const [y, m] = yearMonth.split('-');
-                    year = parseInt(y);
-                    month = parseInt(m);
-                }
-            }
         }
 
         if (isNaN(year) || isNaN(month) || !year || !month) {
@@ -1262,7 +1245,6 @@
             isHistoryMode = true;
             currentSnapshotDate = historicalData.snapshotDate;
 
-            // Блокируем кнопку "Все кешбеки" в историческом режиме
             const viewAllCashbacksBtn = document.getElementById('viewAllCashbacksBtn');
             viewAllCashbacksBtn.disabled = true;
             viewAllCashbacksBtn.title = 'Недоступно в историческом режиме';
@@ -1272,7 +1254,7 @@
             document.getElementById('historyDateText').innerHTML = formatDateToRussian(historicalData.snapshotDate);
 
             document.getElementById('totalAmountDisplay').innerHTML = formatCurrency(historicalData.summary?.totalAmount || 0);
-            updateChartsFromSummary(historicalData.summary);
+            updateCharts(historicalData.summary);
             renderAccountsTable(historicalData.accounts, true);
 
             if (historicalData.cashbackSummary && historicalData.cashbackSummary.length > 0) {
@@ -1299,7 +1281,6 @@
         isHistoryMode = false;
         currentSnapshotDate = null;
 
-        // Разблокируем кнопку "Все кешбеки"
         const viewAllCashbacksBtn = document.getElementById('viewAllCashbacksBtn');
         viewAllCashbacksBtn.disabled = false;
         viewAllCashbacksBtn.title = '';
@@ -1314,7 +1295,6 @@
     }
 
     // ==================== CRUD ОПЕРАЦИИ ====================
-
     async function createAccount(data) {
         const res = await fetch(`${API_BASE}/accounts`, {
             method: 'POST',
@@ -1394,7 +1374,6 @@
     }
 
     // ==================== МОДАЛЬНЫЕ ОКНА ====================
-
     function openAccountModal(title, accountData = null) {
         document.getElementById('modalTitle').innerText = title;
         if (accountData) {
@@ -1513,7 +1492,6 @@
     };
 
     // ==================== ОБРАБОТЧИКИ ФОРМ ====================
-
     document.getElementById('accountForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = document.getElementById('accountId').value;
@@ -1590,7 +1568,6 @@
     });
 
     // ==================== ИНИЦИАЛИЗАЦИЯ ====================
-
     document.getElementById('createAccountBtn').addEventListener('click', () => openAccountModal('Создание нового счёта'));
     document.getElementById('viewAllCashbacksBtn').addEventListener('click', () => openAllCashbacksModal());
     document.getElementById('loadHistoryBtn').addEventListener('click', loadHistoricalData);
@@ -1604,6 +1581,12 @@
         if (event.target === cashbackModal) closeCashbackModal();
         if (event.target === allCashbacksModal) closeAllCashbacksModal();
     };
+
+    window.toggleCashbackDetails = toggleCashbackDetails;
+    window.openAddCashbackModal = openAddCashbackModal;
+    window.editCashback = editCashback;
+    window.deleteCashback = deleteCashback;
+    window.closeAllCashbacksModal = closeAllCashbacksModal;
 
     loadAvailableSnapshots();
     fetchSummaryAndAccounts();
