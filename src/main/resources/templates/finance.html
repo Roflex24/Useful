@@ -401,10 +401,6 @@
             font-weight: 700;
             color: #059669;
         }
-        .inactive-cashback {
-            opacity: 0.6;
-            text-decoration: line-through;
-        }
 
         /* Modal */
         .modal {
@@ -524,33 +520,6 @@
             color: #7c94a8;
         }
 
-        .best-cashback-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .best-cashback-item {
-            background: #f0fdf4;
-            border-radius: 16px;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .best-cashback-category {
-            font-weight: 600;
-            color: #166534;
-        }
-
-        .best-cashback-value {
-            font-weight: 700;
-            color: #059669;
-            font-size: 1.1rem;
-        }
-
         @media (max-width: 768px) {
             body { padding: 16px; }
             .accounts-table, .cashback-table { font-size: 0.75rem; }
@@ -593,14 +562,6 @@
             <div class="chart-sub">Карты / Вклады / Инвестиции</div>
             <div class="canvas-wrapper"><canvas id="typePieChart"></canvas></div>
         </div>
-    </div>
-
-    <!-- Лучший кешбек по категориям -->
-    <div class="cashback-summary-section" id="bestCashbackSection" style="display: none;">
-        <div class="section-header">
-            <h2><i class="fas fa-star"></i> Лучший кешбек по категориям</h2>
-        </div>
-        <div id="bestCashbackGrid" class="best-cashback-grid"></div>
     </div>
 
     <!-- Сводка кешбека по банкам -->
@@ -682,7 +643,7 @@
             </div>
             <div class="form-group">
                 <label><i class="fas fa-percent"></i> Процент кешбека *</label>
-                <input type="number" id="cashbackPercentage" step="0.1" min="0.01" required placeholder="5.0">
+                <input type="number" id="cashbackPercentage" step="1" min="1" max="100" required placeholder="5">
             </div>
             <div class="form-row">
                 <div class="form-group">
@@ -700,16 +661,9 @@
                     <input type="date" id="cashbackValidTo">
                 </div>
                 <div class="form-group">
-                    <label><i class="fas fa-toggle-on"></i> Активен</label>
-                    <select id="cashbackActive">
-                        <option value="true">Да</option>
-                        <option value="false">Нет</option>
-                    </select>
+                    <label><i class="fas fa-comment"></i> Описание</label>
+                    <textarea id="cashbackDescription" rows="2" placeholder="Дополнительная информация..."></textarea>
                 </div>
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-comment"></i> Описание</label>
-                <textarea id="cashbackDescription" rows="2" placeholder="Дополнительная информация..."></textarea>
             </div>
             <div class="modal-buttons">
                 <button type="button" class="btn-secondary" onclick="closeCashbackModal()">Отмена</button>
@@ -767,11 +721,10 @@
 
     async function fetchSummaryAndAccounts() {
         try {
-            const [summaryRes, accountsRes, cashbackSummaryRes, bestCashbackRes] = await Promise.all([
+            const [summaryRes, accountsRes, cashbackSummaryRes] = await Promise.all([
                 fetch(`${API_BASE}/summary`),
                 fetch(`${API_BASE}/accounts`),
-                fetch(`${API_BASE}/cashbacks/summary`),
-                fetch(`${API_BASE}/cashbacks/best-by-category`)
+                fetch(`${API_BASE}/cashbacks/summary`)
             ]);
 
             if (!summaryRes.ok) throw new Error(`Ошибка сводки: ${summaryRes.status}`);
@@ -791,18 +744,6 @@
                 document.getElementById('cashbackSummarySection').style.display = 'block';
             } else {
                 document.getElementById('cashbackSummarySection').style.display = 'none';
-            }
-
-            if (bestCashbackRes.ok) {
-                const bestCashback = await bestCashbackRes.json();
-                renderBestCashback(bestCashback);
-                if (Object.keys(bestCashback).length > 0) {
-                    document.getElementById('bestCashbackSection').style.display = 'block';
-                } else {
-                    document.getElementById('bestCashbackSection').style.display = 'none';
-                }
-            } else {
-                document.getElementById('bestCashbackSection').style.display = 'none';
             }
         } catch (err) {
             console.error('Fetch error:', err);
@@ -910,25 +851,6 @@
         }
     }
 
-    function renderBestCashback(bestCashback) {
-        const container = document.getElementById('bestCashbackGrid');
-        if (!bestCashback || Object.keys(bestCashback).length === 0) {
-            container.innerHTML = '<div class="empty-state">Нет данных о кешбеке</div>';
-            return;
-        }
-
-        let html = '';
-        for (const [category, percent] of Object.entries(bestCashback)) {
-            html += `
-                <div class="best-cashback-item">
-                    <span class="best-cashback-category"><i class="fas fa-tag"></i> ${escapeHtml(category)}</span>
-                    <span class="best-cashback-value">${parseFloat(percent).toFixed(1)}%</span>
-                </div>
-            `;
-        }
-        container.innerHTML = html;
-    }
-
     function renderCashbackSummary(cashbackSummary) {
         const container = document.getElementById('cashbackSummaryContainer');
         if (!cashbackSummary || cashbackSummary.length === 0) {
@@ -952,7 +874,7 @@
             if (bank.cashbackByCategory) {
                 const items = Object.entries(bank.cashbackByCategory);
                 categoriesHtml = items.map(([cat, perc]) =>
-                    `<span class="cashback-badge"><i class="fas fa-tag"></i> ${escapeHtml(cat)}: ${parseFloat(perc).toFixed(1)}%</span>`
+                    `<span class="cashback-badge"><i class="fas fa-tag"></i> ${escapeHtml(cat)}: ${parseInt(perc)}%</span>`
                 ).join(' ');
             }
 
@@ -960,13 +882,13 @@
                 <tr>
                     <td><strong>${escapeHtml(bank.bankName)}</strong></td>
                     <td>${bank.totalCashbackCategories || 0}</td>
-                    <td style="color: #059669; font-weight: 700;">${parseFloat(bank.bestCashbackPercentage || 0).toFixed(1)}%<br><small style="font-weight: normal;">${escapeHtml(bank.bestCashbackCategory || '—')}</small></td>
+                    <td style="color: #059669; font-weight: 700;">${parseInt(bank.bestCashbackPercentage || 0)}%<br><small style="font-weight: normal;">${escapeHtml(bank.bestCashbackCategory || '—')}</small></td>
                     <td><div style="display: flex; flex-wrap: wrap; gap: 6px;">${categoriesHtml || '—'}</div></td>
                 </tr>
             `;
         });
 
-        html += `</tbody></table>`;
+        html += `</tbody>`;
         container.innerHTML = html;
     }
 
@@ -1012,8 +934,7 @@
                     ${cashbackButton}
                     <button class="edit-btn" onclick="editAccount(${acc.id})" title="Редактировать"><i class="fas fa-edit"></i></button>
                     <button class="delete-btn" onclick="deleteAccount(${acc.id})" title="Удалить"><i class="fas fa-trash-alt"></i></button>
-                </td>
-            </tr>`;
+                 </td>             </tr>`;
 
             // Детальная строка с кешбеками только для карт
             if (isCard) {
@@ -1023,8 +944,8 @@
                         <div id="cashbacks-${acc.id}">
                             ${renderCashbacksList(acc.cashbacks, acc.id)}
                         </div>
-                    </td>
-                </tr>
+                     </td>
+                 </tr>
             `;
             } else {
                 // Для не-card счетов показываем информационное сообщение
@@ -1034,13 +955,13 @@
                         <div style="color: #7c94a8; padding: 8px;">
                             <i class="fas fa-info-circle"></i> Кешбек доступен только для карт/счетов (тип CARD)
                         </div>
-                    </td>
-                </tr>
+                     </td>
+                 </tr>
             `;
             }
         });
 
-        html += `</tbody></table>`;
+        html += `</tbody>`;
         container.innerHTML = html;
     }
 
@@ -1054,20 +975,14 @@
             <div style="display: flex; flex-direction: column; gap: 8px;">`;
 
         cashbacks.forEach(cb => {
-            const activeClass = cb.active ? '' : 'inactive-cashback';
-            const statusBadge = cb.active ?
-                '<span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem;">Активен</span>' :
-                '<span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem;">Неактивен</span>';
-
             html += `
-                <div class="${activeClass}" style="background: #f8fafc; border-radius: 16px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div style="background: #f8fafc; border-radius: 16px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
                         <span><i class="fas fa-tag"></i> <strong>${escapeHtml(cb.category)}</strong></span>
-                        <span style="color: #059669; font-weight: 700;">${parseFloat(cb.percentage).toFixed(1)}%</span>
+                        <span style="color: #059669; font-weight: 700;">${parseInt(cb.percentage)}%</span>
                         ${cb.maxAmount ? `<span><i class="fas fa-chart-line"></i> до ${formatCurrency(cb.maxAmount)}/мес</span>` : ''}
                         ${cb.validFrom ? `<span><i class="fas fa-calendar-alt"></i> с ${cb.validFrom}</span>` : ''}
                         ${cb.validTo ? `<span><i class="fas fa-calendar-times"></i> до ${cb.validTo}</span>` : ''}
-                        ${statusBadge}
                     </div>
                     <div style="display: flex; gap: 8px;">
                         <button class="edit-btn" onclick="editCashback(${cb.id}, ${accountId})" style="padding: 4px 8px;" title="Редактировать"><i class="fas fa-edit"></i></button>
@@ -1223,7 +1138,6 @@
         document.getElementById('cashbackMaxAmount').value = '';
         document.getElementById('cashbackValidFrom').value = '';
         document.getElementById('cashbackValidTo').value = '';
-        document.getElementById('cashbackActive').value = 'true';
         document.getElementById('cashbackDescription').value = '';
         document.getElementById('cashbackModal').classList.add('active');
     }
@@ -1246,7 +1160,6 @@
             document.getElementById('cashbackMaxAmount').value = cashback.maxAmount || '';
             document.getElementById('cashbackValidFrom').value = cashback.validFrom || '';
             document.getElementById('cashbackValidTo').value = cashback.validTo || '';
-            document.getElementById('cashbackActive').value = cashback.active ? 'true' : 'false';
             document.getElementById('cashbackDescription').value = cashback.description || '';
             document.getElementById('cashbackModal').classList.add('active');
         } catch (err) {
@@ -1274,20 +1187,20 @@
 
             let html = `<table class="cashback-table">
                 <thead>
-                    <tr><th>ID</th><th>Банк</th><th>Категория</th><th>%</th><th>Макс/мес</th><th>Статус</th><th>Действия</th></tr>
+                    <tr><th>ID</th><th>Банк</th><th>Категория</th><th>%</th><th>Макс/мес</th><th>Действует с</th><th>Действует до</th><th>Действия</th></tr>
                 </thead>
                 <tbody>`;
 
             for (const cb of cashbacks) {
-                const status = cb.active ? '✅ Активен' : '❌ Неактивен';
                 html += `
                     <tr>
                         <td>${cb.id}</td>
                         <td><strong>${escapeHtml(cb.bankName)}</strong></td>
                         <td>${escapeHtml(cb.category)}</td>
-                        <td style="color: #059669; font-weight: 700;">${parseFloat(cb.percentage).toFixed(1)}%</td>
+                        <td style="color: #059669; font-weight: 700;">${parseInt(cb.percentage)}%</td>
                         <td>${cb.maxAmount ? formatCurrency(cb.maxAmount) : '—'}</td>
-                        <td>${status}</td>
+                        <td>${cb.validFrom || '—'}</td>
+                        <td>${cb.validTo || '—'}</td>
                         <td class="action-buttons">
                             <button class="edit-btn" onclick="editCashback(${cb.id}, ${cb.accountId}); closeAllCashbacksModal();"><i class="fas fa-edit"></i></button>
                             <button class="delete-btn" onclick="deleteCashback(${cb.id}); closeAllCashbacksModal();"><i class="fas fa-trash-alt"></i></button>
@@ -1296,7 +1209,7 @@
                 `;
             }
 
-            html += `</tbody></table>`;
+            html += `</tbody>`;
             container.innerHTML = html;
         } catch (err) {
             document.getElementById('allCashbacksContainer').innerHTML = `<div class="loader" style="color:#c7423f;">Ошибка: ${err.message}</div>`;
@@ -1361,19 +1274,18 @@
         const id = document.getElementById('cashbackId').value;
         const accountId = parseInt(document.getElementById('cashbackAccountId').value);
         const category = document.getElementById('cashbackCategory').value.trim();
-        const percentage = parseFloat(document.getElementById('cashbackPercentage').value);
+        const percentage = parseInt(document.getElementById('cashbackPercentage').value);
         const maxAmount = document.getElementById('cashbackMaxAmount').value ? parseFloat(document.getElementById('cashbackMaxAmount').value) : null;
         const validFrom = document.getElementById('cashbackValidFrom').value || null;
         const validTo = document.getElementById('cashbackValidTo').value || null;
-        const active = document.getElementById('cashbackActive').value === 'true';
         const description = document.getElementById('cashbackDescription').value.trim() || null;
 
         if (!category) {
             alert('Введите категорию');
             return;
         }
-        if (isNaN(percentage) || percentage < 0.01) {
-            alert('Процент должен быть больше 0');
+        if (isNaN(percentage) || percentage < 1 || percentage > 100) {
+            alert('Процент должен быть целым числом от 1 до 100');
             return;
         }
 

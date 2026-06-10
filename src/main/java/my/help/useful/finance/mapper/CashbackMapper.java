@@ -32,7 +32,6 @@ public class CashbackMapper {
                 .validFrom(requestDto.getValidFrom())
                 .validTo(requestDto.getValidTo())
                 .description(requestDto.getDescription())
-                .active(true)
                 .build();
     }
 
@@ -47,7 +46,6 @@ public class CashbackMapper {
                 .validFrom(cashback.getValidFrom())
                 .validTo(cashback.getValidTo())
                 .description(cashback.getDescription())
-                .active(cashback.isActive())
                 .build();
     }
 }

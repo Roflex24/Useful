@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,14 +49,6 @@ public class CashbackService {
         }
 
         return cashbackRepository.findByAccountId(accountId)
-                .stream()
-                .map(cashbackMapper::toResponseDto)
-                .collect(Collectors.toList());
-    }
-
-    public List<CashbackResponseDto> getActiveCashbacks() {
-        log.debug("Fetching active cashbacks");
-        return cashbackRepository.findByActiveTrue()
                 .stream()
                 .map(cashbackMapper::toResponseDto)
                 .collect(Collectors.toList());
@@ -109,18 +100,6 @@ public class CashbackService {
     }
 
     @Transactional
-    public void deactivateCashback(Long id) {
-        log.info("Deactivating cashback with id: {}", id);
-
-        Cashback cashback = cashbackRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cashback not found with id: " + id));
-
-        cashback.setActive(false);
-        cashbackRepository.save(cashback);
-        log.info("Cashback deactivated successfully with id: {}", id);
-    }
-
-    @Transactional
     public void deleteCashback(Long id) {
         log.info("Deleting cashback with id: {}", id);
 
@@ -138,7 +117,7 @@ public class CashbackService {
         // Получаем только CARD счета
         List<Account> cardAccounts = accountRepository.findAll().stream()
                 .filter(account -> account.getType() == AccountType.CARD)
-                .collect(Collectors.toList());
+                .toList();
 
         Map<String, List<CashbackResponseDto>> cashbacksByBank = new HashMap<>();
 
@@ -156,23 +135,21 @@ public class CashbackService {
             List<CashbackResponseDto> cashbacks = entry.getValue();
 
             Map<String, BigDecimal> cashbackByCategory = cashbacks.stream()
-                    .filter(CashbackResponseDto::isActive)
                     .collect(Collectors.toMap(
                             CashbackResponseDto::getCategory,
                             CashbackResponseDto::getPercentage
                     ));
 
             Optional<CashbackResponseDto> bestCashback = cashbacks.stream()
-                    .filter(CashbackResponseDto::isActive)
                     .max(Comparator.comparing(CashbackResponseDto::getPercentage));
 
             summary.add(BankCashbackSummaryDto.builder()
                     .bankName(bankName)
-                    .totalCashbackCategories((int) cashbacks.stream().filter(CashbackResponseDto::isActive).count())
+                    .totalCashbackCategories(cashbacks.size())
                     .bestCashbackPercentage(bestCashback.map(CashbackResponseDto::getPercentage).orElse(BigDecimal.ZERO))
                     .bestCashbackCategory(bestCashback.map(CashbackResponseDto::getCategory).orElse("Нет"))
                     .cashbackByCategory(cashbackByCategory)
-                    .activeCashbacks(cashbacks.stream().filter(CashbackResponseDto::isActive).collect(Collectors.toList()))
+                    .activeCashbacks(cashbacks)
                     .build());
         }
 
@@ -183,9 +160,9 @@ public class CashbackService {
         log.debug("Getting best cashback offers for each category");
 
         // Получаем активные кешбеки только для CARD счетов
-        List<Cashback> activeCashbacks = cashbackRepository.findByActiveTrue().stream()
+        List<Cashback> activeCashbacks = cashbackRepository.findAll().stream()
                 .filter(cb -> cb.getAccount().getType() == AccountType.CARD)
-                .collect(Collectors.toList());
+                .toList();
 
         Map<String, BigDecimal> bestCashbackByCategory = new HashMap<>();
 

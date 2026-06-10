@@ -22,5 +22,4 @@ public class CashbackResponseDto {
     private LocalDate validFrom;
     private LocalDate validTo;
     private String description;
-    private boolean active;
 }

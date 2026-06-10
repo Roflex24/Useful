@@ -30,7 +30,4 @@ public class Cashback {
     private LocalDate validFrom;      // Дата начала действия
     private LocalDate validTo;        // Дата окончания действия
     private String description;       // Дополнительное описание
-
-    @Builder.Default
-    private boolean active = true;    // Активен ли кешбек
 }
