@@ -23,6 +23,13 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventById(id));
     }
 
+    @GetMapping("/month")
+    public ResponseEntity<List<EventModel>> getEventsByMonth(
+            @RequestParam int year,
+            @RequestParam int month) {
+        return ResponseEntity.ok(eventService.getEventsByMonth(year, month));
+    }
+
     @PostMapping
     public ResponseEntity<Void> createEvent(@RequestBody EventRq eventRq) {
         eventService.createEvent(eventRq);

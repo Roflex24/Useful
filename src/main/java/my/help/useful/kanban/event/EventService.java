@@ -1,9 +1,9 @@
 package my.help.useful.kanban.event;
 
 import lombok.RequiredArgsConstructor;
-import my.help.useful.kanban.project.ProjectRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -23,6 +23,19 @@ public class EventService {
 
     public EventModel getEventById(Long id) {
         return eventMapper.toModel(eventRepository.findById(id).get());
+    }
+
+    public List<EventModel> getEventsByMonth(int year, int month) {
+        // Создаем начало и конец месяца
+        LocalDateTime startOfMonth = LocalDateTime.of(year, month, 1, 0, 0, 0);
+        LocalDateTime endOfMonth = startOfMonth
+                .withDayOfMonth(startOfMonth.toLocalDate().lengthOfMonth())
+                .withHour(23)
+                .withMinute(59)
+                .withSecond(59);
+
+        List<EventEntity> events = eventRepository.findByDateTimeBetween(startOfMonth, endOfMonth);
+        return eventMapper.toModelList(events);
     }
 
     public void updateEvent(EventModel eventModel) {

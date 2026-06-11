@@ -677,7 +677,53 @@
             grid-template-columns: repeat(7, 1fr);
             gap: 0.5rem;
             margin-bottom: 1rem;
+            position: relative;
         }
+
+        .calendar-grid-wrapper {
+            position: relative;
+            overflow: hidden;
+            min-height: 500px;
+        }
+
+        .calendar-grid {
+            transition: opacity 0.2s ease;
+        }
+
+        .calendar-grid.loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .calendar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 12, 42, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .calendar-overlay .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border-width: 4px;
+        }
+
         .calendar-weekday {
             text-align: center;
             padding: 0.75rem;
@@ -989,6 +1035,15 @@
             .nav-buttons { flex-wrap: wrap; }
             .projects-controls { width: 100%; justify-content: space-between; }
         }
+
+        .month-transition {
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -1035,11 +1090,16 @@
                 <button class="create-event-btn" id="createEventBtn">➕ Создать событие</button>
             </div>
         </div>
-        <div class="calendar-grid" id="calendarWeekdays">
-            <div class="calendar-weekday">Пн</div><div class="calendar-weekday">Вт</div><div class="calendar-weekday">Ср</div>
-            <div class="calendar-weekday">Чт</div><div class="calendar-weekday">Пт</div><div class="calendar-weekday">Сб</div><div class="calendar-weekday">Вс</div>
+        <div class="calendar-grid-wrapper" id="calendarWrapper">
+            <div class="calendar-grid" id="calendarDays">
+                <div class="calendar-loading" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div class="calendar-overlay" id="calendarOverlay">
+                <div class="loading-spinner"></div>
+            </div>
         </div>
-        <div id="calendarDays" class="calendar-grid"></div>
     </div>
 </div>
 
@@ -1063,11 +1123,30 @@
     const EVENT_API = '/event';
     let allProjects = [];
     let filteredProjects = [];
-    let events = [];
+    let currentEvents = [];
     let showArchived = false;
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
+    let loadedYear = null;
+    let loadedMonth = null;
+    let isLoadingEvents = false;
+    let pendingMonthChange = null;
     const MONTHS_RU = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+
+    // Функция для создания даты в локальном часовом поясе
+    function createLocalDate(year, month, day, hour = 0, minute = 0) {
+        return new Date(year, month, day, hour, minute);
+    }
+
+    // Функция для форматирования даты в ISO строку для input datetime-local
+    function formatToDateTimeLocal(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
 
     function showToast(msg, isError = false) {
         const existing = document.querySelector('.toast-message');
@@ -1079,9 +1158,22 @@
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 2800);
     }
-    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
-    function formatDateTime(dateTime) { return new Date(dateTime).toLocaleString('ru-RU'); }
-    function formatTime(dateTime) { return new Date(dateTime).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }); }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    }
+
+    function formatDateTime(dateTime) {
+        const date = new Date(dateTime);
+        return date.toLocaleString('ru-RU');
+    }
+
+    function formatTime(dateTime) {
+        const date = new Date(dateTime);
+        return date.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
+    }
+
     function formatDate(dateString) {
         if (!dateString) return 'Дата не указана';
         const date = new Date(dateString);
@@ -1090,6 +1182,185 @@
             month: 'long',
             day: 'numeric'
         });
+    }
+
+    function showCalendarOverlay(show) {
+        const overlay = document.getElementById('calendarOverlay');
+        if (show) {
+            overlay.classList.add('show');
+        } else {
+            overlay.classList.remove('show');
+        }
+    }
+
+    function animateCalendarUpdate(callback) {
+        const calendarGrid = document.getElementById('calendarDays');
+        calendarGrid.style.opacity = '0.5';
+        calendarGrid.style.transition = 'opacity 0.15s ease';
+
+        setTimeout(() => {
+            callback();
+            setTimeout(() => {
+                calendarGrid.style.opacity = '1';
+            }, 50);
+        }, 100);
+    }
+
+    async function fetchEventsForMonth(year, month, silent = false) {
+        if (isLoadingEvents) {
+            pendingMonthChange = { year, month };
+            return;
+        }
+
+        isLoadingEvents = true;
+        if (!silent) showCalendarOverlay(true);
+
+        try {
+            const url = `${EVENT_API}/month?year=${year}&month=${month + 1}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Ошибка загрузки событий');
+            currentEvents = await res.json();
+            loadedYear = year;
+            loadedMonth = month;
+
+            if (pendingMonthChange) {
+                const pending = pendingMonthChange;
+                pendingMonthChange = null;
+                await fetchEventsForMonth(pending.year, pending.month, silent);
+            } else {
+                renderCalendarGrid();
+            }
+        } catch(e) {
+            console.error('Ошибка загрузки событий:', e);
+            if (!silent) showToast('Ошибка загрузки событий', true);
+            currentEvents = [];
+            renderCalendarGrid();
+        } finally {
+            isLoadingEvents = false;
+            if (!silent) showCalendarOverlay(false);
+        }
+    }
+
+    function renderCalendarGrid() {
+        const calendarDays = document.getElementById('calendarDays');
+
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        let startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const prevDays = new Date(currentYear, currentMonth, 0).getDate();
+        const today = new Date();
+        const isToday = (y,m,d) => y === today.getFullYear() && m === today.getMonth() && d === today.getDate();
+
+        let html = '';
+
+        // Дни предыдущего месяца
+        for (let i = startDay - 1; i >= 0; i--) {
+            html += `<div class="calendar-day other-month" data-year="${currentYear}" data-month="${currentMonth - 1}" data-day="${prevDays - i}">
+                        <div class="day-number">${prevDays - i}</div>
+                        <div class="events-list"></div>
+                    </div>`;
+        }
+
+        // Дни текущего месяца
+        for (let d = 1; d <= daysInMonth; d++) {
+            const cls = isToday(currentYear, currentMonth, d) ? 'calendar-day today' : 'calendar-day';
+            html += `<div class="${cls}" data-year="${currentYear}" data-month="${currentMonth}" data-day="${d}">
+                        <div class="day-number">${d}</div>
+                        <div class="events-list"></div>
+                    </div>`;
+        }
+
+        // Дни следующего месяца
+        const totalCells = startDay + daysInMonth;
+        const remaining = 42 - totalCells;
+        for (let i = 1; i <= remaining; i++) {
+            html += `<div class="calendar-day other-month" data-year="${currentYear}" data-month="${currentMonth + 1}" data-day="${i}">
+                        <div class="day-number">${i}</div>
+                        <div class="events-list"></div>
+                    </div>`;
+        }
+
+        calendarDays.innerHTML = html;
+        document.getElementById('currentMonth').innerHTML = `${MONTHS_RU[currentMonth]} ${currentYear}`;
+
+        // Группируем события по дням
+        const byDay = new Map();
+        currentEvents.forEach(ev => {
+            const d = new Date(ev.dateTime);
+            if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
+                const day = d.getDate();
+                if (!byDay.has(day)) byDay.set(day, []);
+                byDay.get(day).push(ev);
+            }
+        });
+
+        const MAX_VIS = 2;
+        byDay.forEach((dayEvents, day) => {
+            const cell = calendarDays.querySelector(`.calendar-day[data-day="${day}"][data-month="${currentMonth}"]`);
+            if (cell) {
+                const list = cell.querySelector('.events-list');
+                list.innerHTML = '';
+                dayEvents.sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+                dayEvents.slice(0, MAX_VIS).forEach(ev => {
+                    const el = document.createElement('div');
+                    el.className = 'event-item';
+                    el.textContent = `${formatTime(ev.dateTime)} ${ev.name.length > 30 ? ev.name.slice(0,27) + '...' : ev.name}`;
+                    el.onclick = (e) => {
+                        e.stopPropagation();
+                        showEventViewModal(ev);
+                    };
+                    list.appendChild(el);
+                });
+
+                if (dayEvents.length > MAX_VIS) {
+                    const more = document.createElement('div');
+                    more.className = 'more-events-btn';
+                    more.textContent = `+${dayEvents.length - MAX_VIS} еще`;
+                    more.onclick = (e) => {
+                        e.stopPropagation();
+                        showDayEventsModal(dayEvents, createLocalDate(currentYear, currentMonth, day));
+                    };
+                    list.appendChild(more);
+                }
+            }
+        });
+
+        // Добавляем обработчики кликов на ячейки календаря
+        calendarDays.querySelectorAll('.calendar-day').forEach(cell => {
+            cell.onclick = (e) => {
+                if (e.target.classList.contains('event-item') || e.target.classList.contains('more-events-btn')) return;
+                const year = parseInt(cell.dataset.year);
+                const month = parseInt(cell.dataset.month);
+                const day = parseInt(cell.dataset.day);
+                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                    if (cell.classList.contains('other-month')) {
+                        currentYear = year;
+                        currentMonth = month;
+                        renderCalendar();
+                    } else {
+                        // Создаем дату в локальном часовом поясе
+                        const selectedDate = createLocalDate(year, month, day);
+                        showCreateEventModal(selectedDate);
+                    }
+                }
+            };
+        });
+
+        calendarDays.classList.add('month-transition');
+        setTimeout(() => {
+            calendarDays.classList.remove('month-transition');
+        }, 200);
+    }
+
+    function renderCalendar() {
+        if (loadedYear !== currentYear || loadedMonth !== currentMonth) {
+            fetchEventsForMonth(currentYear, currentMonth);
+        } else {
+            animateCalendarUpdate(() => {
+                renderCalendarGrid();
+            });
+        }
     }
 
     function filterProjects() {
@@ -1107,7 +1378,11 @@
             if (!res.ok) throw new Error();
             allProjects = await res.json();
             filterProjects();
-        } catch(e) { showToast('Ошибка загрузки проектов', true); allProjects = []; filterProjects(); }
+        } catch(e) {
+            showToast('Ошибка загрузки проектов', true);
+            allProjects = [];
+            filterProjects();
+        }
     }
 
     async function archiveProject(id, archive) {
@@ -1117,7 +1392,9 @@
             if (!res.ok) throw new Error();
             showToast(archive ? '✅ Проект архивирован' : '✅ Проект разархивирован');
             await fetchProjects();
-        } catch(e) { showToast(archive ? 'Ошибка архивации' : 'Ошибка разархивации', true); }
+        } catch(e) {
+            showToast(archive ? 'Ошибка архивации' : 'Ошибка разархивации', true);
+        }
     }
 
     async function createProject(data) {
@@ -1130,68 +1407,86 @@
             if (!res.ok) throw new Error();
             showToast(`✅ Проект "${data.name}" создан`);
             await fetchProjects();
-        } catch(e) { showToast('Ошибка создания', true); }
+        } catch(e) {
+            showToast('Ошибка создания', true);
+        }
     }
 
     async function updateProject(proj) {
         try {
-            const res = await fetch(PROJECT_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(proj) });
+            const res = await fetch(PROJECT_API, {
+                method:'PUT',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify(proj)
+            });
             if (!res.ok) throw new Error();
             showToast(`✅ Проект обновлен`);
             await fetchProjects();
-        } catch(e) { showToast('Ошибка обновления', true); }
+        } catch(e) {
+            showToast('Ошибка обновления', true);
+        }
     }
 
     async function deleteProject(id, name) {
         if (!confirm(`Удалить проект "${name}"? Это действие необратимо.`)) return;
         try {
             const res = await fetch(`${PROJECT_API}/${id}`, { method:'DELETE' });
-            if (res.ok) { showToast(`✅ Проект удален`); await fetchProjects(); }
-            else throw new Error();
-        } catch(e) { showToast('Ошибка удаления', true); }
-    }
-
-    async function fetchEvents() {
-        try {
-            const res = await fetch(EVENT_API);
-            if (!res.ok) throw new Error();
-            events = await res.json();
-            renderCalendar();
-        } catch(e) { console.error(e); events = []; renderCalendar(); }
+            if (res.ok) {
+                showToast(`✅ Проект удален`);
+                await fetchProjects();
+            } else throw new Error();
+        } catch(e) {
+            showToast('Ошибка удаления', true);
+        }
     }
 
     async function createEvent(name, description, dateTime) {
         try {
+            // Отправляем дату в ISO формате
             const res = await fetch(EVENT_API, {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ name, description: description||'', dateTime, projectId:null })
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ name, description: description || '', dateTime, projectId:null })
             });
             if (!res.ok) throw new Error();
             showToast('✅ Событие создано');
-            await fetchEvents();
-        } catch(e) { showToast('Ошибка создания события', true); }
+            await fetchEventsForMonth(currentYear, currentMonth);
+        } catch(e) {
+            showToast('Ошибка создания события', true);
+        }
     }
 
     async function updateEvent(eventModel) {
         try {
-            const res = await fetch(EVENT_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(eventModel) });
+            const res = await fetch(EVENT_API, {
+                method:'PUT',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify(eventModel)
+            });
             if (!res.ok) throw new Error();
             showToast('✅ Событие обновлено');
-            await fetchEvents();
-        } catch(e) { showToast('Ошибка обновления', true); }
+            await fetchEventsForMonth(currentYear, currentMonth);
+        } catch(e) {
+            showToast('Ошибка обновления', true);
+        }
     }
 
     async function deleteEvent(eventId) {
         if (!confirm('Удалить событие?')) return;
         try {
             const res = await fetch(`${EVENT_API}/${eventId}`, { method:'DELETE' });
-            if (res.ok) { showToast('✅ Событие удалено'); await fetchEvents(); }
-            else throw new Error();
-        } catch(e) { showToast('Ошибка удаления', true); }
+            if (res.ok) {
+                showToast('✅ Событие удалено');
+                await fetchEventsForMonth(currentYear, currentMonth);
+            } else throw new Error();
+        } catch(e) {
+            showToast('Ошибка удаления', true);
+        }
     }
 
     function showEventViewModal(event) {
-        const modal = document.createElement('div'); modal.className = 'event-view-modal';
+        const modal = document.createElement('div');
+        modal.className = 'event-view-modal';
         modal.innerHTML = `
             <div class="event-view-content">
                 <h3>📅 Информация о событии</h3>
@@ -1209,14 +1504,24 @@
         `;
         document.body.appendChild(modal);
         modal.querySelector('.event-close').onclick = () => modal.remove();
-        modal.querySelector('.event-edit').onclick = () => { modal.remove(); showEventEditModal(event); };
-        modal.querySelector('.event-delete').onclick = async () => { await deleteEvent(event.id); modal.remove(); };
-        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        modal.querySelector('.event-edit').onclick = () => {
+            modal.remove();
+            showEventEditModal(event);
+        };
+        modal.querySelector('.event-delete').onclick = async () => {
+            await deleteEvent(event.id);
+            modal.remove();
+        };
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.remove();
+        };
     }
 
     function showEventEditModal(event) {
-        const modal = document.createElement('div'); modal.className = 'event-edit-modal';
-        const dateVal = event.dateTime ? new Date(event.dateTime).toISOString().slice(0,16) : '';
+        const modal = document.createElement('div');
+        modal.className = 'event-edit-modal';
+        const eventDate = new Date(event.dateTime);
+        const dateVal = formatToDateTimeLocal(eventDate);
         modal.innerHTML = `
             <div class="event-edit-content">
                 <h3>✏️ Редактирование события</h3>
@@ -1226,7 +1531,7 @@
                 </div>
                 <div class="event-field">
                     <label>Описание</label>
-                    <textarea id="eventDesc" rows="4" placeholder="Введите описание события...">${escapeHtml(event.description||'')}</textarea>
+                    <textarea id="eventDesc" rows="4" placeholder="Введите описание события...">${escapeHtml(event.description || '')}</textarea>
                 </div>
                 <div class="event-field">
                     <label>Дата и время</label>
@@ -1241,18 +1546,42 @@
         document.body.appendChild(modal);
         const save = () => {
             const name = modal.querySelector('#eventName').value.trim();
-            if (!name) { showToast('Введите название', true); return; }
-            updateEvent({ id:event.id, name, description: modal.querySelector('#eventDesc').value, dateTime: modal.querySelector('#eventDateTime').value, projectId:null });
+            if (!name) {
+                showToast('Введите название', true);
+                return;
+            }
+            updateEvent({
+                id:event.id,
+                name,
+                description: modal.querySelector('#eventDesc').value,
+                dateTime: modal.querySelector('#eventDateTime').value,
+                projectId:null
+            });
             modal.remove();
         };
         modal.querySelector('.event-save').onclick = save;
         modal.querySelector('.event-cancel').onclick = () => modal.remove();
-        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.remove();
+        };
     }
 
     function showCreateEventModal(selectedDate = null) {
-        const modal = document.createElement('div'); modal.className = 'event-edit-modal';
-        const defaultDate = selectedDate ? selectedDate.toISOString().slice(0,16) : new Date().toISOString().slice(0,16);
+        const modal = document.createElement('div');
+        modal.className = 'event-edit-modal';
+
+        let defaultDateTime;
+        if (selectedDate) {
+            // Устанавливаем время на 12:00 дня, чтобы не было смещения
+            const localDate = new Date(selectedDate);
+            localDate.setHours(12, 0, 0, 0);
+            defaultDateTime = formatToDateTimeLocal(localDate);
+        } else {
+            const now = new Date();
+            const localNow = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+            defaultDateTime = localNow.toISOString().slice(0, 16);
+        }
+
         modal.innerHTML = `
             <div class="event-edit-content">
                 <h3>➕ Создание события</h3>
@@ -1266,7 +1595,7 @@
                 </div>
                 <div class="event-field">
                     <label>Дата и время</label>
-                    <input type="datetime-local" id="eventDateTime" value="${defaultDate}">
+                    <input type="datetime-local" id="eventDateTime" value="${defaultDateTime}">
                 </div>
                 <div class="event-buttons">
                     <button class="event-cancel">Отмена</button>
@@ -1277,19 +1606,30 @@
         document.body.appendChild(modal);
         modal.querySelector('.event-save').onclick = async () => {
             const name = modal.querySelector('#eventName').value.trim();
-            if (!name) { showToast('Введите название', true); return; }
+            if (!name) {
+                showToast('Введите название', true);
+                return;
+            }
             await createEvent(name, modal.querySelector('#eventDesc').value, modal.querySelector('#eventDateTime').value);
             modal.remove();
         };
         modal.querySelector('.event-cancel').onclick = () => modal.remove();
-        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.remove();
+        };
     }
 
     function showDayEventsModal(dayEvents, date) {
-        const modal = document.createElement('div'); modal.className = 'day-events-modal';
+        const modal = document.createElement('div');
+        modal.className = 'day-events-modal';
+        const formattedDate = date.toLocaleDateString('ru-RU', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
         modal.innerHTML = `
             <div class="day-events-content">
-                <h3>📅 События за ${date.toLocaleDateString('ru-RU')}</h3>
+                <h3>📅 События за ${formattedDate}</h3>
                 <div class="day-events-list" id="dayEventsList"></div>
                 <div class="event-buttons">
                     <button class="event-close">Закрыть</button>
@@ -1300,80 +1640,25 @@
         document.body.appendChild(modal);
         const list = modal.querySelector('#dayEventsList');
         dayEvents.forEach(ev => {
-            const div = document.createElement('div'); div.className = 'day-event-item';
-            div.innerHTML = `<div class="day-event-time">⏰ ${formatTime(ev.dateTime)}</div><div class="day-event-name">📌 ${escapeHtml(ev.name)}</div>${ev.description ? `<div class="day-event-desc">📝 ${escapeHtml(ev.description)}</div>` : ''}`;
-            div.onclick = () => { modal.remove(); showEventViewModal(ev); };
+            const div = document.createElement('div');
+            div.className = 'day-event-item';
+            div.innerHTML = `<div class="day-event-time">⏰ ${formatTime(ev.dateTime)}</div>
+                            <div class="day-event-name">📌 ${escapeHtml(ev.name)}</div>
+                            ${ev.description ? `<div class="day-event-desc">📝 ${escapeHtml(ev.description)}</div>` : ''}`;
+            div.onclick = () => {
+                modal.remove();
+                showEventViewModal(ev);
+            };
             list.appendChild(div);
         });
         modal.querySelector('.event-close').onclick = () => modal.remove();
-        modal.querySelector('#createEventForDayBtn').onclick = () => { modal.remove(); showCreateEventModal(date); };
-        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    }
-
-    function renderCalendar() {
-        const firstDay = new Date(currentYear, currentMonth, 1);
-        let startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
-        const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
-        const prevDays = new Date(currentYear, currentMonth, 0).getDate();
-        const today = new Date();
-        const isToday = (y,m,d) => y===today.getFullYear() && m===today.getMonth() && d===today.getDate();
-        let html = '';
-        for (let i = startDay-1; i>=0; i--) html += `<div class="calendar-day other-month" data-year="${currentYear}" data-month="${currentMonth-1}" data-day="${prevDays-i}"><div class="day-number">${prevDays-i}</div><div class="events-list"></div></div>`;
-        for (let d=1; d<=daysInMonth; d++) {
-            const cls = isToday(currentYear, currentMonth, d) ? 'calendar-day today' : 'calendar-day';
-            html += `<div class="${cls}" data-year="${currentYear}" data-month="${currentMonth}" data-day="${d}"><div class="day-number">${d}</div><div class="events-list"></div></div>`;
-        }
-        const totalCells = startDay + daysInMonth;
-        const remaining = 42 - totalCells;
-        for (let i=1; i<=remaining; i++) html += `<div class="calendar-day other-month" data-year="${currentYear}" data-month="${currentMonth+1}" data-day="${i}"><div class="day-number">${i}</div><div class="events-list"></div></div>`;
-        document.getElementById('calendarDays').innerHTML = html;
-        document.getElementById('currentMonth').innerHTML = `${MONTHS_RU[currentMonth]} ${currentYear}`;
-
-        const byDay = new Map();
-        events.forEach(ev => {
-            const d = new Date(ev.dateTime);
-            if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
-                const day = d.getDate();
-                if (!byDay.has(day)) byDay.set(day, []);
-                byDay.get(day).push(ev);
-            }
-        });
-        const MAX_VIS = 2;
-        byDay.forEach((dayEvents, day) => {
-            const cell = document.querySelector(`.calendar-day[data-day="${day}"][data-month="${currentMonth}"]`);
-            if (cell) {
-                const list = cell.querySelector('.events-list'); list.innerHTML = '';
-                dayEvents.sort((a,b)=>new Date(a.dateTime)-new Date(b.dateTime));
-                dayEvents.slice(0,MAX_VIS).forEach(ev => {
-                    const el = document.createElement('div'); el.className = 'event-item';
-                    el.textContent = `${formatTime(ev.dateTime)} ${ev.name.length>30?ev.name.slice(0,27)+'...':ev.name}`;
-                    el.onclick = (e) => { e.stopPropagation(); showEventViewModal(ev); };
-                    list.appendChild(el);
-                });
-                if (dayEvents.length > MAX_VIS) {
-                    const more = document.createElement('div'); more.className = 'more-events-btn';
-                    more.textContent = `+${dayEvents.length-MAX_VIS} еще`;
-                    more.onclick = (e) => { e.stopPropagation(); showDayEventsModal(dayEvents, new Date(currentYear, currentMonth, day)); };
-                    list.appendChild(more);
-                }
-            }
-        });
-        document.querySelectorAll('.calendar-day').forEach(cell => {
-            cell.onclick = (e) => {
-                if (e.target.classList.contains('event-item') || e.target.classList.contains('more-events-btn')) return;
-                const year = parseInt(cell.dataset.year);
-                const month = parseInt(cell.dataset.month);
-                const day = parseInt(cell.dataset.day);
-                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-                    if (cell.classList.contains('other-month')) {
-                        currentYear = year; currentMonth = month;
-                        renderCalendar();
-                    } else {
-                        showCreateEventModal(new Date(year, month, day));
-                    }
-                }
-            };
-        });
+        modal.querySelector('#createEventForDayBtn').onclick = () => {
+            modal.remove();
+            showCreateEventModal(date);
+        };
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.remove();
+        };
     }
 
     function showCreateProjectModal() {
@@ -1405,7 +1690,10 @@
         const closeModal = () => modal.remove();
         modal.querySelector('#saveModalBtn').onclick = async () => {
             const name = modal.querySelector('#projName').value.trim();
-            if (!name) { showToast('Введите название проекта', true); return; }
+            if (!name) {
+                showToast('Введите название проекта', true);
+                return;
+            }
             await createProject({
                 name,
                 description: modal.querySelector('#projDesc').value || null
@@ -1414,7 +1702,9 @@
         };
         modal.querySelector('#cancelModalBtn').onclick = closeModal;
         modal.querySelector('.close-modal-btn').onclick = closeModal;
-        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+        modal.onclick = (e) => {
+            if (e.target === modal) closeModal();
+        };
         modal.querySelector('#projName').focus();
     }
 
@@ -1447,7 +1737,10 @@
         const closeModal = () => modal.remove();
         modal.querySelector('#saveModalBtn').onclick = async () => {
             const name = modal.querySelector('#projName').value.trim();
-            if (!name) { showToast('Введите название проекта', true); return; }
+            if (!name) {
+                showToast('Введите название проекта', true);
+                return;
+            }
             await updateProject({
                 id: proj.id,
                 name,
@@ -1459,7 +1752,9 @@
         };
         modal.querySelector('#cancelModalBtn').onclick = closeModal;
         modal.querySelector('.close-modal-btn').onclick = closeModal;
-        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+        modal.onclick = (e) => {
+            if (e.target === modal) closeModal();
+        };
         modal.querySelector('#projName').focus();
         modal.querySelector('#projName').select();
     }
@@ -1563,8 +1858,27 @@
         });
     }
 
-    document.getElementById('prevMonthBtn').onclick = () => { currentMonth--; if(currentMonth<0){ currentMonth=11; currentYear--; } renderCalendar(); };
-    document.getElementById('nextMonthBtn').onclick = () => { currentMonth++; if(currentMonth>11){ currentMonth=0; currentYear++; } renderCalendar(); };
+    // Навигация по месяцам с анимацией
+    document.getElementById('prevMonthBtn').onclick = () => {
+        const newMonth = currentMonth - 1;
+        const newYear = newMonth < 0 ? currentYear - 1 : currentYear;
+        const finalMonth = newMonth < 0 ? 11 : newMonth;
+
+        currentYear = newYear;
+        currentMonth = finalMonth;
+        renderCalendar();
+    };
+
+    document.getElementById('nextMonthBtn').onclick = () => {
+        const newMonth = currentMonth + 1;
+        const newYear = newMonth > 11 ? currentYear + 1 : currentYear;
+        const finalMonth = newMonth > 11 ? 0 : newMonth;
+
+        currentYear = newYear;
+        currentMonth = finalMonth;
+        renderCalendar();
+    };
+
     document.getElementById('createEventBtn').onclick = () => showCreateEventModal();
 
     const showArchivedToggle = document.getElementById('showArchivedToggle');
@@ -1575,9 +1889,10 @@
 
     async function init() {
         await fetchProjects();
-        await fetchEvents();
+        await fetchEventsForMonth(currentYear, currentMonth);
         document.getElementById('createProjectBtn').onclick = () => showCreateProjectModal();
     }
+
     init();
 </script>
 </body>
