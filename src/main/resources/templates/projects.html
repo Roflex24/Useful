@@ -85,6 +85,7 @@
             display: flex;
             gap: 0.8rem;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .planning-button {
@@ -352,6 +353,87 @@
             gap: 0.75rem;
         }
 
+        .projects-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .archive-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(139, 92, 246, 0.15);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .archive-toggle-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(239, 68, 68, 0.5);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: rgba(16, 185, 129, 0.7);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .archive-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            background: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            display: inline-block;
+        }
+
         .create-project-btn {
             background: linear-gradient(135deg, #10b981, #059669);
             border: none;
@@ -387,12 +469,22 @@
             flex-direction: column;
             height: 100%;
             min-height: 280px;
+            position: relative;
         }
         .project-card:hover {
             transform: translateY(-6px);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
             border-color: rgba(139, 92, 246, 0.6);
             background: rgba(255, 255, 255, 0.08);
+        }
+        .project-card.archived {
+            opacity: 0.75;
+            background: rgba(0, 0, 0, 0.3);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        .project-card.archived:hover {
+            opacity: 0.9;
+            border-color: rgba(239, 68, 68, 0.6);
         }
 
         .project-card-header {
@@ -403,12 +495,12 @@
         }
         .project-icon { font-size: 2.5rem; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2)); }
 
-        .project-actions { display: flex; gap: 0.5rem; }
-        .edit-project-btn, .delete-project-btn {
+        .project-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
+        .edit-project-btn, .delete-project-btn, .archive-project-btn, .unarchive-project-btn {
             padding: 0.35rem 0.7rem;
             border-radius: 0.6rem;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             transition: all 0.2s ease;
             font-weight: 600;
             backdrop-filter: blur(10px);
@@ -426,6 +518,18 @@
             color: #fca5a5;
         }
         .delete-project-btn:hover { background: rgba(239, 68, 68, 0.6); transform: scale(1.05); }
+        .archive-project-btn {
+            background: rgba(245, 158, 11, 0.3);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: #fcd34d;
+        }
+        .archive-project-btn:hover { background: rgba(245, 158, 11, 0.6); transform: scale(1.05); }
+        .unarchive-project-btn {
+            background: rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
+        }
+        .unarchive-project-btn:hover { background: rgba(16, 185, 129, 0.6); transform: scale(1.05); }
 
         .project-content { flex: 1; display: flex; flex-direction: column; }
         .project-name {
@@ -433,6 +537,10 @@
             font-weight: 800;
             color: #ffffff;
             margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
         .project-description {
             font-size: 0.9rem;
@@ -466,6 +574,40 @@
             font-weight: 500;
         }
         .project-metric-value.empty { color: rgba(255, 255, 255, 0.5); font-style: italic; }
+
+        .project-date-created {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        .project-date-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.3rem;
+        }
+        .project-date-value {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(139, 92, 246, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #c4b5fd);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
 
         /* КАЛЕНДАРЬ */
         .calendar-section {
@@ -513,7 +655,6 @@
             text-align: center;
         }
 
-        /* КНОПКА СОЗДАТЬ СОБЫТИЕ — ЗЕЛЕНАЯ */
         .create-event-btn {
             background: linear-gradient(135deg, #10b981, #059669);
             border: none;
@@ -722,6 +863,7 @@
             gap: 1rem;
             justify-content: flex-end;
             margin-top: 1.5rem;
+            flex-wrap: wrap;
         }
         .event-save {
             background: linear-gradient(135deg, #10b981, #059669);
@@ -784,7 +926,6 @@
             box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
         }
 
-        /* Кнопка создания события внутри модального окна дня — тоже зеленая */
         #createEventForDayBtn {
             background: linear-gradient(135deg, #10b981, #059669);
             border: none;
@@ -846,40 +987,7 @@
             .event-buttons { flex-wrap: wrap; }
             .event-save, .event-delete, .event-close, .event-cancel, .event-edit, #createEventForDayBtn { padding: 0.5rem 1.2rem; font-size: 0.85rem; }
             .nav-buttons { flex-wrap: wrap; }
-        }
-
-        .project-date-created {
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid rgba(139, 92, 246, 0.2);
-        }
-        .project-date-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 0.3rem;
-        }
-        .project-date-value {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.85);
-            font-weight: 500;
-        }
-        .progress-bar-container {
-            width: 100%;
-            height: 4px;
-            background: rgba(139, 92, 246, 0.2);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #8b5cf6, #c4b5fd);
-            border-radius: 2px;
-            transition: width 0.3s ease;
+            .projects-controls { width: 100%; justify-content: space-between; }
         }
     </style>
 </head>
@@ -901,7 +1009,18 @@
     <div class="projects-section">
         <div class="projects-header">
             <div class="projects-title"><span>📁</span> Список проектов <span id="projectsCount"></span></div>
-            <button class="create-project-btn" id="createProjectBtn"><span>➕</span> Создать проект</button>
+            <div class="projects-controls">
+                <div class="archive-toggle">
+                    <span class="archive-toggle-label">
+                        <span>📦</span> Показывать архивные проекты
+                    </span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showArchivedToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <button class="create-project-btn" id="createProjectBtn"><span>➕</span> Создать проект</button>
+            </div>
         </div>
         <div id="projectsList" class="projects-grid"><div class="empty-state"><div class="loading-spinner"></div><div>Загрузка проектов...</div></div></div>
     </div>
@@ -942,8 +1061,10 @@
 
     const PROJECT_API = '/project';
     const EVENT_API = '/event';
-    let projects = [];
+    let allProjects = [];
+    let filteredProjects = [];
     let events = [];
+    let showArchived = false;
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
     const MONTHS_RU = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
@@ -961,23 +1082,57 @@
     function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
     function formatDateTime(dateTime) { return new Date(dateTime).toLocaleString('ru-RU'); }
     function formatTime(dateTime) { return new Date(dateTime).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }); }
+    function formatDate(dateString) {
+        if (!dateString) return 'Дата не указана';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+
+    function filterProjects() {
+        if (showArchived) {
+            filteredProjects = [...allProjects];
+        } else {
+            filteredProjects = allProjects.filter(p => !p.archived);
+        }
+        renderProjects();
+    }
 
     async function fetchProjects() {
         try {
             const res = await fetch(PROJECT_API);
             if (!res.ok) throw new Error();
-            projects = await res.json();
-            renderProjects();
-        } catch(e) { showToast('Ошибка загрузки проектов', true); projects = []; renderProjects(); }
+            allProjects = await res.json();
+            filterProjects();
+        } catch(e) { showToast('Ошибка загрузки проектов', true); allProjects = []; filterProjects(); }
     }
+
+    async function archiveProject(id, archive) {
+        try {
+            const endpoint = archive ? `${PROJECT_API}/${id}/archive` : `${PROJECT_API}/${id}/unarchive`;
+            const res = await fetch(endpoint, { method:'PUT' });
+            if (!res.ok) throw new Error();
+            showToast(archive ? '✅ Проект архивирован' : '✅ Проект разархивирован');
+            await fetchProjects();
+        } catch(e) { showToast(archive ? 'Ошибка архивации' : 'Ошибка разархивации', true); }
+    }
+
     async function createProject(data) {
         try {
-            const res = await fetch(PROJECT_API, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+            const res = await fetch(PROJECT_API, {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify(data)
+            });
             if (!res.ok) throw new Error();
             showToast(`✅ Проект "${data.name}" создан`);
             await fetchProjects();
         } catch(e) { showToast('Ошибка создания', true); }
     }
+
     async function updateProject(proj) {
         try {
             const res = await fetch(PROJECT_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(proj) });
@@ -986,8 +1141,9 @@
             await fetchProjects();
         } catch(e) { showToast('Ошибка обновления', true); }
     }
+
     async function deleteProject(id, name) {
-        if (!confirm(`Удалить проект "${name}"?`)) return;
+        if (!confirm(`Удалить проект "${name}"? Это действие необратимо.`)) return;
         try {
             const res = await fetch(`${PROJECT_API}/${id}`, { method:'DELETE' });
             if (res.ok) { showToast(`✅ Проект удален`); await fetchProjects(); }
@@ -1003,6 +1159,7 @@
             renderCalendar();
         } catch(e) { console.error(e); events = []; renderCalendar(); }
     }
+
     async function createEvent(name, description, dateTime) {
         try {
             const res = await fetch(EVENT_API, {
@@ -1014,6 +1171,7 @@
             await fetchEvents();
         } catch(e) { showToast('Ошибка создания события', true); }
     }
+
     async function updateEvent(eventModel) {
         try {
             const res = await fetch(EVENT_API, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(eventModel) });
@@ -1022,6 +1180,7 @@
             await fetchEvents();
         } catch(e) { showToast('Ошибка обновления', true); }
     }
+
     async function deleteEvent(eventId) {
         if (!confirm('Удалить событие?')) return;
         try {
@@ -1293,7 +1452,8 @@
                 id: proj.id,
                 name,
                 description: modal.querySelector('#projDesc').value || null,
-                createDate: proj.createDate
+                createDate: proj.createDate,
+                archived: proj.archived
             });
             closeModal();
         };
@@ -1307,24 +1467,34 @@
     function renderProjects() {
         const container = document.getElementById('projectsList');
         const countSpan = document.getElementById('projectsCount');
-        if (!projects.length) {
-            container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✨</div><div>Нет проектов</div><div style="font-size:0.85rem; margin-top:0.5rem;">Нажмите "Создать проект"</div></div>`;
+        if (!filteredProjects.length) {
+            if (allProjects.length === 0) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✨</div><div>Нет проектов</div><div style="font-size:0.85rem; margin-top:0.5rem;">Нажмите "Создать проект"</div></div>`;
+            } else if (!showArchived) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div>Нет активных проектов</div><div style="font-size:0.85rem; margin-top:0.5rem;">Включите отображение архивных проектов, чтобы увидеть их</div></div>`;
+            } else {
+                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div>Нет архивных проектов</div></div>`;
+            }
             if(countSpan) countSpan.textContent = '';
             return;
         }
-        if(countSpan) countSpan.textContent = `(${projects.length})`;
+        if(countSpan) countSpan.textContent = `(${filteredProjects.length}${!showArchived && allProjects.some(p=>p.archived) ? ' из ' + allProjects.length : ''})`;
         const icons = ['🚀','💼','🎯','🌟','⚡','💎'];
-        container.innerHTML = projects.map((p,i) => `
-            <div class="project-card" data-id="${p.id}">
+        container.innerHTML = filteredProjects.map((p,i) => `
+            <div class="project-card ${p.archived ? 'archived' : ''}" data-id="${p.id}">
                 <div class="project-card-header">
                     <div class="project-icon">${icons[i%icons.length]}</div>
                     <div class="project-actions">
+                        ${!p.archived ? `<button class="archive-project-btn" data-id="${p.id}" data-name="${escapeHtml(p.name)}">📦 Архив</button>` : `<button class="unarchive-project-btn" data-id="${p.id}" data-name="${escapeHtml(p.name)}">📤 Разархивировать</button>`}
                         <button class="edit-project-btn" data-id="${p.id}">✎</button>
                         <button class="delete-project-btn" data-id="${p.id}" data-name="${escapeHtml(p.name)}">✖</button>
                     </div>
                 </div>
                 <div class="project-content">
-                    <div class="project-name">${escapeHtml(p.name)}</div>
+                    <div class="project-name">
+                        ${escapeHtml(p.name)}
+                        ${p.archived ? '<span class="archive-badge">📦 Архив</span>' : ''}
+                    </div>
                     <div class="project-description ${!p.description?.trim()?'empty':''}">${p.description?.trim() ? escapeHtml(p.description) : '📝 Нет описания'}</div>
                     <div class="project-metric-wrapper">
                     <div class="project-metric">
@@ -1348,6 +1518,7 @@
                     <div class="project-date-created">
                         <div class="project-date-label">📅 ДАТА СОЗДАНИЯ</div>
                         <div class="project-date-value">${formatDate(p.createDate)}</div>
+                        ${p.archiveDate ? `<div style="margin-top: 8px;"><div class="project-date-label">📦 ДАТА АРХИВАЦИИ</div><div class="project-date-value">${formatDate(p.archiveDate)}</div></div>` : ''}
                     </div>
                 </div>
             </div>
@@ -1356,8 +1527,24 @@
         document.querySelectorAll('.edit-project-btn').forEach(btn => {
             btn.onclick = (e) => {
                 e.stopPropagation();
-                const proj = projects.find(p => p.id == btn.dataset.id);
+                const proj = filteredProjects.find(p => p.id == btn.dataset.id);
                 if(proj) showEditProjectModal(proj);
+            };
+        });
+
+        document.querySelectorAll('.archive-project-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm(`Архивировать проект "${btn.dataset.name}"? Он будет перемещен в архив и не будет отображаться в общем списке.`)) {
+                    archiveProject(btn.dataset.id, true);
+                }
+            };
+        });
+
+        document.querySelectorAll('.unarchive-project-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                archiveProject(btn.dataset.id, false);
             };
         });
 
@@ -1376,19 +1563,15 @@
         });
     }
 
-    function formatDate(dateString) {
-        if (!dateString) return 'Дата не указана';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ru-RU', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    }
-
     document.getElementById('prevMonthBtn').onclick = () => { currentMonth--; if(currentMonth<0){ currentMonth=11; currentYear--; } renderCalendar(); };
     document.getElementById('nextMonthBtn').onclick = () => { currentMonth++; if(currentMonth>11){ currentMonth=0; currentYear++; } renderCalendar(); };
     document.getElementById('createEventBtn').onclick = () => showCreateEventModal();
+
+    const showArchivedToggle = document.getElementById('showArchivedToggle');
+    showArchivedToggle.onchange = (e) => {
+        showArchived = e.target.checked;
+        filterProjects();
+    };
 
     async function init() {
         await fetchProjects();

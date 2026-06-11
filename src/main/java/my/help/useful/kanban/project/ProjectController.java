@@ -34,6 +34,18 @@ public class ProjectController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping("/{id}/archive")
+    public ResponseEntity<Void> archiveProject(@PathVariable Long id) {
+        projectService.archiveProject(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/unarchive")
+    public ResponseEntity<Void> unarchiveProject(@PathVariable Long id) {
+        projectService.unarchiveProject(id);
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProjectById(@PathVariable Long id) {
         projectService.deleteProjectById(id);

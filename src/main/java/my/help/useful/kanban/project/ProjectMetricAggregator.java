@@ -21,7 +21,9 @@ public class ProjectMetricAggregator {
                 entity.getName(),
                 entity.getDescription(),
                 entity.getCreateDate(),
-                null, null
+                null, null,
+                entity.isArchived(),
+                entity.getArchiveDate()
         );
     }
 
@@ -56,7 +58,7 @@ public class ProjectMetricAggregator {
      * Полностью собирает объект ProjectWithMetricModel из сущности и метрик
      */
     public ProjectModel aggregateProjectWithMetrics(ProjectEntity projectEntity,
-                                                              List<ProjectMetricModel> metrics) {
+                                                    List<ProjectMetricModel> metrics) {
         ProjectModel result = buildBasicProjectWithMetric(projectEntity);
         processMetrics(metrics, result);
         return result;

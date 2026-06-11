@@ -19,4 +19,7 @@ public class ProjectModel {
 
     private ProjectMetricModel mainProjectMetric;
     private Integer mainMetricCompletePercent;
+
+    private boolean archived;
+    private LocalDate archiveDate;
 }

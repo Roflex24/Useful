@@ -7,10 +7,10 @@ import my.help.useful.kanban.column.ColumnRepository;
 import my.help.useful.kanban.column.ColumnService;
 import my.help.useful.kanban.project.metric.*;
 import my.help.useful.kanban.task.TaskRepository;
-import my.help.useful.kanban.task.TaskService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +31,10 @@ public class ProjectService {
 
     public ProjectModel createProject(ProjectRq rq) {
         ProjectEntity projectEntity = projectMapper.projectRqToEntity(rq);
+        projectEntity.setArchived(rq.isArchived());
+        if (rq.isArchived()) {
+            projectEntity.setArchiveDate(LocalDate.now());
+        }
         ProjectEntity saved = projectRepository.save(projectEntity);
         columnService.createColumns(saved);
         projectMetricService.createProjectMetric(
@@ -41,6 +45,24 @@ public class ProjectService {
 
     public void updateProject(ProjectModel rq) {
         projectRepository.save(projectMapper.toEntity(rq));
+    }
+
+    @Transactional
+    public void archiveProject(Long id) {
+        ProjectEntity project = projectRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
+        project.setArchived(true);
+        project.setArchiveDate(LocalDate.now());
+        projectRepository.save(project);
+    }
+
+    @Transactional
+    public void unarchiveProject(Long id) {
+        ProjectEntity project = projectRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
+        project.setArchived(false);
+        project.setArchiveDate(null);
+        projectRepository.save(project);
     }
 
     @Transactional
@@ -67,15 +89,18 @@ public class ProjectService {
     // NOTE: Это решение делает N+1 запрос. Подходит только для небольшого количества проектов.
     public List<ProjectModel> getProjectList() {
         List<ProjectEntity> projectEntityList = projectRepository.findAll();
+        return buildProjectModelsWithMetrics(projectEntityList);
+    }
 
+    private List<ProjectModel> buildProjectModelsWithMetrics(List<ProjectEntity> projects) {
         List<ProjectModel> projectWithMetricModelList = new ArrayList<>();
 
-        for (ProjectEntity projectEntity: projectEntityList) {
+        for (ProjectEntity projectEntity : projects) {
             projectWithMetricModelList.add(
                     projectMetricAggregator.aggregateProjectWithMetrics(
                             projectEntity, projectMetricMapper.toModelList(
-                    projectMetricRepository.findAllByProjectId(
-                            projectEntity.getId()))));
+                                    projectMetricRepository.findAllByProjectId(
+                                            projectEntity.getId()))));
         }
         return projectWithMetricModelList;
     }

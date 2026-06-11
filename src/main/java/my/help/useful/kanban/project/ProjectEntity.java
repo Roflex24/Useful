@@ -26,8 +26,22 @@ public class ProjectEntity {
 
     private LocalDate createDate;
 
+    @Column(nullable = false)
+    private boolean archived = false;
+
+    private LocalDate archiveDate;
+
     @PrePersist
     protected void onCreate() {
         createDate = LocalDate.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        if (archived && archiveDate == null) {
+            archiveDate = LocalDate.now();
+        } else if (!archived) {
+            archiveDate = null;
+        }
     }
 }
