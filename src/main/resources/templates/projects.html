@@ -360,6 +360,7 @@
             flex-wrap: wrap;
         }
 
+        /* Новый стиль для тогла "Только актуальные" */
         .archive-toggle {
             display: flex;
             align-items: center;
@@ -371,9 +372,9 @@
         }
 
         .archive-toggle-label {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.9);
             font-size: 0.9rem;
-            font-weight: 500;
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -399,7 +400,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(239, 68, 68, 0.5);
+            background-color: rgba(16, 185, 129, 0.7);
             transition: 0.3s;
             border-radius: 24px;
         }
@@ -416,12 +417,18 @@
             border-radius: 50%;
         }
 
+        /* когда включен (checked) - показываем активные (зеленый фон, ползунок справа) */
         input:checked + .toggle-slider {
             background-color: rgba(16, 185, 129, 0.7);
         }
 
         input:checked + .toggle-slider:before {
             transform: translateX(26px);
+        }
+
+        /* когда выключен (показываем архивные) - фон становится оранжевым/красноватым */
+        input:not(:checked) + .toggle-slider {
+            background-color: rgba(245, 158, 11, 0.7);
         }
 
         .archive-badge {
@@ -1067,10 +1074,10 @@
             <div class="projects-controls">
                 <div class="archive-toggle">
                     <span class="archive-toggle-label">
-                        <span>📦</span> Показывать архивные проекты
+                        <span>✨</span> Только актуальные
                     </span>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="showArchivedToggle">
+                        <input type="checkbox" id="showArchivedToggle" checked>
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
@@ -1124,7 +1131,8 @@
     let allProjects = [];
     let filteredProjects = [];
     let currentEvents = [];
-    let showArchived = false;
+    // showArchived теперь true - показываем только актуальные (неархивные)
+    let showArchived = false;   // false = показываем только активные (НЕ архивные)
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
     let loadedYear = null;
@@ -1133,12 +1141,10 @@
     let pendingMonthChange = null;
     const MONTHS_RU = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
-    // Функция для создания даты в локальном часовом поясе
     function createLocalDate(year, month, day, hour = 0, minute = 0) {
         return new Date(year, month, day, hour, minute);
     }
 
-    // Функция для форматирования даты в ISO строку для input datetime-local
     function formatToDateTimeLocal(date) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -1253,7 +1259,6 @@
 
         let html = '';
 
-        // Дни предыдущего месяца
         for (let i = startDay - 1; i >= 0; i--) {
             html += `<div class="calendar-day other-month" data-year="${currentYear}" data-month="${currentMonth - 1}" data-day="${prevDays - i}">
                         <div class="day-number">${prevDays - i}</div>
@@ -1261,7 +1266,6 @@
                     </div>`;
         }
 
-        // Дни текущего месяца
         for (let d = 1; d <= daysInMonth; d++) {
             const cls = isToday(currentYear, currentMonth, d) ? 'calendar-day today' : 'calendar-day';
             html += `<div class="${cls}" data-year="${currentYear}" data-month="${currentMonth}" data-day="${d}">
@@ -1270,7 +1274,6 @@
                     </div>`;
         }
 
-        // Дни следующего месяца
         const totalCells = startDay + daysInMonth;
         const remaining = 42 - totalCells;
         for (let i = 1; i <= remaining; i++) {
@@ -1283,7 +1286,6 @@
         calendarDays.innerHTML = html;
         document.getElementById('currentMonth').innerHTML = `${MONTHS_RU[currentMonth]} ${currentYear}`;
 
-        // Группируем события по дням
         const byDay = new Map();
         currentEvents.forEach(ev => {
             const d = new Date(ev.dateTime);
@@ -1326,7 +1328,6 @@
             }
         });
 
-        // Добавляем обработчики кликов на ячейки календаря
         calendarDays.querySelectorAll('.calendar-day').forEach(cell => {
             cell.onclick = (e) => {
                 if (e.target.classList.contains('event-item') || e.target.classList.contains('more-events-btn')) return;
@@ -1339,7 +1340,6 @@
                         currentMonth = month;
                         renderCalendar();
                     } else {
-                        // Создаем дату в локальном часовом поясе
                         const selectedDate = createLocalDate(year, month, day);
                         showCreateEventModal(selectedDate);
                     }
@@ -1442,7 +1442,6 @@
 
     async function createEvent(name, description, dateTime) {
         try {
-            // Отправляем дату в ISO формате
             const res = await fetch(EVENT_API, {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
@@ -1572,7 +1571,6 @@
 
         let defaultDateTime;
         if (selectedDate) {
-            // Устанавливаем время на 12:00 дня, чтобы не было смещения
             const localDate = new Date(selectedDate);
             localDate.setHours(12, 0, 0, 0);
             defaultDateTime = formatToDateTimeLocal(localDate);
@@ -1766,7 +1764,7 @@
             if (allProjects.length === 0) {
                 container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✨</div><div>Нет проектов</div><div style="font-size:0.85rem; margin-top:0.5rem;">Нажмите "Создать проект"</div></div>`;
             } else if (!showArchived) {
-                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div>Нет активных проектов</div><div style="font-size:0.85rem; margin-top:0.5rem;">Включите отображение архивных проектов, чтобы увидеть их</div></div>`;
+                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div>Нет активных проектов</div><div style="font-size:0.85rem; margin-top:0.5rem;">Выключите "Только актуальные", чтобы увидеть архивные</div></div>`;
             } else {
                 container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div>Нет архивных проектов</div></div>`;
             }
@@ -1858,7 +1856,6 @@
         });
     }
 
-    // Навигация по месяцам с анимацией
     document.getElementById('prevMonthBtn').onclick = () => {
         const newMonth = currentMonth - 1;
         const newYear = newMonth < 0 ? currentYear - 1 : currentYear;
@@ -1882,8 +1879,9 @@
     document.getElementById('createEventBtn').onclick = () => showCreateEventModal();
 
     const showArchivedToggle = document.getElementById('showArchivedToggle');
+    showArchivedToggle.checked = true;
     showArchivedToggle.onchange = (e) => {
-        showArchived = e.target.checked;
+        showArchived = !e.target.checked;
         filterProjects();
     };
 
