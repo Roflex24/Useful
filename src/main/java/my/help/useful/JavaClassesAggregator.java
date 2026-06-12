@@ -5,7 +5,7 @@ import java.nio.file.*;
 
 public class JavaClassesAggregator {
     public static void main(String[] args) throws IOException {
-        Path sourceRoot = Paths.get("./src/main/java/my/help/useful/finance");
+        Path sourceRoot = Paths.get("./src/main/java/my/help/useful/kanban/planning");
         Path outputFile = Paths.get("all_classes.txt");
 
         try (BufferedWriter writer = Files.newBufferedWriter(outputFile)) {
