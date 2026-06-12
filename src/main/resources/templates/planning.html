@@ -163,8 +163,86 @@
             box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
         }
 
-        .add-plan-btn {
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
             margin-left: auto;
+            padding: 0.4rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 2rem;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .toggle-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(107, 114, 128, 0.6);
+            transition: 0.3s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .toggle-status {
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 1rem;
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .toggle-status.inactive {
+            background: rgba(107, 114, 128, 0.2);
+            color: #9ca3af;
+        }
+
+        .add-plan-btn {
             background: linear-gradient(135deg, #10b981, #059669);
             border: none;
             color: white;
@@ -456,18 +534,30 @@
         <button class="filter-btn" data-type="QUARTER">Квартальные</button>
         <button class="filter-btn" data-type="MONTH">Месячные</button>
         <button class="filter-btn" data-type="WEEK">Недельные</button>
+
+        <div class="toggle-container">
+            <span class="toggle-label">
+                <i>📅</i> Только актуальные
+            </span>
+            <label class="switch">
+                <input type="checkbox" id="relevantToggle" checked>
+                <span class="slider"></span>
+            </label>
+            <span id="toggleInfo" class="toggle-status">Вкл</span>
+        </div>
+
         <button class="filter-btn add-plan-btn" id="addPlanBtn">➕ Создать план</button>
     </div>
 
     <div id="cardsContainer" class="cards-grid">
-        <div class="loading"><div class="loading-spinner"></div> Загрузка...</div>
+        <div class="loading">Загрузка...</div>
     </div>
 </div>
 
 <script>
     const API_BASE = '/api/planning';
-    let currentFilter = 'ALL';
-    let allPlans = [];
+    let currentType = 'ALL';
+    let relevantOnly = true;
 
     function createParticles() {
         const container = document.getElementById('particles');
@@ -525,31 +615,38 @@
     }
 
     async function loadPlans() {
+        const container = document.getElementById('cardsContainer');
+        container.innerHTML = '<div class="loading">Загрузка...</div>';
+
         try {
-            const response = await fetch(API_BASE);
+            let url = `${API_BASE}?relevantOnly=${relevantOnly}`;
+            if (currentType !== 'ALL') {
+                url += `&type=${currentType}`;
+            }
+
+            const response = await fetch(url);
             if (!response.ok) throw new Error('Network error');
-            allPlans = await response.json();
-            renderPlans();
+            const plans = await response.json();
+            renderPlans(plans);
         } catch (error) {
             console.error('Error:', error);
-            document.getElementById('cardsContainer').innerHTML = '<div class="empty-state">❌ Ошибка загрузки данных</div>';
+            container.innerHTML = '<div class="empty-state">❌ Ошибка загрузки данных</div>';
         }
     }
 
-    function renderPlans() {
+    function renderPlans(plans) {
         const container = document.getElementById('cardsContainer');
         if (!container) return;
 
-        let filteredPlans = currentFilter === 'ALL'
-            ? allPlans
-            : allPlans.filter(p => p.planType === currentFilter);
-
-        if (filteredPlans.length === 0) {
-            container.innerHTML = '<div class="empty-state">📭 Нет планов. Создайте первый план!</div>';
+        if (plans.length === 0) {
+            const message = relevantOnly
+                ? '📭 Нет актуальных планов. Отключите фильтр "Только актуальные" чтобы увидеть все планы.'
+                : '📭 Нет планов. Создайте первый план!';
+            container.innerHTML = `<div class="empty-state">${message}</div>`;
             return;
         }
 
-        container.innerHTML = filteredPlans.map(plan => `
+        container.innerHTML = plans.map(plan => `
             <div class="plan-card">
                 <div class="plan-type-badge plan-type-${plan.planType}">${getPlanTypeName(plan.planType)}</div>
                 <div class="plan-title">${escapeHtml(plan.title || 'Без названия')}</div>
@@ -561,10 +658,14 @@
         `).join('');
     }
 
-    // Глобальная функция для открытия модального окна редактирования
     window.openEditPlanModal = async function(id) {
-        const plan = allPlans.find(p => p.id === id);
-        if (!plan) return;
+        // Получаем актуальные данные плана с сервера
+        const response = await fetch(`${API_BASE}/${id}`);
+        if (!response.ok) {
+            showToast('Ошибка загрузки данных плана', true);
+            return;
+        }
+        const plan = await response.json();
 
         const modal = document.createElement('div');
         modal.className = 'fullscreen-modal';
@@ -787,33 +888,51 @@
         modal.onclick = (e) => { if (e.target === modal) closeModal(); };
     }
 
-    // Инициализация фильтров
     function initFilters() {
-        const filterBtns = document.querySelectorAll('.filter-btn');
+        const filterBtns = document.querySelectorAll('.filter-btn[data-type]');
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 filterBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                currentFilter = btn.dataset.type;
-                renderPlans();
+                currentType = btn.dataset.type;
+                loadPlans();
             });
         });
     }
 
-    // Инициализация кнопки создания плана
+    function initRelevantToggle() {
+        const toggle = document.getElementById('relevantToggle');
+        const toggleInfo = document.getElementById('toggleInfo');
+
+        if (toggle) {
+            toggle.addEventListener('change', (e) => {
+                relevantOnly = e.target.checked;
+                if (toggleInfo) {
+                    toggleInfo.textContent = relevantOnly ? 'Вкл' : 'Выкл';
+                    toggleInfo.className = relevantOnly ? 'toggle-status' : 'toggle-status inactive';
+                }
+                loadPlans();
+
+                const message = relevantOnly
+                    ? '🔍 Показаны только актуальные планы'
+                    : '📋 Показаны все планы';
+                showToast(message);
+            });
+        }
+    }
+
     function initAddButton() {
         const addBtn = document.getElementById('addPlanBtn');
         if (addBtn) {
-            // Удаляем старый обработчик, если есть
             const newAddBtn = addBtn.cloneNode(true);
             addBtn.parentNode.replaceChild(newAddBtn, addBtn);
             newAddBtn.addEventListener('click', () => showCreatePlanModal());
         }
     }
 
-    // Запуск приложения
     async function init() {
         initFilters();
+        initRelevantToggle();
         initAddButton();
         await loadPlans();
     }

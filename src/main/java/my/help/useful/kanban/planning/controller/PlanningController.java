@@ -35,8 +35,10 @@ public class PlanningController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PlanResponseDto>> getAllPlans() {
-        return ResponseEntity.ok(planningService.getAllPlans());
+    public ResponseEntity<List<PlanResponseDto>> getAllPlans(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false, defaultValue = "false") boolean relevantOnly) {
+        return ResponseEntity.ok(planningService.getPlans(type, relevantOnly));
     }
 
     @DeleteMapping("/{id}")
