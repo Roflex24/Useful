@@ -1896,7 +1896,7 @@
     // Функция для переключения фильтра метрик
     function toggleMetricsFilter() {
         showOnlyIncompleteMetrics = !showOnlyIncompleteMetrics;
-        renderProjectInfo(); // Перерисовываем блок метрик с новым фильтром
+        renderProjectInfo();
     }
 
     function initMetricDragAndDrop() {
@@ -2008,9 +2008,9 @@
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
                     <div class="metrics-filter-toggle">
-                        <span class="toggle-label">${showOnlyIncompleteMetrics ? '🔴 Только активные' : '🟢 Все метрики'}</span>
+                        <span class="toggle-label">${showOnlyIncompleteMetrics ? '🟢 Только активные' : '🔴 Все метрики'}</span>
                         <label class="toggle-switch">
-                            <input type="checkbox" id="metricsFilterToggle" ${!showOnlyIncompleteMetrics ? 'checked' : ''}>
+                            <input type="checkbox" id="metricsFilterToggle" ${showOnlyIncompleteMetrics ? 'checked' : ''}>
                             <span class="slider"></span>
                         </label>
                     </div>
