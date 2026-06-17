@@ -3,6 +3,7 @@ package my.help.useful.finance.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.help.useful.finance.dto.HistoricalDataResponseDto;
+import my.help.useful.finance.dto.MonthlyDynamicsDto;
 import my.help.useful.finance.dto.SnapshotInfoDto;
 import my.help.useful.finance.service.FinanceSnapshotService;
 import org.springframework.http.ResponseEntity;
@@ -80,5 +81,15 @@ public class HistoryController {
             log.error("Failed to create snapshot", e);
             return ResponseEntity.internalServerError().body("Failed: " + e.getMessage());
         }
+    }
+
+    /**
+     * Получить помесячную динамику
+     * GET /api/finance/history/dynamics/monthly
+     */
+    @GetMapping("/dynamics/monthly")
+    public ResponseEntity<List<MonthlyDynamicsDto>> getMonthlyDynamics() {
+        List<MonthlyDynamicsDto> dynamics = snapshotService.getMonthlyDynamics();
+        return ResponseEntity.ok(dynamics);
     }
 }

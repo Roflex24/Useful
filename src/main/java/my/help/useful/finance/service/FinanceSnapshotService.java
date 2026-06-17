@@ -356,4 +356,90 @@ public class FinanceSnapshotService {
             createSnapshotForPreviousMonth();
         }
     }
+
+    /**
+     * Получить динамику по месяцам:
+     * - данные из снимков (за прошлые месяцы)
+     * - текущий месяц из живых данных (accounts)
+     */
+    @Transactional(readOnly = true)
+    public List<MonthlyDynamicsDto> getMonthlyDynamics() {
+        List<MonthlyDynamicsDto> result = new ArrayList<>();
+
+        // 1. Получаем все даты снимков из истории
+        List<LocalDate> snapshotDates = snapshotRepository.findAllSnapshotDates();
+
+        // 2. Добавляем данные из каждого снимка
+        for (LocalDate snapshotDate : snapshotDates) {
+            YearMonth yearMonth = YearMonth.from(snapshotDate);
+            HistoricalDataResponseDto historicalData = getHistoricalData(yearMonth);
+            if (historicalData != null && historicalData.getAccounts() != null) {
+                MonthlyDynamicsDto dto = buildMonthlyDynamicsFromAccounts(historicalData.getAccounts(), yearMonth);
+                result.add(dto);
+            }
+        }
+
+        // 3. Добавляем текущий месяц (живые данные из БД)
+        MonthlyDynamicsDto currentMonthDto = getCurrentMonthDynamics();
+        result.add(currentMonthDto);
+
+        // 4. Сортируем по месяцу (от старых к новым)
+        result.sort(Comparator.comparing(MonthlyDynamicsDto::getMonth));
+
+        return result;
+    }
+
+    /**
+     * Получить данные за текущий месяц из живых счетов
+     */
+    private MonthlyDynamicsDto getCurrentMonthDynamics() {
+        List<Account> currentAccounts = accountRepository.findAll();
+
+        List<AccountResponseDto> accountDtos = currentAccounts.stream()
+                .map(account -> AccountResponseDto.builder()
+                        .id(account.getId())
+                        .bankName(account.getBankName())
+                        .amount(account.getAmount())
+                        .type(account.getType())
+                        .comment(account.getComment())
+                        .build())
+                .collect(Collectors.toList());
+
+        YearMonth currentMonth = YearMonth.now();
+        return buildMonthlyDynamicsFromAccounts(accountDtos, currentMonth);
+    }
+
+    /**
+     * Из списка счетов собираем статистику по типам
+     */
+    private MonthlyDynamicsDto buildMonthlyDynamicsFromAccounts(List<AccountResponseDto> accounts, YearMonth month) {
+        BigDecimal total = BigDecimal.ZERO;
+        BigDecimal cardTotal = BigDecimal.ZERO;
+        BigDecimal depositTotal = BigDecimal.ZERO;
+        BigDecimal investmentTotal = BigDecimal.ZERO;
+
+        for (AccountResponseDto account : accounts) {
+            BigDecimal amount = account.getAmount() != null ? account.getAmount() : BigDecimal.ZERO;
+            total = total.add(amount);
+
+            if (account.getType() == AccountType.CARD) {
+                cardTotal = cardTotal.add(amount);
+            } else if (account.getType() == AccountType.DEPOSIT) {
+                depositTotal = depositTotal.add(amount);
+            } else if (account.getType() == AccountType.INVESTMENT) {
+                investmentTotal = investmentTotal.add(amount);
+            }
+        }
+
+        String monthLabel = month.format(DateTimeFormatter.ofPattern("LLLL yyyy", new Locale("ru")));
+
+        return MonthlyDynamicsDto.builder()
+                .month(month)
+                .monthLabel(monthLabel)
+                .totalAmount(total)
+                .cardAmount(cardTotal)
+                .depositAmount(depositTotal)
+                .investmentAmount(investmentTotal)
+                .build();
+    }
 }

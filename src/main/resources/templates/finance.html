@@ -3,34 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Финансовый менеджер - Счета, Кешбек и История | 3D Диаграммы</title>
+    <title>Финансовый менеджер - Счета, Кешбек и История | 3D Диаграммы + Динамика активов</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #f0f2f8 0%, #e8edf5 100%);
             color: #1a2634;
             padding: 32px 24px;
         }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        /* Header */
-        .header {
-            margin-bottom: 28px;
-        }
-
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { margin-bottom: 28px; }
         .header-top {
             display: flex;
             justify-content: space-between;
@@ -39,7 +25,6 @@
             flex-wrap: wrap;
             gap: 16px;
         }
-
         h1 {
             font-size: 2rem;
             font-weight: 700;
@@ -51,7 +36,6 @@
             align-items: center;
             gap: 12px;
         }
-
         .home-btn {
             background: linear-gradient(135deg, #2c6e9e, #235b84);
             color: white;
@@ -63,26 +47,15 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            transition: all 0.2s;
             text-decoration: none;
             font-size: 0.95rem;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-
         .home-btn:hover {
             background: linear-gradient(135deg, #235b84, #1a4a6e);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(44,110,158,0.3);
         }
-
-        .sub {
-            color: #5a6e7c;
-            margin-top: 8px;
-            font-weight: 500;
-            font-size: 0.95rem;
-        }
-
-        /* Stats row */
+        .sub { color: #5a6e7c; margin-top: 8px; font-weight: 500; font-size: 0.95rem; }
         .stats-row {
             background: white;
             border-radius: 28px;
@@ -95,30 +68,26 @@
             align-items: center;
             gap: 20px;
         }
-
         .total-amount {
             background: linear-gradient(145deg, #f9fbfd, #ffffff);
             padding: 12px 24px;
             border-radius: 60px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         }
-
-        .total-label {
+        .total-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; color: #5b7a9a; }
+        .total-number { font-size: 2.2rem; font-weight: 800; color: #1f4e7a; line-height: 1.2; }
+        .trend-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
             font-weight: 600;
-            color: #5b7a9a;
+            padding: 8px 16px;
+            border-radius: 40px;
+            background: #f1f5f9;
         }
-
-        .total-number {
-            font-size: 2.2rem;
-            font-weight: 800;
-            color: #1f4e7a;
-            line-height: 1.2;
-        }
-
-        /* History controls */
+        .trend-up { color: #10b981; }
+        .trend-down { color: #ef4444; }
+        .trend-equal { color: #6b7280; }
         .history-controls {
             background: white;
             border-radius: 28px;
@@ -131,14 +100,7 @@
             align-items: center;
             gap: 16px;
         }
-
-        .history-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
+        .history-group { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
         .history-select {
             padding: 10px 20px;
             border-radius: 30px;
@@ -147,14 +109,8 @@
             font-family: 'Inter', sans-serif;
             font-size: 0.9rem;
             cursor: pointer;
-            min-width: 220px;
+            min-width: 260px;
         }
-
-        .history-select:disabled {
-            background: #f1f5f9;
-            cursor: not-allowed;
-        }
-
         .history-badge {
             background: #fef3c7;
             padding: 8px 16px;
@@ -165,7 +121,6 @@
             align-items: center;
             gap: 8px;
         }
-
         .btn-outline {
             background: transparent;
             border: 1px solid #2c6e9e;
@@ -179,103 +134,7 @@
             align-items: center;
             gap: 8px;
         }
-
-        .btn-outline:hover {
-            background: #2c6e9e;
-            color: white;
-        }
-
-        /* Charts grid - 3D стиль */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 28px;
-            margin-bottom: 40px;
-        }
-
-        .chart-card {
-            background: #ffffff;
-            border-radius: 32px;
-            padding: 20px 20px 28px;
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s, box-shadow 0.2s;
-            border: 1px solid rgba(166, 188, 210, 0.15);
-        }
-
-        .chart-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 32px rgba(0, 0, 0, 0.08);
-        }
-
-        .chart-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #1f3b4c;
-            border-left: 4px solid #3a7ca5;
-            padding-left: 16px;
-        }
-
-        .chart-sub {
-            font-size: 0.75rem;
-            color: #6e8faa;
-            margin-bottom: 20px;
-            margin-left: 20px;
-        }
-
-        .canvas-wrapper {
-            position: relative;
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;
-        }
-
-        canvas {
-            max-height: 280px;
-            max-width: 100%;
-            filter: drop-shadow(8px 12px 16px rgba(0,0,0,0.15));
-            transition: filter 0.3s ease;
-        }
-
-        .chart-card:hover canvas {
-            filter: drop-shadow(10px 15px 20px rgba(0,0,0,0.2));
-        }
-
-        /* Sections */
-        .accounts-section {
-            background: white;
-            border-radius: 32px;
-            padding: 24px 28px;
-            margin-bottom: 32px;
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04);
-        }
-
-        .cashback-summary-section {
-            background: white;
-            border-radius: 32px;
-            padding: 24px 28px;
-            margin-bottom: 32px;
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04);
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 24px;
-            gap: 16px;
-        }
-
-        .section-header h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1f3b4c;
-        }
-
+        .btn-outline:hover { background: #2c6e9e; color: white; }
         .btn-primary {
             background: linear-gradient(135deg, #2c6e9e, #235b84);
             color: white;
@@ -289,18 +148,8 @@
             gap: 8px;
             transition: all 0.2s;
         }
-
-        .btn-primary:hover:not(:disabled) {
-            background: linear-gradient(135deg, #235b84, #1a4a6e);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(44,110,158,0.3);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(44,110,158,0.3); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-secondary {
             background: #eef2f9;
             color: #2c5a82;
@@ -309,53 +158,67 @@
             border-radius: 40px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
         }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: #e2e8f2;
+        .pie-charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 28px;
+            margin-bottom: 40px;
         }
-
-        .btn-secondary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .full-width-chart-card {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 20px 28px 28px;
+            margin-bottom: 32px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.05);
+            border: 1px solid rgba(166, 188, 210, 0.15);
+            transition: transform 0.2s;
         }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            color: white;
+        .full-width-chart-card:hover { transform: translateY(-4px); }
+        .chart-card {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 20px 20px 28px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            border: 1px solid rgba(166, 188, 210, 0.15);
         }
-
-        .btn-danger:hover {
-            background: linear-gradient(135deg, #b91c1c, #991b1b);
-        }
-
-        /* Tables */
-        .accounts-table, .cashback-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        .accounts-table th, .cashback-table th {
-            text-align: left;
-            padding: 14px 8px 12px 0;
+        .chart-card:hover { transform: translateY(-4px); }
+        .chart-title {
+            font-size: 1.3rem;
             font-weight: 600;
-            color: #3a6582;
-            border-bottom: 2px solid #e2ebf3;
-        }
-
-        .accounts-table td, .cashback-table td {
-            padding: 14px 8px 14px 0;
-            border-bottom: 1px solid #edf2f7;
-            vertical-align: middle;
-        }
-
-        .action-buttons {
+            margin-bottom: 6px;
             display: flex;
-            gap: 8px;
+            align-items: center;
+            gap: 10px;
+            color: #1f3b4c;
+            border-left: 4px solid #3a7ca5;
+            padding-left: 16px;
         }
-
+        .chart-sub { font-size: 0.75rem; color: #6e8faa; margin-bottom: 20px; margin-left: 20px; }
+        .canvas-wrapper { position: relative; display: flex; justify-content: center; margin-top: 10px; }
+        canvas { max-height: 260px; max-width: 100%; filter: drop-shadow(8px 12px 16px rgba(0,0,0,0.15)); }
+        .full-width-canvas { width: 100%; height: auto; min-height: 420px; }
+        .accounts-section, .cashback-summary-section {
+            background: white;
+            border-radius: 32px;
+            padding: 24px 28px;
+            margin-bottom: 32px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.04);
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+            gap: 16px;
+        }
+        .section-header h2 { font-size: 1.5rem; font-weight: 600; color: #1f3b4c; }
+        .accounts-table, .cashback-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .accounts-table th, .cashback-table th { text-align: left; padding: 14px 8px 12px 0; font-weight: 600; color: #3a6582; border-bottom: 2px solid #e2ebf3; }
+        .accounts-table td, .cashback-table td { padding: 14px 8px 14px 0; border-bottom: 1px solid #edf2f7; }
+        .action-buttons { display: flex; gap: 8px; }
         .edit-btn, .delete-btn, .cashback-btn {
             background: none;
             border: none;
@@ -363,267 +226,48 @@
             font-size: 1.1rem;
             padding: 6px 10px;
             border-radius: 8px;
-            transition: all 0.2s;
         }
-
-        .edit-btn {
-            color: #2c6e9e;
-        }
-
-        .edit-btn:hover:not(:disabled) {
-            background: #e3f0fa;
-            transform: scale(1.05);
-        }
-
-        .delete-btn {
-            color: #dc2626;
-        }
-
-        .delete-btn:hover:not(:disabled) {
-            background: #fee2e2;
-            transform: scale(1.05);
-        }
-
-        .cashback-btn {
-            color: #10b981;
-        }
-
-        .cashback-btn:hover:not(:disabled) {
-            background: #d1fae5;
-            transform: scale(1.05);
-        }
-
-        .edit-btn:disabled, .delete-btn:disabled, .cashback-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .type-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
+        .edit-btn { color: #2c6e9e; }
+        .delete-btn { color: #dc2626; }
+        .cashback-btn { color: #10b981; }
+        .type-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 30px; font-size: 0.8rem; font-weight: 500; }
         .type-card { background: #e0f2fe; color: #0369a1; }
         .type-deposit { background: #dcfce7; color: #166534; }
         .type-investment { background: #fef3c7; color: #92400e; }
-
-        .cashback-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
-            border-radius: 20px;
+        .cashback-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; background: #fef3c7; color: #92400e; }
+        .expandable-row { cursor: pointer; }
+        .expand-icon { transition: transform 0.2s; display: inline-block; }
+        .expand-icon.rotated { transform: rotate(90deg); }
+        .detail-row { display: none; background-color: #f8fafc; }
+        .detail-row.show { display: table-row; }
+        .detail-cell { padding: 16px 24px !important; background-color: #f8fafc; }
+        .cashback-item { background: #f8fafc; border-radius: 16px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+        .cashback-percent { font-weight: 700; color: #059669; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 32px; padding: 32px; max-width: 550px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .close-modal { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #7c94a8; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c5a82; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 16px; font-family: inherit; }
+        .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+        .loader { text-align: center; padding: 40px; color: #2c6e9e; }
+        .empty-state { text-align: center; padding: 60px; color: #7c94a8; }
+        .toast-notification { position: fixed; bottom: 20px; right: 20px; background: white; padding: 12px 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 2000; font-size: 0.9rem; display: none; align-items: center; gap: 10px; }
+        .global-loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px 30px; border-radius: 16px; z-index: 9999; display: none; align-items: center; gap: 12px; }
+        .current-month-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #2c6e9e, #235b84);
+            color: white;
             font-size: 0.7rem;
             font-weight: 600;
-            background: #fef3c7;
-            color: #92400e;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
+            vertical-align: middle;
         }
-
-        /* Expandable rows */
-        .expandable-row {
-            cursor: pointer;
-        }
-        .expand-icon {
-            transition: transform 0.2s;
-            display: inline-block;
-        }
-        .expand-icon.rotated {
-            transform: rotate(90deg);
-        }
-        .detail-row {
-            display: none;
-            background-color: #f8fafc;
-        }
-        .detail-row.show {
-            display: table-row;
-        }
-        .detail-cell {
-            padding: 16px 24px !important;
-            background-color: #f8fafc;
-        }
-        .cashback-list {
-            margin: 0;
-            padding-left: 20px;
-        }
-        .cashback-item {
-            background: #f8fafc;
-            border-radius: 16px;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 8px;
-        }
-        .cashback-percent {
-            font-weight: 700;
-            color: #059669;
-        }
-
-        /* Modals */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 32px;
-            padding: 32px;
-            max-width: 550px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-30px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .modal-header h3 {
-            font-size: 1.5rem;
-            color: #1f3b4c;
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #7c94a8;
-            transition: color 0.2s;
-        }
-
-        .close-modal:hover {
-            color: #dc2626;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2c5a82;
-        }
-
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #cbd5e1;
-            border-radius: 16px;
-            font-size: 1rem;
-            font-family: inherit;
-            transition: border-color 0.2s;
-        }
-
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #2c6e9e;
-            box-shadow: 0 0 0 3px rgba(44,110,158,0.1);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 24px;
-        }
-
-        .loader {
-            text-align: center;
-            padding: 40px;
-            color: #2c6e9e;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px;
-            color: #7c94a8;
-        }
-
-        /* Toast */
-        .toast-notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: white;
-            padding: 12px 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 2000;
-            font-size: 0.9rem;
-            display: none;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Global loader */
-        .global-loader {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 16px;
-            z-index: 9999;
-            display: none;
-            align-items: center;
-            gap: 12px;
-            font-size: 1rem;
-        }
-
-        @media (max-width: 768px) {
-            body { padding: 16px; }
-            .accounts-table, .cashback-table { font-size: 0.75rem; }
-            .action-buttons { flex-direction: column; gap: 4px; }
-            .form-row { grid-template-columns: 1fr; }
-            .history-group { flex-direction: column; align-items: stretch; }
-        }
+        @media (max-width: 768px) { body { padding: 16px; } .accounts-table, .cashback-table { font-size: 0.75rem; } .action-buttons { flex-direction: column; gap: 4px; } .full-width-canvas { min-height: 320px; } }
     </style>
 </head>
 <body>
@@ -631,965 +275,354 @@
     <div class="header">
         <div class="header-top">
             <h1><i class="fas fa-chart-pie"></i> Финансовый менеджер</h1>
-            <button onclick="window.location.href='http://localhost:8080/'" class="home-btn">
-                <i class="fas fa-home"></i> На главную
-            </button>
+            <button onclick="window.location.href='http://localhost:8080/'" class="home-btn"><i class="fas fa-home"></i> На главную</button>
         </div>
-        <div class="sub">Управление счетами: карты, вклады, инвестиции + КЕШБЕК по банкам | 3D-эффектные диаграммы</div>
+        <div class="sub">Управление счетами: карты, вклады, инвестиции + КЕШБЕК по банкам | 3D-эффектные диаграммы + накопленная столбчатая диаграмма динамики активов (включая текущий месяц)</div>
     </div>
 
-    <!-- Stats row -->
     <div class="stats-row">
         <div class="total-amount">
             <div class="total-label"><i class="fas fa-coins"></i> ИТОГО АКТИВОВ</div>
             <div class="total-number" id="totalAmountDisplay">0 ₽</div>
         </div>
+        <div id="trendBadge" class="trend-badge" style="display: none;"><i class="fas fa-chart-line"></i> <span id="trendText"></span></div>
     </div>
 
-    <!-- History controls -->
     <div class="history-controls">
         <div class="history-group">
-            <i class="fas fa-history" style="color: #2c6e9e; font-size: 1.2rem;"></i>
+            <i class="fas fa-history" style="color: #2c6e9e;"></i>
             <span style="font-weight: 600;">Исторические данные:</span>
-            <select id="historyMonthSelect" class="history-select">
-                <option value="">-- загрузка... --</option>
-            </select>
-            <button id="loadHistoryBtn" class="btn-outline">
-                <i class="fas fa-calendar-alt"></i> Показать
-            </button>
+            <select id="historyMonthSelect" class="history-select"><option value="">-- загрузка... --</option></select>
+            <button id="loadHistoryBtn" class="btn-outline"><i class="fas fa-calendar-alt"></i> Показать</button>
         </div>
         <div class="history-group">
-            <div id="historyInfoBadge" style="display: none;" class="history-badge">
-                <i class="fas fa-clock"></i>
-                <span id="historyDateText"></span>
-            </div>
-            <button id="showCurrentBtn" class="btn-primary" style="display: none;">
-                <i class="fas fa-chart-line"></i> Текущие данные
-            </button>
+            <div id="historyInfoBadge" style="display: none;" class="history-badge"><i class="fas fa-clock"></i> <span id="historyDateText"></span></div>
+            <button id="showCurrentBtn" class="btn-primary" style="display: none;"><i class="fas fa-chart-line"></i> Текущие данные</button>
         </div>
     </div>
 
-    <!-- Charts - 3D стиль -->
-    <div class="charts-grid">
+    <!-- Две круговые диаграммы -->
+    <div class="pie-charts-grid">
         <div class="chart-card">
             <div class="chart-title"><i class="fas fa-university"></i> Распределение по банкам</div>
-            <div class="chart-sub">Доля средств в разных банках — объёмная 3D визуализация</div>
+            <div class="chart-sub">Доля средств в разных банках</div>
             <div class="canvas-wrapper"><canvas id="bankPieChart"></canvas></div>
         </div>
         <div class="chart-card">
             <div class="chart-title"><i class="fas fa-layer-group"></i> По типам счетов</div>
-            <div class="chart-sub">Карты / Вклады / Инвестиции — эффект глубины</div>
+            <div class="chart-sub">Карты / Вклады / Инвестиции</div>
             <div class="canvas-wrapper"><canvas id="typePieChart"></canvas></div>
         </div>
     </div>
 
-    <!-- Cashback summary section -->
+    <!-- Полноширинная накопленная столбчатая диаграмма динамики с разделением по типам (данные с бэка) -->
+    <div class="full-width-chart-card">
+        <div class="chart-title"><i class="fas fa-chart-bar"></i> Динамика активов по месяцам <span class="current-month-badge">текущий месяц</span></div>
+        <div class="chart-sub">Каждый месяц — один столбец, разделённый по типам счетов: 💳 Карты, 🏦 Вклады, 📈 Инвестиции. Данные загружаются с сервера</div>
+        <div class="canvas-wrapper" style="width: 100%;">
+            <canvas id="trendStackedBarChart" class="full-width-canvas" style="width: 100%; height: auto; max-height: 450px;"></canvas>
+        </div>
+    </div>
+
     <div class="cashback-summary-section" id="cashbackSummarySection" style="display: none;">
         <div class="section-header">
             <h2><i class="fas fa-percent"></i> Кешбек по банкам</h2>
             <button id="viewAllCashbacksBtn" class="btn-secondary"><i class="fas fa-list"></i> Все кешбеки</button>
         </div>
-        <div id="cashbackSummaryContainer">
-            <div class="loader"><i class="fas fa-spinner fa-pulse"></i> Загрузка...</div>
-        </div>
+        <div id="cashbackSummaryContainer"><div class="loader"><i class="fas fa-spinner fa-pulse"></i> Загрузка...</div></div>
     </div>
 
-    <!-- Accounts section -->
     <div class="accounts-section">
         <div class="section-header">
             <h2><i class="fas fa-list-ul"></i> Мои счета</h2>
             <button id="createAccountBtn" class="btn-primary"><i class="fas fa-plus"></i> Создать счёт</button>
         </div>
-        <div id="accountsTableContainer">
-            <div class="loader"><i class="fas fa-spinner fa-pulse"></i> Загрузка счетов...</div>
-        </div>
+        <div id="accountsTableContainer"><div class="loader"><i class="fas fa-spinner fa-pulse"></i> Загрузка счетов...</div></div>
     </div>
 </div>
 
-<!-- Modal for account -->
-<div id="accountModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modalTitle">Создание счёта</h3>
-            <button class="close-modal" onclick="closeAccountModal()">&times;</button>
-        </div>
-        <form id="accountForm">
-            <input type="hidden" id="accountId">
-            <div class="form-group">
-                <label><i class="fas fa-building"></i> Название банка *</label>
-                <input type="text" id="bankName" required placeholder="Тинькофф, Сбер, Альфа-Банк..." maxlength="100">
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-ruble-sign"></i> Сумма *</label>
-                <input type="number" id="amount" step="0.01" min="0.01" required placeholder="1000.00">
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-tag"></i> Тип счёта *</label>
-                <select id="type" required>
-                    <option value="CARD">💳 Карта/счёт (CARD)</option>
-                    <option value="DEPOSIT">🏦 Вклад (DEPOSIT)</option>
-                    <option value="INVESTMENT">📈 Инвестиции (INVESTMENT)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-comment"></i> Комментарий</label>
-                <textarea id="comment" rows="3" placeholder="Дополнительная информация о счёте..."></textarea>
-            </div>
-            <div class="modal-buttons">
-                <button type="button" class="btn-secondary" onclick="closeAccountModal()">Отмена</button>
-                <button type="submit" class="btn-primary">Сохранить</button>
-            </div>
-        </form>
-    </div>
-</div>
+<div id="accountModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="modalTitle">Создание счёта</h3><button class="close-modal" onclick="closeAccountModal()">&times;</button></div><form id="accountForm"><input type="hidden" id="accountId"><div class="form-group"><label>Название банка *</label><input type="text" id="bankName" required placeholder="Тинькофф, Сбер..."></div><div class="form-group"><label>Сумма *</label><input type="number" id="amount" step="0.01" min="0.01" required></div><div class="form-group"><label>Тип счёта *</label><select id="type" required><option value="CARD">💳 Карта/счёт</option><option value="DEPOSIT">🏦 Вклад</option><option value="INVESTMENT">📈 Инвестиции</option></select></div><div class="form-group"><label>Комментарий</label><textarea id="comment" rows="2"></textarea></div><div class="modal-buttons"><button type="button" class="btn-secondary" onclick="closeAccountModal()">Отмена</button><button type="submit" class="btn-primary">Сохранить</button></div></form></div></div>
 
-<!-- Modal for cashback -->
-<div id="cashbackModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="cashbackModalTitle">Добавить кешбек</h3>
-            <button class="close-modal" onclick="closeCashbackModal()">&times;</button>
-        </div>
-        <form id="cashbackForm">
-            <input type="hidden" id="cashbackId">
-            <input type="hidden" id="cashbackAccountId">
-            <div class="form-group">
-                <label><i class="fas fa-building"></i> Банк</label>
-                <input type="text" id="cashbackBankName" readonly style="background: #f0f2f5; font-weight: 600;">
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-tag"></i> Категория *</label>
-                <input type="text" id="cashbackCategory" required placeholder="Супермаркеты, Такси, Рестораны...">
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-percent"></i> Процент кешбека *</label>
-                <input type="number" id="cashbackPercentage" step="1" min="1" max="100" required placeholder="5">
-            </div>
-            <div class="modal-buttons">
-                <button type="button" class="btn-secondary" onclick="closeCashbackModal()">Отмена</button>
-                <button type="submit" class="btn-primary">Сохранить</button>
-            </div>
-        </form>
-    </div>
-</div>
+<div id="cashbackModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="cashbackModalTitle">Добавить кешбек</h3><button class="close-modal" onclick="closeCashbackModal()">&times;</button></div><form id="cashbackForm"><input type="hidden" id="cashbackId"><input type="hidden" id="cashbackAccountId"><div class="form-group"><label>Банк</label><input type="text" id="cashbackBankName" readonly style="background:#f0f2f5;"></div><div class="form-group"><label>Категория *</label><input type="text" id="cashbackCategory" required placeholder="Супермаркеты, Такси..."></div><div class="form-group"><label>Процент *</label><input type="number" id="cashbackPercentage" step="1" min="1" max="100" required></div><div class="modal-buttons"><button type="button" class="btn-secondary" onclick="closeCashbackModal()">Отмена</button><button type="submit" class="btn-primary">Сохранить</button></div></form></div></div>
 
-<!-- Modal for all cashbacks -->
-<div id="allCashbacksModal" class="modal">
-    <div class="modal-content" style="max-width: 800px;">
-        <div class="modal-header">
-            <h3><i class="fas fa-percent"></i> Все кешбеки</h3>
-            <button class="close-modal" onclick="closeAllCashbacksModal()">&times;</button>
-        </div>
-        <div id="allCashbacksContainer">
-            <div class="loader"><i class="fas fa-spinner fa-pulse"></i> Загрузка...</div>
-        </div>
-    </div>
-</div>
+<div id="allCashbacksModal" class="modal"><div class="modal-content" style="max-width:800px;"><div class="modal-header"><h3>Все кешбеки</h3><button class="close-modal" onclick="closeAllCashbacksModal()">&times;</button></div><div id="allCashbacksContainer"><div class="loader">Загрузка...</div></div></div></div>
 
-<!-- Toast -->
 <div id="toastNotification" class="toast-notification"></div>
-
-<!-- Global loader -->
-<div id="globalLoader" class="global-loader">
-    <i class="fas fa-spinner fa-pulse"></i> Загрузка...
-</div>
+<div id="globalLoader" class="global-loader"><i class="fas fa-spinner fa-pulse"></i> Загрузка...</div>
 
 <script>
-    // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (ПОЛНАЯ СТАРАЯ ЛОГИКА) ====================
-    let bankChart = null, typeChart = null;
+    let bankChart = null, typeChart = null, stackedBarChart = null;
     let isHistoryMode = false;
-    let currentSnapshotDate = null;
     let availableSnapshots = [];
+    let dynamicsData = null; // Храним данные динамики для переиспользования
 
     const API_BASE = '/api/finance';
     const API_HISTORY = '/api/finance/history';
 
-    // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
-    function formatCurrency(amount) {
-        let num = parseFloat(amount);
-        if (isNaN(num)) num = 0;
-        return new Intl.NumberFormat('ru-RU', {
-            style: 'currency',
-            currency: 'RUB',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(num);
-    }
+    function formatCurrency(amount) { let num = parseFloat(amount) || 0; return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 2 }).format(num); }
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+    function formatDateToRussian(dateString) { let d = new Date(dateString); let months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']; return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`; }
+    function getCurrentMonthName() { let months = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь']; return months[new Date().getMonth()]; }
+    function showToast(msg, type='info') { let t = document.getElementById('toastNotification'); t.innerHTML = `<i class="fas ${type==='error'?'fa-exclamation-triangle':'fa-info-circle'}"></i> ${msg}`; t.style.display='flex'; setTimeout(()=>t.style.display='none',3000); }
+    function showLoading(show) { document.getElementById('globalLoader').style.display = show ? 'flex' : 'none'; }
 
-    function getTypeDescription(type) {
-        const types = {
-            'CARD': '💳 Карта/счёт',
-            'DEPOSIT': '🏦 Вклад',
-            'INVESTMENT': '📈 Инвестиции'
-        };
-        return types[type] || type;
-    }
+    // Загрузка данных для накопленной столбчатой диаграммы с бэка
+    async function loadStackedBarChartFromBackend() {
+        try {
+            showLoading(true);
+            const res = await fetch(`${API_HISTORY}/dynamics/monthly`);
+            if (!res.ok) throw new Error('Failed to load dynamics data');
+            dynamicsData = await res.json();
 
-    function getTypeClass(type) {
-        const classes = {
-            'CARD': 'type-card',
-            'DEPOSIT': 'type-deposit',
-            'INVESTMENT': 'type-investment'
-        };
-        return classes[type] || 'type-card';
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
-    }
-
-    function formatDateToRussian(dateString) {
-        const date = new Date(dateString);
-        const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-            'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-        return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-    }
-
-    function showToast(message, type = 'info') {
-        const toast = document.getElementById('toastNotification');
-        const colors = {
-            success: '#10b981',
-            error: '#ef4444',
-            info: '#3b82f6',
-            warning: '#f59e0b'
-        };
-        toast.style.borderLeft = `4px solid ${colors[type] || colors.info}`;
-        toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i> ${message}`;
-        toast.style.display = 'flex';
-        setTimeout(() => {
-            toast.style.display = 'none';
-        }, 3000);
-    }
-
-    function showLoading(show) {
-        const loader = document.getElementById('globalLoader');
-        loader.style.display = show ? 'flex' : 'none';
-    }
-
-    // ==================== КРАСИВЫЕ 3D-СТИЛЬ ДЛЯ ГРАФИКОВ (НО ПОЛНАЯ СОВМЕСТИМОСТЬ) ====================
-    function create3DStyledChart(ctx, labels, data, colors) {
-        return new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    backgroundColor: colors,
-                    borderWidth: 0,
-                    hoverOffset: 15,
-                    cutout: '0%',
-                    borderRadius: 10,
-                    spacing: 4,
-                    offset: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { font: { size: 12, family: 'Inter', weight: '500' }, usePointStyle: true, boxWidth: 10, padding: 14 }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => {
-                                const total = ctx.dataset.data.reduce((a,b) => a + b, 0);
-                                const percent = ((ctx.raw / total) * 100).toFixed(1);
-                                return `${ctx.label}: ${formatCurrency(ctx.raw)} (${percent}%)`;
-                            }
-                        },
-                        backgroundColor: 'rgba(0,0,0,0.85)',
-                        titleFont: { size: 13, weight: 'bold' },
-                        bodyFont: { size: 12 },
-                        padding: 12,
-                        cornerRadius: 12,
-                        displayColors: true
-                    }
-                },
-                layout: { padding: 12 },
-                elements: {
-                    arc: {
-                        borderWidth: 0,
-                        shadowOffsetX: 4,
-                        shadowOffsetY: 6,
-                        shadowBlur: 15,
-                        shadowColor: 'rgba(0,0,0,0.25)'
-                    }
-                },
-                animation: { duration: 1000, easing: 'easeOutCubic' }
+            if (!dynamicsData || dynamicsData.length === 0) {
+                if(stackedBarChart) stackedBarChart.destroy();
+                const ctx = document.getElementById('trendStackedBarChart').getContext('2d');
+                stackedBarChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: ['Нет данных'], datasets: [{ label: 'Нет данных', data: [0], backgroundColor: '#cbd5e1' }] },
+                    options: { responsive: true, maintainAspectRatio: true, scales: { x: { stacked: true }, y: { stacked: true } } }
+                });
+                return;
             }
-        });
+
+            let labels = dynamicsData.map(d => d.monthLabel);
+            let cardAmounts = dynamicsData.map(d => parseFloat(d.cardAmount) || 0);
+            let depositAmounts = dynamicsData.map(d => parseFloat(d.depositAmount) || 0);
+            let investmentAmounts = dynamicsData.map(d => parseFloat(d.investmentAmount) || 0);
+
+            let ctx = document.getElementById('trendStackedBarChart').getContext('2d');
+            if(stackedBarChart) stackedBarChart.destroy();
+
+            stackedBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '💳 Карты/счета',
+                            data: cardAmounts,
+                            backgroundColor: '#3b82f6',
+                            borderColor: '#1e3c72',
+                            borderWidth: 0,
+                            borderRadius: 0,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.9,
+                            stack: 'month'
+                        },
+                        {
+                            label: '🏦 Вклады',
+                            data: depositAmounts,
+                            backgroundColor: '#10b981',
+                            borderColor: '#0a5c3e',
+                            borderWidth: 0,
+                            borderRadius: 0,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.9,
+                            stack: 'month'
+                        },
+                        {
+                            label: '📈 Инвестиции',
+                            data: investmentAmounts,
+                            backgroundColor: '#f59e0b',
+                            borderColor: '#b45309',
+                            borderWidth: 0,
+                            borderRadius: 0,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.9,
+                            stack: 'month'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { font: { size: 12, weight: 'bold' }, usePointStyle: true, boxWidth: 12 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: ${formatCurrency(ctx.raw)}`,
+                                footer: (items) => {
+                                    if(items.length === 0) return '';
+                                    let total = 0;
+                                    for(let item of items) total += item.raw;
+                                    return `Итого: ${formatCurrency(total)}`;
+                                }
+                            },
+                            backgroundColor: 'rgba(0,0,0,0.85)',
+                            titleFont: { size: 13, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { callback: (v) => formatCurrency(v), font: { size: 11 } },
+                            grid: { color: '#e2e8f0' },
+                            title: { display: true, text: 'Сумма (₽)', font: { size: 11, weight: 'bold' } },
+                            stacked: true
+                        },
+                        x: {
+                            ticks: { font: { size: 11 }, rotation: -15, autoSkip: true, maxRotation: 25 },
+                            grid: { display: false },
+                            title: { display: true, text: 'Период (месяц)', font: { size: 11, weight: 'bold' } },
+                            stacked: true
+                        }
+                    },
+                    animation: { duration: 800, easing: 'easeOutQuart' }
+                }
+            });
+
+            // Обновляем тренд (текущий месяц vs последний исторический)
+            if(cardAmounts.length >= 2) {
+                let lastHistoricalTotal = (cardAmounts[cardAmounts.length-2] || 0) + (depositAmounts[depositAmounts.length-2] || 0) + (investmentAmounts[investmentAmounts.length-2] || 0);
+                let currentTotal = (cardAmounts[cardAmounts.length-1] || 0) + (depositAmounts[depositAmounts.length-1] || 0) + (investmentAmounts[investmentAmounts.length-1] || 0);
+                let diff = currentTotal - lastHistoricalTotal;
+                let trendDiv = document.getElementById('trendBadge'), trendSpan = document.getElementById('trendText');
+                trendDiv.style.display = 'inline-flex';
+                if(diff > 0) trendSpan.innerHTML = `<span class="trend-up"><i class="fas fa-arrow-up"></i> +${formatCurrency(diff)} за месяц</span>`;
+                else if(diff < 0) trendSpan.innerHTML = `<span class="trend-down"><i class="fas fa-arrow-down"></i> ${formatCurrency(diff)} за месяц</span>`;
+                else trendSpan.innerHTML = `<span class="trend-equal"><i class="fas fa-minus"></i> Без изменений</span>`;
+            } else {
+                document.getElementById('trendBadge').style.display = 'none';
+            }
+        } catch(e) {
+            console.error('Stacked bar chart error:', e);
+            showToast('Ошибка загрузки динамики активов', 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function create3DStyledChart(ctx, labels, data, colors) {
+        return new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 15, borderRadius: 10, spacing: 4 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } }, tooltip: { callbacks: { label: (ctx) => { let total = ctx.dataset.data.reduce((a,b)=>a+b,0); let p = ((ctx.raw/total)*100).toFixed(1); return `${ctx.label}: ${formatCurrency(ctx.raw)} (${p}%)`; } } } }, layout: { padding: 10 } } });
     }
 
     function updateCharts(summary) {
-        // Данные по банкам
         let bankLabels = [], bankValues = [];
-        if (summary.amountByBank && Object.keys(summary.amountByBank).length) {
-            for (let [bank, amount] of Object.entries(summary.amountByBank)) {
-                let val = parseFloat(amount);
-                if (val > 0) {
-                    bankLabels.push(bank);
-                    bankValues.push(val);
-                }
-            }
-        }
-        if (bankLabels.length === 0) {
-            bankLabels = ['Нет данных'];
-            bankValues = [1];
-        }
-
-        const bankColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a', '#06b6d4', '#84cc16', '#f97316', '#6366f1'];
-        const bankColorPalette = bankLabels.map((_, i) => bankColors[i % bankColors.length]);
-
-        // Данные по типам
-        let typeLabels = [], typeValues = [];
-        const typeMap = { 'CARD': '💳 Карта/счёт', 'DEPOSIT': '🏦 Вклад', 'INVESTMENT': '📈 Инвестиции' };
-        if (summary.amountByType && Object.keys(summary.amountByType).length) {
-            for (let [type, amount] of Object.entries(summary.amountByType)) {
-                let val = parseFloat(amount);
-                if (val > 0) {
-                    typeLabels.push(typeMap[type] || type);
-                    typeValues.push(val);
-                }
-            }
-        }
-        if (typeLabels.length === 0) {
-            typeLabels = ['Нет счетов'];
-            typeValues = [1];
-        }
-
-        const typeColorsMap = { '💳 Карта/счёт': '#3b82f6', '🏦 Вклад': '#10b981', '📈 Инвестиции': '#f59e0b' };
-        const typeColorPalette = typeLabels.map(label => typeColorsMap[label] || '#8b5cf6');
-
-        // Банковская диаграмма
-        const bankCtx = document.getElementById('bankPieChart').getContext('2d');
-        if (bankChart) {
-            bankChart.data.labels = bankLabels;
-            bankChart.data.datasets[0].data = bankValues;
-            bankChart.data.datasets[0].backgroundColor = bankColorPalette;
-            bankChart.update();
-        } else {
-            bankChart = create3DStyledChart(bankCtx, bankLabels, bankValues, bankColorPalette);
-        }
-
-        // Диаграмма типов
-        const typeCtx = document.getElementById('typePieChart').getContext('2d');
-        if (typeChart) {
-            typeChart.data.labels = typeLabels;
-            typeChart.data.datasets[0].data = typeValues;
-            typeChart.data.datasets[0].backgroundColor = typeColorPalette;
-            typeChart.update();
-        } else {
-            typeChart = create3DStyledChart(typeCtx, typeLabels, typeValues, typeColorPalette);
-        }
+        if(summary.amountByBank) for(let [k,v] of Object.entries(summary.amountByBank)) if(parseFloat(v)>0) { bankLabels.push(k); bankValues.push(parseFloat(v)); }
+        if(bankLabels.length===0) { bankLabels=['Нет данных']; bankValues=[1]; }
+        let bankColors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec489a','#06b6d4'];
+        let typeLabels=[], typeValues=[], typeMap={'CARD':'💳 Карта/счёт','DEPOSIT':'🏦 Вклад','INVESTMENT':'📈 Инвестиции'};
+        if(summary.amountByType) for(let [k,v] of Object.entries(summary.amountByType)) if(parseFloat(v)>0) { typeLabels.push(typeMap[k]||k); typeValues.push(parseFloat(v)); }
+        if(typeLabels.length===0) { typeLabels=['Нет счетов']; typeValues=[1]; }
+        let typeColors = typeLabels.map(l=> l.includes('Карта')?'#3b82f6': l.includes('Вклад')?'#10b981':'#f59e0b');
+        let bankCtx = document.getElementById('bankPieChart').getContext('2d');
+        if(bankChart) { bankChart.data.labels=bankLabels; bankChart.data.datasets[0].data=bankValues; bankChart.data.datasets[0].backgroundColor=bankColors.slice(0,bankLabels.length); bankChart.update(); }
+        else { bankChart = create3DStyledChart(bankCtx, bankLabels, bankValues, bankColors.slice(0,bankLabels.length)); }
+        let typeCtx = document.getElementById('typePieChart').getContext('2d');
+        if(typeChart) { typeChart.data.labels=typeLabels; typeChart.data.datasets[0].data=typeValues; typeChart.data.datasets[0].backgroundColor=typeColors; typeChart.update(); }
+        else { typeChart = create3DStyledChart(typeCtx, typeLabels, typeValues, typeColors); }
     }
 
-    // ==================== ЗАГРУЗКА ДАННЫХ (ТЕКУЩИЕ) ====================
-    async function fetchSummaryAndAccounts() {
-        try {
-            showLoading(true);
-            const [summaryRes, accountsRes, cashbackSummaryRes] = await Promise.all([
-                fetch(`${API_BASE}/summary`),
-                fetch(`${API_BASE}/accounts`),
-                fetch(`${API_BASE}/cashbacks/summary`)
-            ]);
-
-            if (!summaryRes.ok) throw new Error(`Ошибка сводки: ${summaryRes.status}`);
-            if (!accountsRes.ok) throw new Error(`Ошибка получения счетов: ${accountsRes.status}`);
-
-            const summary = await summaryRes.json();
-            const accounts = await accountsRes.json();
-
-            document.getElementById('totalAmountDisplay').innerHTML = formatCurrency(summary.totalAmount || 0);
-            updateCharts(summary);
-            renderAccountsTable(accounts, false);
-
-            if (cashbackSummaryRes.ok) {
-                const cashbackSummary = await cashbackSummaryRes.json();
-                renderCashbackSummary(cashbackSummary);
-                document.getElementById('cashbackSummarySection').style.display = 'block';
-            } else {
-                document.getElementById('cashbackSummarySection').style.display = 'none';
-            }
-        } catch (err) {
-            console.error('Fetch error:', err);
-            document.getElementById('accountsTableContainer').innerHTML =
-                `<div class="loader" style="color:#c7423f;"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки: ${err.message}</div>`;
-            showToast('Ошибка загрузки данных: ' + err.message, 'error');
-        } finally {
-            showLoading(false);
-        }
-    }
-
-    // ==================== ОТОБРАЖЕНИЕ ТАБЛИЦ (ПОЛНАЯ ЛОГИКА) ====================
-    function renderAccountsTable(accounts, isHistorical = false) {
-        const container = document.getElementById('accountsTableContainer');
-
-        if (!accounts || accounts.length === 0) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-inbox" style="font-size: 3rem; opacity: 0.5;"></i><p style="margin-top: 16px;">${isHistorical ? 'Нет счетов за выбранный период' : 'Нет доступных счетов. Создайте первый счёт!'}</p></div>`;
-            return;
-        }
-
-        let html = `<table class="accounts-table">
-        <thead>
-            <tr><th style="width: 30px;"></th><th>ID</th><th>Банк</th><th>Тип счёта</th><th>Сумма</th><th>Комментарий</th><th style="min-width: 120px;">Действия</th>
-            </thead>
-        <tbody>`;
-
-        for (const acc of accounts) {
-            const typeDesc = getTypeDescription(acc.type);
-            const typeClass = getTypeClass(acc.type);
-            const isCard = acc.type === 'CARD';
-
-            const actionsDisabled = isHistorical ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : '';
-            const showCashbackButton = isCard && !isHistorical;
-            const cashbackButtonHtml = showCashbackButton ?
-                `<button class="cashback-btn" onclick="event.stopPropagation(); openAddCashbackModal(${acc.id}, '${escapeHtml(acc.bankName)}')" title="Добавить кешбек"><i class="fas fa-percent"></i></button>` :
-                `<button class="cashback-btn" disabled style="visibility:hidden;"><i class="fas fa-percent"></i></button>`;
-
-            html += `
-            <tr class="expandable-row" data-account-id="${acc.id}" onclick="${isCard ? `toggleCashbackDetails(${acc.id})` : ''}" style="${!isCard ? 'cursor: default;' : ''}">
-                <td>${isCard ? '<i class="fas fa-chevron-right expand-icon" id="expand-icon-' + acc.id + '"></i>' : '<span style="opacity: 0.3;"><i class="fas fa-lock"></i></span>'}</td>
-                <td style="font-weight: 500;">${acc.id}</td>
-                <td><strong>${escapeHtml(acc.bankName)}</strong></td>
+    function renderAccountsTable(accounts, isHistorical) {
+        let container = document.getElementById('accountsTableContainer');
+        if(!accounts || accounts.length===0) { container.innerHTML=`<div class="empty-state"><i class="fas fa-inbox"></i><p>${isHistorical?'Нет счетов за период':'Нет счетов. Создайте первый!'}</p></div>`; return; }
+        let html = `<table class="accounts-table"><thead><tr><th style="width:30px"></th><th>ID</th><th>Банк</th><th>Тип</th><th>Сумма</th><th>Комментарий</th><th>Действия</th></tr></thead><tbody>`;
+        for(let acc of accounts) {
+            let typeDesc = acc.type==='CARD'?'💳 Карта/счёт': acc.type==='DEPOSIT'?'🏦 Вклад':'📈 Инвестиции';
+            let typeClass = acc.type==='CARD'?'type-card': acc.type==='DEPOSIT'?'type-deposit':'type-investment';
+            let isCard = acc.type === 'CARD';
+            let disabled = isHistorical ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : '';
+            let cashbackBtn = (isCard && !isHistorical) ? `<button class="cashback-btn" onclick="event.stopPropagation(); openAddCashbackModal(${acc.id},'${escapeHtml(acc.bankName)}')"><i class="fas fa-percent"></i></button>` : `<button class="cashback-btn" disabled style="visibility:hidden"><i class="fas fa-percent"></i></button>`;
+            html += `<tr class="expandable-row" data-account-id="${acc.id}" onclick="${isCard?`toggleCashbackDetails(${acc.id})`:'return false;'}" style="${!isCard?'cursor:default':''}">
+                <td>${isCard?'<i class="fas fa-chevron-right expand-icon" id="expand-icon-'+acc.id+'"></i>':'<span style="opacity:0.3"><i class="fas fa-lock"></i></span>'}</td>
+                <td>${acc.id}</td><td><strong>${escapeHtml(acc.bankName)}</strong></td>
                 <td><span class="type-badge ${typeClass}">${typeDesc}</span></td>
-                <td style="font-weight: 600; color: #1f4e7a;">${formatCurrency(acc.amount)}</td>
-                <td style="color: #6e8faa; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(acc.comment || '—')}</td>
-                <td class="action-buttons" onclick="event.stopPropagation()">
-                    ${cashbackButtonHtml}
-                    <button class="edit-btn" onclick="editAccount(${acc.id})" ${actionsDisabled} title="${isHistorical ? 'Недоступно в историческом режиме' : 'Редактировать'}"><i class="fas fa-edit"></i></button>
-                    <button class="delete-btn" onclick="deleteAccount(${acc.id})" ${actionsDisabled} title="${isHistorical ? 'Недоступно в историческом режиме' : 'Удалить'}"><i class="fas fa-trash-alt"></i></button>
-                </td>
-            </tr>
-        `;
-
-            if (isCard) {
-                html += `
-                <tr class="detail-row" id="detail-row-${acc.id}">
-                    <td colspan="7" class="detail-cell">
-                        <div id="cashbacks-${acc.id}">
-                            ${renderCashbacksList(acc.cashbacks, acc.id, isHistorical)}
-                        </div>
-                    </td>
-                </tr>
-            `;
-            } else {
-                html += `
-                <tr class="detail-row" id="detail-row-${acc.id}" style="display: none;">
-                    <td colspan="7" class="detail-cell">
-                        <div style="color: #7c94a8; padding: 8px;">
-                            <i class="fas fa-info-circle"></i> Кешбек доступен только для карт/счетов (тип CARD)
-                        </div>
-                    </td>
-                </tr>
-            `;
-            }
+                <td style="font-weight:600;color:#1f4e7a;">${formatCurrency(acc.amount)}</td>
+                <td>${escapeHtml(acc.comment||'—')}</td>
+                <td class="action-buttons" onclick="event.stopPropagation()">${cashbackBtn}<button class="edit-btn" onclick="editAccount(${acc.id})" ${disabled}><i class="fas fa-edit"></i></button><button class="delete-btn" onclick="deleteAccount(${acc.id})" ${disabled}><i class="fas fa-trash-alt"></i></button></td>
+            </tr><tr class="detail-row" id="detail-row-${acc.id}"><td colspan="7" class="detail-cell"><div id="cashbacks-${acc.id}">${renderCashbacksList(acc.cashbacks, acc.id, isHistorical)}</div></td></tr>`;
         }
-
-        html += `</tbody>`;
-        container.innerHTML = html;
+        container.innerHTML = html + '</tbody></table>';
     }
 
-    function renderCashbacksList(cashbacks, accountId, isHistorical = false) {
-        if (!cashbacks || cashbacks.length === 0) {
-            return `<div style="color: #7c94a8; padding: 8px;"><i class="fas fa-info-circle"></i> Нет кешбеков${isHistorical ? ' на эту дату' : ''}.</div>`;
+    function renderCashbacksList(cashbacks, accountId, isHistorical) {
+        if(!cashbacks || cashbacks.length===0) return `<div style="color:#7c94a8;padding:8px;"><i class="fas fa-info-circle"></i> Нет кешбеков</div>`;
+        let html = `<div><div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-percent"></i> Кешбеки:</div>`;
+        for(let cb of cashbacks) {
+            let disabled = isHistorical ? 'disabled style="opacity:0.4;"' : '';
+            html += `<div class="cashback-item"><div><strong>${escapeHtml(cb.category)}</strong> <span class="cashback-percent">${parseInt(cb.percentage)}%</span></div>
+            <div><button class="edit-btn" onclick="editCashback(${cb.id}, ${accountId})" ${disabled}><i class="fas fa-edit"></i></button>
+            <button class="delete-btn" onclick="deleteCashback(${cb.id})" ${disabled}><i class="fas fa-trash-alt"></i></button></div></div>`;
         }
-
-        let html = `<div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="font-weight: 600; margin-bottom: 8px;"><i class="fas fa-percent"></i> Кешбеки по карте:</div>`;
-
-        for (const cb of cashbacks) {
-            const actionsDisabled = isHistorical ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : '';
-            html += `
-                <div class="cashback-item">
-                    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; flex: 1;">
-                        <span><i class="fas fa-tag"></i> <strong>${escapeHtml(cb.category)}</strong></span>
-                        <span class="cashback-percent">${parseInt(cb.percentage)}%</span>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="edit-btn" onclick="editCashback(${cb.id}, ${accountId})" ${actionsDisabled}><i class="fas fa-edit"></i></button>
-                        <button class="delete-btn" onclick="deleteCashback(${cb.id})" ${actionsDisabled}><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                </div>
-            `;
-        }
-
-        html += `</div>`;
-        return html;
+        return html + '</div>';
     }
 
-    function renderCashbackSummary(cashbackSummary) {
-        const container = document.getElementById('cashbackSummaryContainer');
-        if (!cashbackSummary || cashbackSummary.length === 0) {
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-percent"></i> Нет данных о кешбеке. Добавьте кешбек для банков!</div>';
-            return;
+    function renderCashbackSummary(summary) {
+        let container = document.getElementById('cashbackSummaryContainer');
+        if(!summary || summary.length===0) { container.innerHTML='<div class="empty-state">Нет данных о кешбеке</div>'; return; }
+        let html = `<table class="cashback-table"><thead><tr><th>Банк</th><th>Категорий</th><th>Лучший кешбек</th><th>Категории</th></tr></thead><tbody>`;
+        for(let b of summary) {
+            let cats = '';
+            if(b.cashbackByCategory) for(let [cat,perc] of Object.entries(b.cashbackByCategory)) cats += `<span class="cashback-badge">${escapeHtml(cat)}: ${parseInt(perc)}%</span> `;
+            html += `<tr><td><strong>${escapeHtml(b.bankName)}</strong></td><td>${b.totalCashbackCategories||0}</td><td style="color:#059669;">${parseInt(b.bestCashbackPercentage||0)}%<br><small>${escapeHtml(b.bestCashbackCategory||'—')}</small></td><td>${cats||'—'}</td></tr>`;
         }
-
-        let html = `<table class="cashback-table">
-            <thead><tr><th>Банк</th><th>Категорий</th><th>Лучший кешбек</th><th>Категории</th></tr></thead>
-            <tbody>`;
-
-        for (const bank of cashbackSummary) {
-            let categoriesHtml = '';
-            if (bank.cashbackByCategory) {
-                categoriesHtml = Object.entries(bank.cashbackByCategory).map(([cat, perc]) =>
-                    `<span class="cashback-badge"><i class="fas fa-tag"></i> ${escapeHtml(cat)}: ${parseInt(perc)}%</span>`
-                ).join(' ');
-            }
-
-            html += `
-                <tr>
-                    <td><strong>${escapeHtml(bank.bankName)}</strong></td>
-                    <td>${bank.totalCashbackCategories || 0}</td>
-                    <td style="color: #059669; font-weight: 700;">${parseInt(bank.bestCashbackPercentage || 0)}%<br><small style="font-weight: normal;">${escapeHtml(bank.bestCashbackCategory || '—')}</small></td>
-                    <td><div style="display: flex; flex-wrap: wrap; gap: 6px;">${categoriesHtml || '—'}</div></td>
-                </tr>
-            `;
-        }
-
-        html += `</tbody>`;
-        container.innerHTML = html;
+        container.innerHTML = html + '</tbody></table>';
     }
 
-    function toggleCashbackDetails(accountId) {
-        const detailRow = document.getElementById(`detail-row-${accountId}`);
-        const icon = document.getElementById(`expand-icon-${accountId}`);
-        if (detailRow && icon) {
-            detailRow.classList.toggle('show');
-            icon.classList.toggle('rotated');
-        }
-    }
+    window.toggleCashbackDetails = function(id) { let row = document.getElementById(`detail-row-${id}`); let icon = document.getElementById(`expand-icon-${id}`); if(row && icon) { row.classList.toggle('show'); icon.classList.toggle('rotated'); } };
 
-    // ==================== ИСТОРИЧЕСКИЕ ДАННЫЕ ====================
     async function loadAvailableSnapshots() {
-        try {
-            const response = await fetch(`${API_HISTORY}/snapshots`);
-            if (!response.ok) throw new Error('Failed to load snapshots');
-
-            availableSnapshots = await response.json();
-            const select = document.getElementById('historyMonthSelect');
-
-            if (!availableSnapshots || availableSnapshots.length === 0) {
-                select.innerHTML = '<option value="">Нет исторических данных</option>';
-                select.disabled = true;
-                return;
-            }
-
-            select.disabled = false;
-            select.innerHTML = '<option value="">-- выберите месяц --</option>';
-
-            for (const snapshot of availableSnapshots) {
-                const option = document.createElement('option');
-                option.value = `${snapshot.year}|${snapshot.month}`;
-                option.textContent = `${snapshot.formattedDate} (${snapshot.accountsCount} счетов, ${snapshot.cashbacksCount} кешбеков)`;
-                option.dataset.year = snapshot.year;
-                option.dataset.month = snapshot.month;
-                select.appendChild(option);
-            }
-        } catch (err) {
-            console.error('Failed to load snapshots:', err);
-            const select = document.getElementById('historyMonthSelect');
-            select.innerHTML = '<option value="">Ошибка загрузки</option>';
-            showToast('Ошибка загрузки исторических данных: ' + err.message, 'error');
-        }
+        try { let res=await fetch(`${API_HISTORY}/snapshots`); let data=await res.json(); availableSnapshots=data; let sel=document.getElementById('historyMonthSelect'); if(!data||!data.length){ sel.innerHTML='<option value="">Нет истории</option>'; sel.disabled=true; return; }
+            sel.disabled=false; sel.innerHTML='<option value="">-- выберите месяц --</option>';
+            for(let s of data) sel.innerHTML+=`<option value="${s.year}|${s.month}">${s.formattedDate} (${s.accountsCount} счетов)</option>`;
+        } catch(e){ console.error(e); }
     }
 
     async function loadHistoricalData() {
-        const select = document.getElementById('historyMonthSelect');
-        const selectedValue = select.value;
-
-        if (!selectedValue) {
-            showToast('Выберите месяц', 'warning');
-            return;
-        }
-
-        let year, month;
-
-        if (selectedValue.includes('|')) {
-            const parts = selectedValue.split('|');
-            year = parseInt(parts[0]);
-            month = parseInt(parts[1]);
-        } else {
-            const selectedOption = select.options[select.selectedIndex];
-            year = parseInt(selectedOption.dataset.year);
-            month = parseInt(selectedOption.dataset.month);
-        }
-
-        if (isNaN(year) || isNaN(month) || !year || !month) {
-            showToast('Ошибка: не удалось определить год и месяц', 'error');
-            return;
-        }
-
-        try {
-            showLoading(true);
-            const response = await fetch(`${API_HISTORY}/data?year=${year}&month=${month}`);
-
-            if (!response.ok) {
-                if (response.status === 404) {
-                    showToast('Нет данных за выбранный месяц', 'warning');
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return;
-            }
-
-            const historicalData = await response.json();
-
-            if (!historicalData || !historicalData.accounts) {
-                showToast('Некорректные данные от сервера', 'error');
-                return;
-            }
-
-            isHistoryMode = true;
-            currentSnapshotDate = historicalData.snapshotDate;
-
-            const viewAllCashbacksBtn = document.getElementById('viewAllCashbacksBtn');
-            viewAllCashbacksBtn.disabled = true;
-            viewAllCashbacksBtn.title = 'Недоступно в историческом режиме';
-
-            document.getElementById('showCurrentBtn').style.display = 'inline-flex';
-            document.getElementById('historyInfoBadge').style.display = 'inline-flex';
-            document.getElementById('historyDateText').innerHTML = formatDateToRussian(historicalData.snapshotDate);
-
-            document.getElementById('totalAmountDisplay').innerHTML = formatCurrency(historicalData.summary?.totalAmount || 0);
-            updateCharts(historicalData.summary);
-            renderAccountsTable(historicalData.accounts, true);
-
-            if (historicalData.cashbackSummary && historicalData.cashbackSummary.length > 0) {
-                renderCashbackSummary(historicalData.cashbackSummary);
-                document.getElementById('cashbackSummarySection').style.display = 'block';
-            } else {
-                document.getElementById('cashbackSummarySection').style.display = 'none';
-            }
-
-            document.getElementById('createAccountBtn').disabled = true;
-            document.getElementById('createAccountBtn').title = 'Недоступно в историческом режиме';
-
-            showToast(`Загружены данные на ${formatDateToRussian(historicalData.snapshotDate)}`, 'success');
-
-        } catch (err) {
-            console.error('Error loading historical data:', err);
-            showToast('Ошибка загрузки исторических данных: ' + err.message, 'error');
-        } finally {
-            showLoading(false);
-        }
+        let sel=document.getElementById('historyMonthSelect'); let val=sel.value; if(!val){ showToast('Выберите месяц','warning'); return; }
+        let [year,month]=val.split('|').map(Number);
+        try { showLoading(true); let res=await fetch(`${API_HISTORY}/data?year=${year}&month=${month}`); if(!res.ok) throw new Error(); let hist=await res.json(); isHistoryMode=true;
+            document.getElementById('totalAmountDisplay').innerHTML=formatCurrency(hist.summary?.totalAmount||0); updateCharts(hist.summary); renderAccountsTable(hist.accounts,true);
+            if(hist.cashbackSummary && hist.cashbackSummary.length) { renderCashbackSummary(hist.cashbackSummary); document.getElementById('cashbackSummarySection').style.display='block'; } else document.getElementById('cashbackSummarySection').style.display='none';
+            document.getElementById('historyInfoBadge').style.display='inline-flex'; document.getElementById('historyDateText').innerHTML=formatDateToRussian(hist.snapshotDate);
+            document.getElementById('showCurrentBtn').style.display='inline-flex'; document.getElementById('createAccountBtn').disabled=true; document.getElementById('viewAllCashbacksBtn').disabled=true;
+            showToast(`Загружены данные за ${formatDateToRussian(hist.snapshotDate)}`,'success');
+        } catch(e){ showToast('Ошибка загрузки истории','error'); } finally { showLoading(false); }
     }
 
-    function loadCurrentData() {
-        isHistoryMode = false;
-        currentSnapshotDate = null;
+    function loadCurrentData() { isHistoryMode=false; document.getElementById('showCurrentBtn').style.display='none'; document.getElementById('historyInfoBadge').style.display='none'; document.getElementById('createAccountBtn').disabled=false; document.getElementById('viewAllCashbacksBtn').disabled=false; fetchSummaryAndAccounts(); showToast('Актуальные данные','info'); }
 
-        const viewAllCashbacksBtn = document.getElementById('viewAllCashbacksBtn');
-        viewAllCashbacksBtn.disabled = false;
-        viewAllCashbacksBtn.title = '';
-
-        document.getElementById('showCurrentBtn').style.display = 'none';
-        document.getElementById('historyInfoBadge').style.display = 'none';
-        document.getElementById('createAccountBtn').disabled = false;
-        document.getElementById('createAccountBtn').title = '';
-
-        fetchSummaryAndAccounts();
-        showToast('Загружены актуальные данные', 'info');
+    async function fetchSummaryAndAccounts() {
+        try { showLoading(true); let [sumRes,accRes,csRes] = await Promise.all([fetch(`${API_BASE}/summary`), fetch(`${API_BASE}/accounts`), fetch(`${API_BASE}/cashbacks/summary`)]);
+            if(!sumRes.ok) throw new Error(); let summary=await sumRes.json(), accounts=await accRes.json();
+            document.getElementById('totalAmountDisplay').innerHTML=formatCurrency(summary.totalAmount||0);
+            updateCharts(summary);
+            renderAccountsTable(accounts,false);
+            if(csRes.ok){ let cs=await csRes.json(); renderCashbackSummary(cs); document.getElementById('cashbackSummarySection').style.display='block'; } else document.getElementById('cashbackSummarySection').style.display='none';
+        } catch(e){ showToast('Ошибка загрузки: '+e.message,'error'); } finally { showLoading(false); }
     }
 
-    // ==================== CRUD ОПЕРАЦИИ ====================
-    async function createAccount(data) {
-        const res = await fetch(`${API_BASE}/accounts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) {
-            const error = await res.text();
-            throw new Error(`Ошибка создания: ${res.status} - ${error}`);
-        }
-        return await res.json();
-    }
+    async function createAccount(data) { let r=await fetch(`${API_BASE}/accounts`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); if(!r.ok) throw new Error(); return r.json(); }
+    async function updateAccount(id,data) { let r=await fetch(`${API_BASE}/accounts/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); if(!r.ok) throw new Error(); return r.json(); }
+    async function deleteAccount(id) { if(!confirm('Удалить счёт?')) return; let r=await fetch(`${API_BASE}/accounts/${id}`,{method:'DELETE'}); if(r.ok){ await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Удалено','success'); } else showToast('Ошибка','error'); }
+    async function createCashback(data) { let r=await fetch(`${API_BASE}/cashbacks`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); if(!r.ok) throw new Error(); return r.json(); }
+    async function updateCashback(id,data) { let r=await fetch(`${API_BASE}/cashbacks/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); if(!r.ok) throw new Error(); return r.json(); }
+    async function deleteCashback(id) { if(!confirm('Удалить кешбек?')) return; let r=await fetch(`${API_BASE}/cashbacks/${id}`,{method:'DELETE'}); if(r.ok){ await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Кешбек удалён','success'); } else showToast('Ошибка','error'); }
 
-    async function updateAccount(id, data) {
-        const res = await fetch(`${API_BASE}/accounts/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) {
-            const error = await res.text();
-            throw new Error(`Ошибка обновления: ${res.status} - ${error}`);
-        }
-        return await res.json();
-    }
+    function openAccountModal(title,data=null) { document.getElementById('modalTitle').innerText=title; if(data){ document.getElementById('accountId').value=data.id; document.getElementById('bankName').value=data.bankName; document.getElementById('amount').value=data.amount; document.getElementById('type').value=data.type; document.getElementById('comment').value=data.comment||''; } else { document.getElementById('accountId').value=''; document.getElementById('bankName').value=''; document.getElementById('amount').value=''; document.getElementById('type').value='CARD'; document.getElementById('comment').value=''; } document.getElementById('accountModal').classList.add('active'); }
+    function closeAccountModal() { document.getElementById('accountModal').classList.remove('active'); }
+    function openAddCashbackModal(accountId,bankName) { document.getElementById('cashbackModalTitle').innerText='Добавить кешбек'; document.getElementById('cashbackId').value=''; document.getElementById('cashbackAccountId').value=accountId; document.getElementById('cashbackBankName').value=bankName; document.getElementById('cashbackCategory').value=''; document.getElementById('cashbackPercentage').value=''; document.getElementById('cashbackModal').classList.add('active'); }
+    async function editCashback(id,accountId) { let res=await fetch(`${API_BASE}/cashbacks`); let list=await res.json(); let cb=list.find(x=>x.id===id); if(cb){ document.getElementById('cashbackModalTitle').innerText='Редактировать'; document.getElementById('cashbackId').value=cb.id; document.getElementById('cashbackAccountId').value=accountId; document.getElementById('cashbackBankName').value=cb.bankName; document.getElementById('cashbackCategory').value=cb.category; document.getElementById('cashbackPercentage').value=cb.percentage; document.getElementById('cashbackModal').classList.add('active'); } }
+    function closeCashbackModal() { document.getElementById('cashbackModal').classList.remove('active'); }
+    async function openAllCashbacksModal() { if(isHistoryMode){ showToast('Недоступно в историческом режиме','warning'); return; } document.getElementById('allCashbacksModal').classList.add('active'); let res=await fetch(`${API_BASE}/cashbacks`); let list=await res.json(); let cont=document.getElementById('allCashbacksContainer'); if(!list.length){ cont.innerHTML='<div class="empty-state">Нет кешбеков</div>'; return; } let html='<table class="cashback-table"><thead><tr><th>Банк</th><th>Категория</th><th>%</th><th>Действия</th></tr></thead><tbody>'; for(let cb of list) html+=`<tr><td><strong>${escapeHtml(cb.bankName)}</strong></td><td>${escapeHtml(cb.category)}</td><td style="color:#059669;">${parseInt(cb.percentage)}%</td><td><button class="edit-btn" onclick="editCashback(${cb.id},${cb.accountId});closeAllCashbacksModal();"><i class="fas fa-edit"></i></button> <button class="delete-btn" onclick="deleteCashback(${cb.id});closeAllCashbacksModal();"><i class="fas fa-trash-alt"></i></button></td></tr>`; cont.innerHTML=html+'</tbody></table>'; }
+    function closeAllCashbacksModal() { document.getElementById('allCashbacksModal').classList.remove('active'); }
+    window.editAccount = async (id)=>{ let r=await fetch(`${API_BASE}/accounts/${id}`); let acc=await r.json(); openAccountModal('Редактирование',acc); };
 
-    async function deleteAccount(id) {
-        if (!confirm('Вы уверены, что хотите удалить этот счёт? Все связанные кешбеки также будут удалены.')) return;
-        try {
-            const res = await fetch(`${API_BASE}/accounts/${id}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error(`Ошибка удаления: ${res.status}`);
-            await fetchSummaryAndAccounts();
-            await loadAvailableSnapshots();
-            showToast('Счёт успешно удалён', 'success');
-        } catch (err) {
-            showToast('Ошибка удаления: ' + err.message, 'error');
-        }
-    }
+    document.getElementById('accountForm').addEventListener('submit',async(e)=>{ e.preventDefault(); let id=document.getElementById('accountId').value; let payload={bankName:document.getElementById('bankName').value.trim(), amount:parseFloat(document.getElementById('amount').value), type:document.getElementById('type').value, comment:document.getElementById('comment').value.trim()||null}; try{ showLoading(true); if(id) await updateAccount(parseInt(id),payload); else await createAccount(payload); closeAccountModal(); await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Сохранено','success'); } catch(e){ showToast('Ошибка: '+e.message,'error'); } finally{ showLoading(false); } });
+    document.getElementById('cashbackForm').addEventListener('submit',async(e)=>{ e.preventDefault(); let id=document.getElementById('cashbackId').value; let payload={accountId:parseInt(document.getElementById('cashbackAccountId').value), category:document.getElementById('cashbackCategory').value.trim(), percentage:parseInt(document.getElementById('cashbackPercentage').value)}; try{ showLoading(true); if(id) await updateCashback(parseInt(id),payload); else await createCashback(payload); closeCashbackModal(); await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Кешбек сохранён','success'); } catch(e){ showToast('Ошибка: '+e.message,'error'); } finally{ showLoading(false); } });
+    document.getElementById('createAccountBtn').onclick=()=>openAccountModal('Создание счёта');
+    document.getElementById('viewAllCashbacksBtn').onclick=openAllCashbacksModal;
+    document.getElementById('loadHistoryBtn').onclick=loadHistoricalData;
+    document.getElementById('showCurrentBtn').onclick=loadCurrentData;
+    window.onclick = (e)=> { if(e.target===document.getElementById('accountModal')) closeAccountModal(); if(e.target===document.getElementById('cashbackModal')) closeCashbackModal(); if(e.target===document.getElementById('allCashbacksModal')) closeAllCashbacksModal(); };
 
-    async function createCashback(data) {
-        const res = await fetch(`${API_BASE}/cashbacks`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) {
-            const error = await res.text();
-            throw new Error(`Ошибка создания кешбека: ${res.status} - ${error}`);
-        }
-        return await res.json();
-    }
-
-    async function updateCashback(id, data) {
-        const res = await fetch(`${API_BASE}/cashbacks/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) {
-            const error = await res.text();
-            throw new Error(`Ошибка обновления кешбека: ${res.status} - ${error}`);
-        }
-        return await res.json();
-    }
-
-    async function deleteCashback(id) {
-        if (!confirm('Вы уверены, что хотите удалить этот кешбек?')) return;
-        try {
-            const res = await fetch(`${API_BASE}/cashbacks/${id}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error(`Ошибка удаления кешбека: ${res.status}`);
-            await fetchSummaryAndAccounts();
-            await loadAvailableSnapshots();
-            showToast('Кешбек успешно удалён', 'success');
-        } catch (err) {
-            showToast('Ошибка удаления: ' + err.message, 'error');
-        }
-    }
-
-    // ==================== МОДАЛЬНЫЕ ОКНА ====================
-    function openAccountModal(title, accountData = null) {
-        document.getElementById('modalTitle').innerText = title;
-        if (accountData) {
-            document.getElementById('accountId').value = accountData.id;
-            document.getElementById('bankName').value = accountData.bankName;
-            document.getElementById('amount').value = accountData.amount;
-            document.getElementById('type').value = accountData.type;
-            document.getElementById('comment').value = accountData.comment || '';
-        } else {
-            document.getElementById('accountId').value = '';
-            document.getElementById('bankName').value = '';
-            document.getElementById('amount').value = '';
-            document.getElementById('type').value = 'CARD';
-            document.getElementById('comment').value = '';
-        }
-        document.getElementById('accountModal').classList.add('active');
-    }
-
-    function closeAccountModal() {
-        document.getElementById('accountModal').classList.remove('active');
-        document.getElementById('accountForm').reset();
-    }
-
-    function openAddCashbackModal(accountId, bankName) {
-        document.getElementById('cashbackModalTitle').innerText = 'Добавить кешбек';
-        document.getElementById('cashbackId').value = '';
-        document.getElementById('cashbackAccountId').value = accountId;
-        document.getElementById('cashbackBankName').value = bankName;
-        document.getElementById('cashbackCategory').value = '';
-        document.getElementById('cashbackPercentage').value = '';
-        document.getElementById('cashbackModal').classList.add('active');
-    }
-
-    async function editCashback(id, accountId) {
-        try {
-            const res = await fetch(`${API_BASE}/cashbacks`);
-            if (!res.ok) throw new Error('Failed to fetch cashbacks');
-            const cashbacks = await res.json();
-            const cashback = cashbacks.find(cb => cb.id === id);
-            if (!cashback) throw new Error('Cashback not found');
-
-            document.getElementById('cashbackModalTitle').innerText = 'Редактировать кешбек';
-            document.getElementById('cashbackId').value = cashback.id;
-            document.getElementById('cashbackAccountId').value = accountId;
-            document.getElementById('cashbackBankName').value = cashback.bankName;
-            document.getElementById('cashbackCategory').value = cashback.category;
-            document.getElementById('cashbackPercentage').value = cashback.percentage;
-            document.getElementById('cashbackModal').classList.add('active');
-        } catch (err) {
-            showToast('Ошибка загрузки кешбека: ' + err.message, 'error');
-        }
-    }
-
-    function closeCashbackModal() {
-        document.getElementById('cashbackModal').classList.remove('active');
-        document.getElementById('cashbackForm').reset();
-    }
-
-    async function openAllCashbacksModal() {
-        if (isHistoryMode) {
-            showToast('Просмотр всех кешбеков недоступен в историческом режиме', 'warning');
-            return;
-        }
-
-        document.getElementById('allCashbacksModal').classList.add('active');
-        try {
-            const res = await fetch(`${API_BASE}/cashbacks`);
-            if (!res.ok) throw new Error('Failed to fetch cashbacks');
-            const cashbacks = await res.json();
-
-            const container = document.getElementById('allCashbacksContainer');
-            if (!cashbacks || cashbacks.length === 0) {
-                container.innerHTML = '<div class="empty-state">Нет кешбеков</div>';
-                return;
-            }
-
-            let html = `<table class="cashback-table">
-                <thead><tr><th>ID</th><th>Банк</th><th>Категория</th><th>%</th><th>Действия</th></tr></thead>
-                <tbody>`;
-
-            for (const cb of cashbacks) {
-                html += `
-                    <tr>
-                        <td>${cb.id}</td>
-                        <td><strong>${escapeHtml(cb.bankName)}</strong></td>
-                        <td>${escapeHtml(cb.category)}</td>
-                        <td style="color: #059669; font-weight: 700;">${parseInt(cb.percentage)}%</td>
-                        <td class="action-buttons">
-                            <button class="edit-btn" onclick="editCashback(${cb.id}, ${cb.accountId}); closeAllCashbacksModal();"><i class="fas fa-edit"></i></button>
-                            <button class="delete-btn" onclick="deleteCashback(${cb.id}); closeAllCashbacksModal();"><i class="fas fa-trash-alt"></i></button>
-                        </td>
-                    </tr>
-                `;
-            }
-
-            html += `</tbody>`;
-            container.innerHTML = html;
-        } catch (err) {
-            document.getElementById('allCashbacksContainer').innerHTML = `<div class="loader" style="color:#c7423f;">Ошибка: ${err.message}</div>`;
-        }
-    }
-
-    function closeAllCashbacksModal() {
-        document.getElementById('allCashbacksModal').classList.remove('active');
-    }
-
-    window.editAccount = async (id) => {
-        try {
-            const res = await fetch(`${API_BASE}/accounts/${id}`);
-            if (!res.ok) throw new Error('Не удалось загрузить данные счёта');
-            const account = await res.json();
-            openAccountModal('Редактирование счёта', account);
-        } catch (err) {
-            showToast('Ошибка загрузки: ' + err.message, 'error');
-        }
-    };
-
-    // ==================== ОБРАБОТЧИКИ ФОРМ ====================
-    document.getElementById('accountForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('accountId').value;
-        const bankName = document.getElementById('bankName').value.trim();
-        const amount = parseFloat(document.getElementById('amount').value);
-        const type = document.getElementById('type').value;
-        const comment = document.getElementById('comment').value.trim();
-
-        if (!bankName) {
-            showToast('Введите название банка', 'warning');
-            return;
-        }
-        if (isNaN(amount) || amount < 0.01) {
-            showToast('Сумма должна быть больше 0', 'warning');
-            return;
-        }
-
-        const payload = { bankName, amount, type, comment: comment || null };
-
-        try {
-            showLoading(true);
-            if (id) {
-                await updateAccount(parseInt(id), payload);
-                showToast('Счёт успешно обновлён', 'success');
-            } else {
-                await createAccount(payload);
-                showToast('Счёт успешно создан', 'success');
-            }
-            closeAccountModal();
-            await fetchSummaryAndAccounts();
-            await loadAvailableSnapshots();
-        } catch (err) {
-            showToast('Ошибка: ' + err.message, 'error');
-        } finally {
-            showLoading(false);
-        }
-    });
-
-    document.getElementById('cashbackForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('cashbackId').value;
-        const accountId = parseInt(document.getElementById('cashbackAccountId').value);
-        const category = document.getElementById('cashbackCategory').value.trim();
-        const percentage = parseInt(document.getElementById('cashbackPercentage').value);
-
-        if (!category) {
-            showToast('Введите категорию', 'warning');
-            return;
-        }
-        if (isNaN(percentage) || percentage < 1 || percentage > 100) {
-            showToast('Процент должен быть целым числом от 1 до 100', 'warning');
-            return;
-        }
-
-        const payload = { accountId, category, percentage };
-
-        try {
-            showLoading(true);
-            if (id) {
-                await updateCashback(parseInt(id), payload);
-                showToast('Кешбек успешно обновлён', 'success');
-            } else {
-                await createCashback(payload);
-                showToast('Кешбек успешно добавлен', 'success');
-            }
-            closeCashbackModal();
-            await fetchSummaryAndAccounts();
-            await loadAvailableSnapshots();
-        } catch (err) {
-            showToast('Ошибка: ' + err.message, 'error');
-        } finally {
-            showLoading(false);
-        }
-    });
-
-    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
-    document.getElementById('createAccountBtn').addEventListener('click', () => openAccountModal('Создание нового счёта'));
-    document.getElementById('viewAllCashbacksBtn').addEventListener('click', () => openAllCashbacksModal());
-    document.getElementById('loadHistoryBtn').addEventListener('click', loadHistoricalData);
-    document.getElementById('showCurrentBtn').addEventListener('click', loadCurrentData);
-
-    window.onclick = function(event) {
-        const accountModal = document.getElementById('accountModal');
-        const cashbackModal = document.getElementById('cashbackModal');
-        const allCashbacksModal = document.getElementById('allCashbacksModal');
-        if (event.target === accountModal) closeAccountModal();
-        if (event.target === cashbackModal) closeCashbackModal();
-        if (event.target === allCashbacksModal) closeAllCashbacksModal();
-    };
-
-    window.toggleCashbackDetails = toggleCashbackDetails;
-    window.openAddCashbackModal = openAddCashbackModal;
-    window.editCashback = editCashback;
-    window.deleteCashback = deleteCashback;
-    window.closeAllCashbacksModal = closeAllCashbacksModal;
-
+    // Инициализация: загружаем снимки, текущие данные и динамику с бэка
     loadAvailableSnapshots();
     fetchSummaryAndAccounts();
+    loadStackedBarChartFromBackend();
 </script>
 </body>
 </html>
