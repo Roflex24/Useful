@@ -35,7 +35,8 @@ public class AccountService {
         return accountRepository.findAll()
                 .stream()
                 .map(this::toResponseDtoWithDetails)
-                .sorted(Comparator.comparing(AccountResponseDto::getType))
+                .sorted(Comparator.comparing(AccountResponseDto::getType)
+                        .thenComparing(AccountResponseDto::getAmount, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
     }
 
