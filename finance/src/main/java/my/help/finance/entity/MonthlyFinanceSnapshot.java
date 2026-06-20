@@ -60,4 +60,7 @@ public class MonthlyFinanceSnapshot {
 
     // Для быстрой агрегации (денормализованные поля)
     private BigDecimal totalAmountByBank;  // Сумма всех счетов этого банка на момент снимка
+
+    @Column(columnDefinition = "TEXT")
+    private String depositJson;  // Информация о депозите в JSON
 }

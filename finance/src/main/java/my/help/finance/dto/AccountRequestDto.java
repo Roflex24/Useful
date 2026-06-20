@@ -27,4 +27,7 @@ public class AccountRequestDto {
     private AccountType type;
 
     private String comment;
+
+    // Для DEPOSIT обязательно, для других типов - null
+    private DepositInfoDto depositInfoDto;
 }

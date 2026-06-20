@@ -161,7 +161,7 @@
         }
         .pie-charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
             gap: 28px;
             margin-bottom: 40px;
         }
@@ -178,12 +178,12 @@
         .chart-card {
             background: #ffffff;
             border-radius: 32px;
-            padding: 20px 20px 28px;
-            box-shadow: 0 12px 28px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
+            padding: 24px 24px 20px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
             border: 1px solid rgba(166, 188, 210, 0.15);
         }
-        .chart-card:hover { transform: translateY(-4px); }
+        .chart-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.09); }
         .chart-title {
             font-size: 1.3rem;
             font-weight: 600;
@@ -197,7 +197,9 @@
         }
         .chart-sub { font-size: 0.75rem; color: #6e8faa; margin-bottom: 20px; margin-left: 20px; }
         .canvas-wrapper { position: relative; display: flex; justify-content: center; margin-top: 10px; }
-        canvas { max-height: 260px; max-width: 100%; filter: drop-shadow(8px 12px 16px rgba(0,0,0,0.15)); }
+        .donut-wrap { position: relative; width: 100%; max-width: 480px; margin: 0 auto; aspect-ratio: 1; }
+        .donut-wrap canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
+        canvas { max-width: 100%; }
         .full-width-canvas { width: 100%; height: auto; min-height: 420px; }
         .accounts-section, .cashback-summary-section {
             background: white;
@@ -252,6 +254,10 @@
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c5a82; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 16px; font-family: inherit; }
         .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+        .deposit-fields { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 16px; margin-top: -8px; margin-bottom: 8px; }
+        .deposit-fields .form-group { margin-bottom: 12px; }
+        .deposit-fields .form-group:last-child { margin-bottom: 0; }
+        .type-locked-badge { display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; color: #64748b; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; margin-left: 8px; }
         .loader { text-align: center; padding: 40px; color: #2c6e9e; }
         .empty-state { text-align: center; padding: 60px; color: #7c94a8; }
         .toast-notification { position: fixed; bottom: 20px; right: 20px; background: white; padding: 12px 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 2000; font-size: 0.9rem; display: none; align-items: center; gap: 10px; }
@@ -306,12 +312,12 @@
         <div class="chart-card">
             <div class="chart-title"><i class="fas fa-university"></i> Распределение по банкам</div>
             <div class="chart-sub">Доля средств в разных банках</div>
-            <div class="canvas-wrapper"><canvas id="bankPieChart"></canvas></div>
+            <div class="donut-wrap"><canvas id="bankPieChart"></canvas></div>
         </div>
         <div class="chart-card">
             <div class="chart-title"><i class="fas fa-layer-group"></i> По типам счетов</div>
             <div class="chart-sub">Карты / Вклады / Инвестиции</div>
-            <div class="canvas-wrapper"><canvas id="typePieChart"></canvas></div>
+            <div class="donut-wrap"><canvas id="typePieChart"></canvas></div>
         </div>
     </div>
 
@@ -341,7 +347,7 @@
     </div>
 </div>
 
-<div id="accountModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="modalTitle">Создание счёта</h3><button class="close-modal" onclick="closeAccountModal()">&times;</button></div><form id="accountForm"><input type="hidden" id="accountId"><div class="form-group"><label>Название банка *</label><input type="text" id="bankName" required placeholder="Тинькофф, Сбер..."></div><div class="form-group"><label>Сумма *</label><input type="number" id="amount" step="0.01" min="0.01" required></div><div class="form-group"><label>Тип счёта *</label><select id="type" required><option value="CARD">💳 Карта/счёт</option><option value="DEPOSIT">🏦 Вклад</option><option value="INVESTMENT">📈 Инвестиции</option></select></div><div class="form-group"><label>Комментарий</label><textarea id="comment" rows="2"></textarea></div><div class="modal-buttons"><button type="button" class="btn-secondary" onclick="closeAccountModal()">Отмена</button><button type="submit" class="btn-primary">Сохранить</button></div></form></div></div>
+<div id="accountModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="modalTitle">Создание счёта</h3><button class="close-modal" onclick="closeAccountModal()">&times;</button></div><form id="accountForm"><input type="hidden" id="accountId"><div class="form-group"><label>Название банка *</label><input type="text" id="bankName" required placeholder="Тинькофф, Сбер..."></div><div class="form-group"><label>Сумма *</label><input type="number" id="amount" step="0.01" min="0.01" required></div><div class="form-group"><label>Тип счёта *<span id="typeLockBadge" class="type-locked-badge" style="display:none;"><i class="fas fa-lock"></i> нельзя изменить</span></label><select id="type" required><option value="CARD">💳 Карта/счёт</option><option value="DEPOSIT">🏦 Вклад</option><option value="INVESTMENT">📈 Инвестиции</option></select></div><div id="depositFields" class="deposit-fields" style="display:none;"><div style="font-weight:600;margin-bottom:12px;color:#166534;"><i class="fas fa-university"></i> Параметры вклада</div><div class="form-group"><label>Дата окончания вклада *</label><input type="date" id="depositEndDate"></div><div class="form-group"><label>Дата выплаты процентов</label><input type="date" id="depositInterestPaymentDate"></div><div class="form-group"><label>Процентная ставка (%) *</label><input type="number" id="depositInterestRate" step="0.01" min="0.01" placeholder="напр. 18.5"></div></div><div class="form-group"><label>Комментарий</label><textarea id="comment" rows="2"></textarea></div><div class="modal-buttons"><button type="button" class="btn-secondary" onclick="closeAccountModal()">Отмена</button><button type="submit" class="btn-primary">Сохранить</button></div></form></div></div>
 
 <div id="cashbackModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="cashbackModalTitle">Добавить кешбек</h3><button class="close-modal" onclick="closeCashbackModal()">&times;</button></div><form id="cashbackForm"><input type="hidden" id="cashbackId"><input type="hidden" id="cashbackAccountId"><div class="form-group"><label>Банк</label><input type="text" id="cashbackBankName" readonly style="background:#f0f2f5;"></div><div class="form-group"><label>Категория *</label><input type="text" id="cashbackCategory" required placeholder="Супермаркеты, Такси..."></div><div class="form-group"><label>Процент *</label><input type="number" id="cashbackPercentage" step="1" min="1" max="100" required></div><div class="modal-buttons"><button type="button" class="btn-secondary" onclick="closeCashbackModal()">Отмена</button><button type="submit" class="btn-primary">Сохранить</button></div></form></div></div>
 
@@ -495,47 +501,214 @@
         }
     }
 
-    function create3DStyledChart(ctx, labels, data, colors) {
-        return new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 15, borderRadius: 10, spacing: 4 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } }, tooltip: { callbacks: { label: (ctx) => { let total = ctx.dataset.data.reduce((a,b)=>a+b,0); let p = ((ctx.raw/total)*100).toFixed(1); return `${ctx.label}: ${formatCurrency(ctx.raw)} (${p}%)`; } } } }, layout: { padding: 10 } } });
+    // ── Chart.js doughnut диаграммы ──────────────────────────────────────────
+    const _chartInstances = {};
+
+    function drawDonutChart(canvasId, labels, data, colors) {
+        if (_chartInstances[canvasId]) {
+            _chartInstances[canvasId].destroy();
+            delete _chartInstances[canvasId];
+        }
+
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+
+        const total = data.reduce((s, v) => s + v, 0);
+
+        _chartInstances[canvasId] = new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: colors,
+                    borderColor: '#ffffff',
+                    borderWidth: 3,
+                    hoverBorderWidth: 3,
+                    hoverOffset: 12,
+                    spacing: 2,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '58%',
+                layout: { padding: 20 },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 12, family: 'Inter, sans-serif', weight: '500' },
+                            padding: 16,
+                            usePointStyle: true,
+                            pointStyleWidth: 10,
+                            boxHeight: 8,
+                            generateLabels(chart) {
+                                const ds = chart.data.datasets[0];
+                                return chart.data.labels.map((label, i) => {
+                                    const val = ds.data[i];
+                                    const pct = total > 0 ? (val / total * 100).toFixed(1) : 0;
+                                    return {
+                                        text: `${label}  ${pct}%`,
+                                        fillStyle: ds.backgroundColor[i],
+                                        strokeStyle: ds.backgroundColor[i],
+                                        pointStyle: 'circle',
+                                        index: i,
+                                        hidden: false,
+                                    };
+                                });
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15,23,42,0.92)',
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label(ctx) {
+                                const pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
+                                return `  ${formatCurrency(ctx.raw)}  ·  ${pct}%`;
+                            }
+                        }
+                    },
+                    // Текст в центре через кастомный плагин
+                    centerText: { total, color: '#1e3a5f' }
+                },
+                animation: { animateRotate: true, duration: 700, easing: 'easeOutQuart' }
+            },
+            plugins: [{
+                id: 'centerText',
+                afterDraw(chart) {
+                    const { ctx, chartArea: { left, top, right, bottom } } = chart;
+                    const cx = (left + right) / 2, cy = (top + bottom) / 2;
+                    const t = chart.options.plugins.centerText.total;
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = '500 11px Inter, sans-serif';
+                    ctx.fillText('ИТОГО', cx, cy - 12);
+                    ctx.fillStyle = '#1e3a5f';
+                    ctx.font = 'bold 14px Inter, sans-serif';
+                    ctx.fillText(formatCurrency(t), cx, cy + 8);
+                    ctx.restore();
+                }
+            }]
+        });
+    }
+
+    // Цвета банков, приближённые к фирменным
+    const BANK_COLORS = {
+        'тинькофф':   '#FFDD00',
+        'тинькофф банк': '#FFDD00',
+        'т-банк':     '#FFDD00',
+        'сбер':       '#21A038',
+        'сбербанк':   '#21A038',
+        'альфа':      '#EF3124',
+        'альфа-банк': '#EF3124',
+        'альфабанк':  '#EF3124',
+        'втб':        '#009FDF',
+        'газпромбанк':'#0033A0',
+        'газпром':    '#0033A0',
+        'открытие':   '#0066CC',
+        'банк открытие': '#0066CC',
+        'райффайзен': '#FFED00',
+        'райффайзенбанк': '#FFED00',
+        'совкомбанк': '#FF6B00',
+        'росбанк':    '#E30613',
+        'почта банк': '#8B1A8C',
+        'почтабанк':  '#8B1A8C',
+        'мтс':        '#E30611',
+        'мтс банк':   '#E30611',
+        'озон':       '#005BFF',
+        'озон банк':  '#005BFF',
+        'ozon':       '#005BFF',
+        'яндекс':     '#FC3F1D',
+        'яндекс банк':'#FC3F1D',
+        'хоум':       '#FF7A00',
+        'хоум банк':  '#FF7A00',
+        'home credit':'#FF7A00',
+        'уралсиб':    '#005A96',
+        'авангард':   '#004A97',
+        'ренессанс':  '#FF4F00',
+        'ренессанс кредит': '#FF4F00',
+    };
+    // Запасные цвета, если банк не найден
+    const FALLBACK_COLORS = ['#6366f1','#06b6d4','#8b5cf6','#ec4899','#14b8a6','#f43f5e','#84cc16'];
+    const _bankColorCache = {};
+    let _fallbackIdx = 0;
+    function getBankColor(bankName) {
+        let key = (bankName||'').toLowerCase().trim();
+        if (_bankColorCache[key]) return _bankColorCache[key];
+        // Ищем совпадение по подстроке
+        for(let [pattern, color] of Object.entries(BANK_COLORS)) {
+            if(key.includes(pattern) || pattern.includes(key)) {
+                _bankColorCache[key] = color;
+                return color;
+            }
+        }
+        // Назначаем стабильный запасной цвет
+        let color = FALLBACK_COLORS[_fallbackIdx % FALLBACK_COLORS.length];
+        _fallbackIdx++;
+        _bankColorCache[key] = color;
+        return color;
     }
 
     function updateCharts(summary) {
         let bankLabels = [], bankValues = [];
         if(summary.amountByBank) for(let [k,v] of Object.entries(summary.amountByBank)) if(parseFloat(v)>0) { bankLabels.push(k); bankValues.push(parseFloat(v)); }
         if(bankLabels.length===0) { bankLabels=['Нет данных']; bankValues=[1]; }
-        let bankColors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec489a','#06b6d4'];
+        let bankColors = bankLabels.map(name => getBankColor(name));
+
         let typeLabels=[], typeValues=[], typeMap={'CARD':'💳 Карта/счёт','DEPOSIT':'🏦 Вклад','INVESTMENT':'📈 Инвестиции'};
         if(summary.amountByType) for(let [k,v] of Object.entries(summary.amountByType)) if(parseFloat(v)>0) { typeLabels.push(typeMap[k]||k); typeValues.push(parseFloat(v)); }
         if(typeLabels.length===0) { typeLabels=['Нет счетов']; typeValues=[1]; }
         let typeColors = typeLabels.map(l=> l.includes('Карта')?'#3b82f6': l.includes('Вклад')?'#10b981':'#f59e0b');
-        let bankCtx = document.getElementById('bankPieChart').getContext('2d');
-        if(bankChart) { bankChart.data.labels=bankLabels; bankChart.data.datasets[0].data=bankValues; bankChart.data.datasets[0].backgroundColor=bankColors.slice(0,bankLabels.length); bankChart.update(); }
-        else { bankChart = create3DStyledChart(bankCtx, bankLabels, bankValues, bankColors.slice(0,bankLabels.length)); }
-        let typeCtx = document.getElementById('typePieChart').getContext('2d');
-        if(typeChart) { typeChart.data.labels=typeLabels; typeChart.data.datasets[0].data=typeValues; typeChart.data.datasets[0].backgroundColor=typeColors; typeChart.update(); }
-        else { typeChart = create3DStyledChart(typeCtx, typeLabels, typeValues, typeColors); }
+
+        drawDonutChart('bankPieChart', bankLabels, bankValues, bankColors);
+        drawDonutChart('typePieChart', typeLabels, typeValues, typeColors);
     }
 
     function renderAccountsTable(accounts, isHistorical) {
         let container = document.getElementById('accountsTableContainer');
         if(!accounts || accounts.length===0) { container.innerHTML=`<div class="empty-state"><i class="fas fa-inbox"></i><p>${isHistorical?'Нет счетов за период':'Нет счетов. Создайте первый!'}</p></div>`; return; }
-        let html = `<table class="accounts-table"><thead><tr><th style="width:30px"></th><th>ID</th><th>Банк</th><th>Тип</th><th>Сумма</th><th>Комментарий</th><th>Действия</th></tr></thead><tbody>`;
+        let html = `<table class="accounts-table"><thead><tr><th style="width:30px"></th><th>Банк</th><th>Тип</th><th>Сумма</th><th>Комментарий</th><th>Действия</th></tr></thead><tbody>`;
         for(let acc of accounts) {
             let typeDesc = acc.type==='CARD'?'💳 Карта/счёт': acc.type==='DEPOSIT'?'🏦 Вклад':'📈 Инвестиции';
             let typeClass = acc.type==='CARD'?'type-card': acc.type==='DEPOSIT'?'type-deposit':'type-investment';
             let isCard = acc.type === 'CARD';
+            let isDeposit = acc.type === 'DEPOSIT';
+            let isExpandable = isCard || isDeposit;
             let disabled = isHistorical ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : '';
             let cashbackBtn = (isCard && !isHistorical) ? `<button class="cashback-btn" onclick="event.stopPropagation(); openAddCashbackModal(${acc.id},'${escapeHtml(acc.bankName)}')"><i class="fas fa-percent"></i></button>` : `<button class="cashback-btn" disabled style="visibility:hidden"><i class="fas fa-percent"></i></button>`;
-            html += `<tr class="expandable-row" data-account-id="${acc.id}" onclick="${isCard?`toggleCashbackDetails(${acc.id})`:'return false;'}" style="${!isCard?'cursor:default':''}">
-                <td>${isCard?'<i class="fas fa-chevron-right expand-icon" id="expand-icon-'+acc.id+'"></i>':'<span style="opacity:0.3"><i class="fas fa-lock"></i></span>'}</td>
-                <td>${acc.id}</td><td><strong>${escapeHtml(acc.bankName)}</strong></td>
+            let expandIcon = isExpandable ? `<i class="fas fa-chevron-right expand-icon" id="expand-icon-${acc.id}"></i>` : `<span style="opacity:0.3"><i class="fas fa-lock"></i></span>`;
+            let onRowClick = isExpandable ? `toggleExpandDetails(${acc.id})` : 'return false;';
+            html += `<tr class="expandable-row" data-account-id="${acc.id}" onclick="${onRowClick}" style="${!isExpandable?'cursor:default':''}">
+                <td>${expandIcon}</td>
+                <td><strong>${escapeHtml(acc.bankName)}</strong></td>
                 <td><span class="type-badge ${typeClass}">${typeDesc}</span></td>
                 <td style="font-weight:600;color:#1f4e7a;">${formatCurrency(acc.amount)}</td>
                 <td>${escapeHtml(acc.comment||'—')}</td>
                 <td class="action-buttons" onclick="event.stopPropagation()">${cashbackBtn}<button class="edit-btn" onclick="editAccount(${acc.id})" ${disabled}><i class="fas fa-edit"></i></button><button class="delete-btn" onclick="deleteAccount(${acc.id})" ${disabled}><i class="fas fa-trash-alt"></i></button></td>
-            </tr><tr class="detail-row" id="detail-row-${acc.id}"><td colspan="7" class="detail-cell"><div id="cashbacks-${acc.id}">${renderCashbacksList(acc.cashbacks, acc.id, isHistorical)}</div></td></tr>`;
+            </tr><tr class="detail-row" id="detail-row-${acc.id}"><td colspan="6" class="detail-cell"><div id="cashbacks-${acc.id}">${isCard ? renderCashbacksList(acc.cashbacks, acc.id, isHistorical) : renderDepositInfo(acc.depositInfo)}</div></td></tr>`;
         }
         container.innerHTML = html + '</tbody></table>';
+    }
+
+    function renderDepositInfo(depositInfo) {
+        if(!depositInfo) return `<div style="color:#7c94a8;padding:8px;"><i class="fas fa-info-circle"></i> Нет данных о вкладе</div>`;
+        let formatDate = (d) => d ? new Date(d).toLocaleDateString('ru-RU') : '—';
+        return `<div style="padding:4px 0;">
+            <div style="font-weight:600;margin-bottom:10px;color:#166534;"><i class="fas fa-university"></i> Параметры вклада</div>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;">
+                <div><span style="color:#6b7280;font-size:0.8rem;">Дата окончания</span><br><strong>${formatDate(depositInfo.endDate)}</strong></div>
+                <div><span style="color:#6b7280;font-size:0.8rem;">Выплата процентов</span><br><strong>${formatDate(depositInfo.interestPaymentDate)}</strong></div>
+                <div><span style="color:#6b7280;font-size:0.8rem;">Ставка</span><br><strong style="color:#059669;">${depositInfo.interestRate ? depositInfo.interestRate + '%' : '—'}</strong></div>
+            </div>
+        </div>`;
     }
 
     function renderCashbacksList(cashbacks, accountId, isHistorical) {
@@ -562,7 +735,8 @@
         container.innerHTML = html + '</tbody></table>';
     }
 
-    window.toggleCashbackDetails = function(id) { let row = document.getElementById(`detail-row-${id}`); let icon = document.getElementById(`expand-icon-${id}`); if(row && icon) { row.classList.toggle('show'); icon.classList.toggle('rotated'); } };
+    window.toggleExpandDetails = function(id) { let row = document.getElementById(`detail-row-${id}`); let icon = document.getElementById(`expand-icon-${id}`); if(row && icon) { row.classList.toggle('show'); icon.classList.toggle('rotated'); } };
+    window.toggleCashbackDetails = window.toggleExpandDetails;
 
     async function loadAvailableSnapshots() {
         try { let res=await fetch(`${API_HISTORY}/snapshots`); let data=await res.json(); availableSnapshots=data; let sel=document.getElementById('historyMonthSelect'); if(!data||!data.length){ sel.innerHTML='<option value="">Нет истории</option>'; sel.disabled=true; return; }
@@ -602,8 +776,55 @@
     async function updateCashback(id,data) { let r=await fetch(`${API_BASE}/cashbacks/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); if(!r.ok) throw new Error(); return r.json(); }
     async function deleteCashback(id) { if(!confirm('Удалить кешбек?')) return; let r=await fetch(`${API_BASE}/cashbacks/${id}`,{method:'DELETE'}); if(r.ok){ await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Кешбек удалён','success'); } else showToast('Ошибка','error'); }
 
-    function openAccountModal(title,data=null) { document.getElementById('modalTitle').innerText=title; if(data){ document.getElementById('accountId').value=data.id; document.getElementById('bankName').value=data.bankName; document.getElementById('amount').value=data.amount; document.getElementById('type').value=data.type; document.getElementById('comment').value=data.comment||''; } else { document.getElementById('accountId').value=''; document.getElementById('bankName').value=''; document.getElementById('amount').value=''; document.getElementById('type').value='CARD'; document.getElementById('comment').value=''; } document.getElementById('accountModal').classList.add('active'); }
-    function closeAccountModal() { document.getElementById('accountModal').classList.remove('active'); }
+    function openAccountModal(title,data=null) {
+        document.getElementById('modalTitle').innerText=title;
+        let typeSelect = document.getElementById('type');
+        let typeLockBadge = document.getElementById('typeLockBadge');
+        if(data){
+            document.getElementById('accountId').value=data.id;
+            document.getElementById('bankName').value=data.bankName;
+            document.getElementById('amount').value=data.amount;
+            typeSelect.value=data.type;
+            typeSelect.disabled=true;
+            typeLockBadge.style.display='inline-flex';
+            document.getElementById('comment').value=data.comment||'';
+            // Заполняем поля депозита, если есть
+            if(data.type==='DEPOSIT'){
+                showDepositFields(true);
+                if(data.depositInfo){
+                    document.getElementById('depositEndDate').value=data.depositInfo.endDate||'';
+                    document.getElementById('depositInterestPaymentDate').value=data.depositInfo.interestPaymentDate||'';
+                    document.getElementById('depositInterestRate').value=data.depositInfo.interestRate||'';
+                }
+            } else {
+                showDepositFields(false);
+            }
+        } else {
+            document.getElementById('accountId').value='';
+            document.getElementById('bankName').value='';
+            document.getElementById('amount').value='';
+            typeSelect.value='CARD';
+            typeSelect.disabled=false;
+            typeLockBadge.style.display='none';
+            document.getElementById('comment').value='';
+            showDepositFields(false);
+        }
+        document.getElementById('accountModal').classList.add('active');
+    }
+    function closeAccountModal() {
+        document.getElementById('accountModal').classList.remove('active');
+        document.getElementById('type').disabled=false;
+        document.getElementById('typeLockBadge').style.display='none';
+        showDepositFields(false);
+    }
+
+    function showDepositFields(show) {
+        let fields = document.getElementById('depositFields');
+        fields.style.display = show ? 'block' : 'none';
+        // Управляем required у полей депозита
+        document.getElementById('depositEndDate').required = show;
+        document.getElementById('depositInterestRate').required = show;
+    }
     function openAddCashbackModal(accountId,bankName) { document.getElementById('cashbackModalTitle').innerText='Добавить кешбек'; document.getElementById('cashbackId').value=''; document.getElementById('cashbackAccountId').value=accountId; document.getElementById('cashbackBankName').value=bankName; document.getElementById('cashbackCategory').value=''; document.getElementById('cashbackPercentage').value=''; document.getElementById('cashbackModal').classList.add('active'); }
     async function editCashback(id,accountId) { let res=await fetch(`${API_BASE}/cashbacks`); let list=await res.json(); let cb=list.find(x=>x.id===id); if(cb){ document.getElementById('cashbackModalTitle').innerText='Редактировать'; document.getElementById('cashbackId').value=cb.id; document.getElementById('cashbackAccountId').value=accountId; document.getElementById('cashbackBankName').value=cb.bankName; document.getElementById('cashbackCategory').value=cb.category; document.getElementById('cashbackPercentage').value=cb.percentage; document.getElementById('cashbackModal').classList.add('active'); } }
     function closeCashbackModal() { document.getElementById('cashbackModal').classList.remove('active'); }
@@ -611,7 +832,17 @@
     function closeAllCashbacksModal() { document.getElementById('allCashbacksModal').classList.remove('active'); }
     window.editAccount = async (id)=>{ let r=await fetch(`${API_BASE}/accounts/${id}`); let acc=await r.json(); openAccountModal('Редактирование',acc); };
 
-    document.getElementById('accountForm').addEventListener('submit',async(e)=>{ e.preventDefault(); let id=document.getElementById('accountId').value; let payload={bankName:document.getElementById('bankName').value.trim(), amount:parseFloat(document.getElementById('amount').value), type:document.getElementById('type').value, comment:document.getElementById('comment').value.trim()||null}; try{ showLoading(true); if(id) await updateAccount(parseInt(id),payload); else await createAccount(payload); closeAccountModal(); await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Сохранено','success'); } catch(e){ showToast('Ошибка: '+e.message,'error'); } finally{ showLoading(false); } });
+    // Показывать/скрывать поля депозита при смене типа (только при создании)
+    document.getElementById('type').addEventListener('change', function() {
+        showDepositFields(this.value === 'DEPOSIT');
+        if(this.value !== 'DEPOSIT') {
+            document.getElementById('depositEndDate').value='';
+            document.getElementById('depositInterestPaymentDate').value='';
+            document.getElementById('depositInterestRate').value='';
+        }
+    });
+
+    document.getElementById('accountForm').addEventListener('submit',async(e)=>{ e.preventDefault(); let id=document.getElementById('accountId').value; let type=document.getElementById('type').value; let payload={bankName:document.getElementById('bankName').value.trim(), amount:parseFloat(document.getElementById('amount').value), type:type, comment:document.getElementById('comment').value.trim()||null}; if(type==='DEPOSIT'){ let endDate=document.getElementById('depositEndDate').value; let interestPaymentDate=document.getElementById('depositInterestPaymentDate').value; let interestRate=document.getElementById('depositInterestRate').value; payload.depositInfoDto={endDate:endDate||null, interestPaymentDate:interestPaymentDate||null, interestRate:interestRate?parseFloat(interestRate):null}; } try{ showLoading(true); if(id) await updateAccount(parseInt(id),payload); else await createAccount(payload); closeAccountModal(); await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Сохранено','success'); } catch(e){ showToast('Ошибка: '+e.message,'error'); } finally{ showLoading(false); } });
     document.getElementById('cashbackForm').addEventListener('submit',async(e)=>{ e.preventDefault(); let id=document.getElementById('cashbackId').value; let payload={accountId:parseInt(document.getElementById('cashbackAccountId').value), category:document.getElementById('cashbackCategory').value.trim(), percentage:parseInt(document.getElementById('cashbackPercentage').value)}; try{ showLoading(true); if(id) await updateCashback(parseInt(id),payload); else await createCashback(payload); closeCashbackModal(); await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Кешбек сохранён','success'); } catch(e){ showToast('Ошибка: '+e.message,'error'); } finally{ showLoading(false); } });
     document.getElementById('createAccountBtn').onclick=()=>openAccountModal('Создание счёта');
     document.getElementById('viewAllCashbacksBtn').onclick=openAllCashbacksModal;

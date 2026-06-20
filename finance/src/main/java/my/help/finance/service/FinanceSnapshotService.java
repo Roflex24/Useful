@@ -5,13 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import my.help.finance.dto.*;
-import my.help.finance.entity.Account;
-import my.help.finance.entity.AccountType;
-import my.help.finance.entity.Cashback;
-import my.help.finance.entity.MonthlyFinanceSnapshot;
+import my.help.finance.entity.*;
 import my.help.finance.mapper.AccountMapper;
 import my.help.finance.repository.AccountRepository;
 import my.help.finance.repository.CashbackRepository;
+import my.help.finance.repository.DepositRepository;
 import my.help.finance.repository.MonthlyFinanceSnapshotRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,13 +29,21 @@ public class FinanceSnapshotService {
     private final MonthlyFinanceSnapshotRepository snapshotRepository;
     private final AccountRepository accountRepository;
     private final CashbackRepository cashbackRepository;
+    private final DepositRepository depositRepository; // ДОБАВИТЬ ПОЛЕ
     private final AccountMapper accountMapper;
     private final ObjectMapper objectMapper;
 
-    public FinanceSnapshotService(MonthlyFinanceSnapshotRepository snapshotRepository, AccountRepository accountRepository, CashbackRepository cashbackRepository, AccountMapper accountMapper) {
+    // ОБНОВИТЬ КОНСТРУКТОР
+    public FinanceSnapshotService(
+            MonthlyFinanceSnapshotRepository snapshotRepository,
+            AccountRepository accountRepository,
+            CashbackRepository cashbackRepository,
+            DepositRepository depositRepository, // ДОБАВИТЬ ПАРАМЕТР
+            AccountMapper accountMapper) {
         this.snapshotRepository = snapshotRepository;
         this.accountRepository = accountRepository;
         this.cashbackRepository = cashbackRepository;
+        this.depositRepository = depositRepository; // ИНИЦИАЛИЗИРОВАТЬ
         this.accountMapper = accountMapper;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
@@ -86,6 +92,29 @@ public class FinanceSnapshotService {
                 cashbacksJson = "[]";
             }
 
+            // ===== НОВЫЙ КОД ДЛЯ ДЕПОЗИТОВ =====
+            // Получаем информацию о депозите, если тип DEPOSIT
+            String depositJson = null;
+            if (account.getType() == AccountType.DEPOSIT) {
+                Optional<Deposit> depositOpt = depositRepository.findByAccountId(account.getId());
+                if (depositOpt.isPresent()) {
+                    Deposit deposit = depositOpt.get();
+                    DepositSnapshotDto depositDto = DepositSnapshotDto.builder()
+                            .id(deposit.getId())
+                            .endDate(deposit.getEndDate())
+                            .interestPaymentDate(deposit.getInterestPaymentDate())
+                            .interestRate(deposit.getInterestRate())
+                            .build();
+                    try {
+                        depositJson = objectMapper.writeValueAsString(depositDto);
+                    } catch (Exception e) {
+                        log.error("Failed to serialize deposit for account {}", account.getId(), e);
+                        depositJson = null;
+                    }
+                }
+            }
+            // ===== КОНЕЦ НОВОГО КОДА =====
+
             MonthlyFinanceSnapshot snapshot = MonthlyFinanceSnapshot.builder()
                     .snapshotDate(snapshotDate)
                     .accountId(account.getId())
@@ -94,6 +123,7 @@ public class FinanceSnapshotService {
                     .type(account.getType())
                     .comment(account.getComment())
                     .cashbacksJson(cashbacksJson)
+                    .depositJson(depositJson) // ДОБАВИТЬ ЭТУ СТРОКУ
                     .createdBy("SYSTEM_SCHEDULER")
                     .build();
 

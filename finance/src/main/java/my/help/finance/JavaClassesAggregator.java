@@ -1,11 +1,11 @@
-package my.help.useful;
+package my.help.finance;
 
 import java.io.*;
 import java.nio.file.*;
 
 public class JavaClassesAggregator {
     public static void main(String[] args) throws IOException {
-        Path sourceRoot = Paths.get("./src/main/java/my/help/useful");
+        Path sourceRoot = Paths.get("./finance/src/main/java/my/help/finance");
         Path outputFile = Paths.get("all_classes.txt");
 
         try (BufferedWriter writer = Files.newBufferedWriter(outputFile)) {
