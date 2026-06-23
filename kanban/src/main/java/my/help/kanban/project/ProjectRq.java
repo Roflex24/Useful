@@ -11,5 +11,5 @@ public class ProjectRq {
 
     private String name;
     private String description;
-    private boolean archived; // опционально при создании
+    private boolean archived;
 }

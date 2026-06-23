@@ -491,6 +491,16 @@
             font-family: inherit;
         }
 
+        .form-group select {
+            appearance: none;
+            -webkit-appearance: none;
+            padding-right: 2.5rem;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b5cf6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.85rem center;
+            cursor: pointer;
+        }
+
         .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
             outline: none;
             border-color: #8b5cf6;
@@ -577,6 +587,124 @@
             text-align: center;
             padding: 2rem;
             color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Светлая иконка кнопки календаря */
+        .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: brightness(0) invert(1);
+            opacity: 0.75;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: opacity 0.2s, background 0.2s;
+        }
+
+        .form-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        /* Тёмная тема для выпадающего окна календаря */
+        .form-group input[type="date"] {
+            color-scheme: dark;
+        }
+        /* Кастомный select */
+        .custom-select-wrapper {
+            position: relative;
+        }
+
+        .custom-select-wrapper select {
+            display: none;
+        }
+
+        .custom-select-trigger {
+            width: 100%;
+            padding: 0.8rem 2.5rem 0.8rem 0.8rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-radius: 1rem;
+            font-size: 0.95rem;
+            color: white;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            user-select: none;
+        }
+
+        .custom-select-trigger:hover,
+        .custom-select-wrapper.open .custom-select-trigger {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+        }
+
+        .custom-select-trigger .cs-arrow {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            transition: transform 0.25s ease;
+            opacity: 0.8;
+        }
+
+        .custom-select-wrapper.open .cs-arrow {
+            transform: rotate(180deg);
+        }
+
+        .custom-select-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #12103a 0%, #1c1952 100%);
+            border: 1px solid rgba(139, 92, 246, 0.45);
+            border-radius: 1rem;
+            overflow: hidden;
+            z-index: 9999;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(139, 92, 246, 0.15);
+            opacity: 0;
+            transform: translateY(-6px) scale(0.98);
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        .custom-select-wrapper.open .custom-select-dropdown {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: all;
+        }
+
+        .custom-select-option {
+            padding: 0.7rem 1rem;
+            font-size: 0.92rem;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .custom-select-option:not(:last-child) {
+            border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+        }
+
+        .custom-select-option:hover {
+            background: rgba(139, 92, 246, 0.25);
+            color: #e0d4ff;
+        }
+
+        .custom-select-option.selected {
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
+            font-weight: 600;
+        }
+
+        .custom-select-option.selected::after {
+            content: '✓';
+            margin-left: auto;
+            color: #8b5cf6;
+            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -688,6 +816,61 @@
         return names[difficulty] || difficulty;
     }
 
+
+    // === КАСТОМНЫЕ SELECT-Ы ===
+    function initCustomSelects(container) {
+        container.querySelectorAll('select').forEach(select => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'custom-select-wrapper';
+
+            // Build options from select
+            const options = Array.from(select.options);
+            const selectedOpt = options.find(o => o.selected) || options[0];
+
+            const arrowSvg = `<svg class="cs-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%238b5cf6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+            wrapper.innerHTML = `
+                <div class="custom-select-trigger">
+                    <span class="cs-label">${selectedOpt ? selectedOpt.text : ''}</span>
+                    <svg class="cs-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="custom-select-dropdown">
+                    ${options.map(o => `<div class="custom-select-option${o.selected ? ' selected' : ''}" data-value="${o.value}">${o.text}</div>`).join('')}
+                </div>
+            `;
+
+            select.parentNode.insertBefore(wrapper, select);
+            wrapper.appendChild(select);
+
+            const trigger = wrapper.querySelector('.custom-select-trigger');
+            const dropdown = wrapper.querySelector('.custom-select-dropdown');
+            const label = wrapper.querySelector('.cs-label');
+
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Close all others
+                document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
+                    if (w !== wrapper) w.classList.remove('open');
+                });
+                wrapper.classList.toggle('open');
+            });
+
+            wrapper.querySelectorAll('.custom-select-option').forEach(opt => {
+                opt.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const val = opt.dataset.value;
+                    select.value = val;
+                    label.textContent = opt.textContent;
+                    wrapper.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+                    wrapper.classList.remove('open');
+                });
+            });
+
+            document.addEventListener('click', () => wrapper.classList.remove('open'));
+        });
+    }
+
     async function loadPlanInfo() {
         try {
             const response = await fetch(`${API_BASE}/${PLAN_ID}`);
@@ -696,6 +879,7 @@
 
             document.getElementById('planInfo').innerHTML = `
                 <h2>${escapeHtml(currentPlan.title)}</h2>
+                ${currentPlan.description ? `<p style="color: rgba(255,255,255,0.7); font-size: 0.95rem; margin-bottom: 0.8rem; line-height: 1.5;">${escapeHtml(currentPlan.description)}</p>` : ''}
                 <div class="plan-meta">
                     <span>🏷️ ${getPlanTypeName(currentPlan.planType)}</span>
                     <span>📅 ${formatDate(currentPlan.startDate)} - ${formatDate(currentPlan.endDate)}</span>
@@ -884,6 +1068,10 @@
                         <label>📝 Название</label>
                         <input type="text" id="title" value="${escapeHtml(currentPlan.title)}">
                     </div>
+                    <div class="form-group">
+                        <label>📄 Описание</label>
+                        <textarea id="description" rows="3" placeholder="Описание плана...">${escapeHtml(currentPlan.description || '')}</textarea>
+                    </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>📅 Дата начала</label>
@@ -912,6 +1100,7 @@
             </div>
         `;
         document.body.appendChild(modal);
+        initCustomSelects(modal);
 
         // Закрытие ТОЛЬКО через кнопки или крестик (нет onclick на overlay)
         const closeModal = () => modal.remove();
@@ -928,6 +1117,7 @@
                 const planData = {
                     planType: modal.querySelector('#planType').value,
                     title: modal.querySelector('#title').value,
+                    description: modal.querySelector('#description').value,
                     startDate: modal.querySelector('#startDate').value,
                     endDate: modal.querySelector('#endDate').value,
                     status: modal.querySelector('#status').value
@@ -1007,6 +1197,7 @@
                 </div>
             `;
             document.body.appendChild(modal);
+            initCustomSelects(modal);
 
             // Закрытие ТОЛЬКО через кнопки (НЕТ клика по overlay)
             const closeModal = () => modal.remove();

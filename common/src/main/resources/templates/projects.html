@@ -1694,7 +1694,8 @@
             }
             await createProject({
                 name,
-                description: modal.querySelector('#projDesc').value || null
+                description: modal.querySelector('#projDesc').value || null,
+                archived: false
             });
             closeModal();
         };

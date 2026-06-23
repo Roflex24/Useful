@@ -11,6 +11,7 @@ public class PlanResponseDto {
     private Long id;
     private PlanType planType;
     private String title;
+    private String description;
     private LocalDate startDate;
     private LocalDate endDate;
     private PlanStatus status;

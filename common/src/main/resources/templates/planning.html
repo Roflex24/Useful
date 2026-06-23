@@ -514,6 +514,123 @@
             from { opacity: 0; transform: translateX(100px); }
             to { opacity: 1; transform: translateX(0); }
         }
+        /* Иконка календаря - светлая */
+        .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: brightness(0) invert(1);
+            opacity: 0.75;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: opacity 0.2s;
+        }
+
+        .form-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        .form-group input[type="date"] {
+            color-scheme: dark;
+        }
+
+        /* Кастомный select */
+        .form-group select {
+            display: none;
+        }
+
+        .custom-select-wrapper {
+            position: relative;
+        }
+
+        .custom-select-trigger {
+            width: 100%;
+            padding: 0.8rem 2.5rem 0.8rem 0.8rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-radius: 1rem;
+            font-size: 1rem;
+            color: white;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            user-select: none;
+        }
+
+        .custom-select-trigger:hover,
+        .custom-select-wrapper.open .custom-select-trigger {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+        }
+
+        .custom-select-trigger .cs-arrow {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            transition: transform 0.25s ease;
+            opacity: 0.8;
+        }
+
+        .custom-select-wrapper.open .cs-arrow {
+            transform: rotate(180deg);
+        }
+
+        .custom-select-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #12103a 0%, #1c1952 100%);
+            border: 1px solid rgba(139, 92, 246, 0.45);
+            border-radius: 1rem;
+            overflow: hidden;
+            z-index: 9999;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(139, 92, 246, 0.15);
+            opacity: 0;
+            transform: translateY(-6px) scale(0.98);
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        .custom-select-wrapper.open .custom-select-dropdown {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: all;
+        }
+
+        .custom-select-option {
+            padding: 0.7rem 1rem;
+            font-size: 0.92rem;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .custom-select-option:not(:last-child) {
+            border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+        }
+
+        .custom-select-option:hover {
+            background: rgba(139, 92, 246, 0.25);
+            color: #e0d4ff;
+        }
+
+        .custom-select-option.selected {
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
+            font-weight: 600;
+        }
+
+        .custom-select-option.selected::after {
+            content: '✓';
+            margin-left: auto;
+            color: #8b5cf6;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -718,6 +835,7 @@
             </div>
         `;
         document.body.appendChild(modal);
+        initCustomSelects(modal);
 
         const closeModal = () => modal.remove();
 
@@ -840,6 +958,7 @@
             </div>
         `;
         document.body.appendChild(modal);
+        initCustomSelects(modal);
 
         const closeModal = () => modal.remove();
 
@@ -928,6 +1047,56 @@
             addBtn.parentNode.replaceChild(newAddBtn, addBtn);
             newAddBtn.addEventListener('click', () => showCreatePlanModal());
         }
+    }
+
+
+    // === КАСТОМНЫЕ SELECT-Ы ===
+    function initCustomSelects(container) {
+        container.querySelectorAll('select').forEach(select => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'custom-select-wrapper';
+
+            const options = Array.from(select.options);
+            const selectedOpt = options.find(o => o.selected) || options[0];
+
+            wrapper.innerHTML = `
+                <div class="custom-select-trigger">
+                    <span class="cs-label">${selectedOpt ? selectedOpt.text : ''}</span>
+                    <svg class="cs-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="custom-select-dropdown">
+                    ${options.map(o => `<div class="custom-select-option${o.selected ? ' selected' : ''}" data-value="${o.value}">${o.text}</div>`).join('')}
+                </div>
+            `;
+
+            select.parentNode.insertBefore(wrapper, select);
+            wrapper.appendChild(select);
+
+            const trigger = wrapper.querySelector('.custom-select-trigger');
+            const label = wrapper.querySelector('.cs-label');
+
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
+                    if (w !== wrapper) w.classList.remove('open');
+                });
+                wrapper.classList.toggle('open');
+            });
+
+            wrapper.querySelectorAll('.custom-select-option').forEach(opt => {
+                opt.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const val = opt.dataset.value;
+                    select.value = val;
+                    label.textContent = opt.textContent;
+                    wrapper.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+                    wrapper.classList.remove('open');
+                });
+            });
+
+            document.addEventListener('click', () => wrapper.classList.remove('open'));
+        });
     }
 
     async function init() {

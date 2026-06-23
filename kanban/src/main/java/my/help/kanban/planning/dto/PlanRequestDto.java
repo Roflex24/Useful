@@ -9,6 +9,7 @@ import java.time.LocalDate;
 public class PlanRequestDto {
     private PlanType planType;
     private String title;
+    private String description;
     private LocalDate startDate;
     private LocalDate endDate;
     private PlanStatus status;
