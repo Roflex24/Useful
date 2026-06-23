@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>На сколько хватит — Финансовый менеджер</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* ── Tokens (consistent with finance.html) ─────────────────── */
+        :root {
+            --bg:           #060C1A;
+            --bg2:          #0B1326;
+            --surface:      rgba(255,255,255,0.042);
+            --surface-hover:rgba(255,255,255,0.072);
+            --border:       rgba(255,255,255,0.08);
+            --border-lit:   rgba(99,102,241,0.35);
+
+            --indigo:       #6366F1;
+            --indigo-soft:  rgba(99,102,241,0.18);
+            --indigo-glow:  rgba(99,102,241,0.32);
+            --emerald:      #10B981;
+            --emerald-soft: rgba(16,185,129,0.15);
+            --amber:        #F59E0B;
+            --amber-soft:   rgba(245,158,11,0.15);
+            --rose:         #F43F5E;
+            --rose-soft:    rgba(244,63,94,0.13);
+            --sky:          #38BDF8;
+
+            --text:         #F0F4FF;
+            --text-2:       #B8C8E0;
+            --text-3:       #6B7E99;
+
+            --font-display: 'Syne', sans-serif;
+            --font-ui:      'Inter', sans-serif;
+            --font-num:     'JetBrains Mono', monospace;
+
+            --radius-sm:    10px;
+            --radius:       16px;
+            --radius-lg:    22px;
+            --radius-xl:    30px;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-ui);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* ── Aurora background ────────────────────────────────────── */
+        .aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+        .aurora-blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.28; animation: drift 18s ease-in-out infinite alternate; }
+        .aurora-blob:nth-child(1) { width: 700px; height: 500px; background: radial-gradient(circle, #6366F1 0%, transparent 70%); top: -150px; left: -100px; animation-duration: 20s; }
+        .aurora-blob:nth-child(2) { width: 500px; height: 500px; background: radial-gradient(circle, #10B981 0%, transparent 70%); top: 40%; right: -120px; animation-duration: 25s; animation-delay: -8s; opacity: 0.18; }
+        .aurora-blob:nth-child(3) { width: 400px; height: 400px; background: radial-gradient(circle, #38BDF8 0%, transparent 70%); bottom: -80px; left: 35%; animation-duration: 22s; animation-delay: -4s; opacity: 0.14; }
+        @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(60px,40px) scale(1.12); } }
+
+        .layout { position: relative; z-index: 1; max-width: 1380px; margin: 0 auto; padding: 28px 24px 80px; }
+
+        .glass { background: var(--surface); border: 1px solid var(--border); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+
+        /* ── Nav ──────────────────────────────────────────────────── */
+        .nav { display: flex; justify-content: space-between; align-items: center; padding: 14px 22px; border-radius: var(--radius-lg); margin-bottom: 32px; gap: 20px; flex-wrap: wrap; }
+        .nav-brand { display: flex; align-items: center; gap: 14px; }
+        .nav-icon { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(145deg, var(--indigo), #4F46E5); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; box-shadow: 0 0 0 1px rgba(99,102,241,0.4), 0 8px 24px rgba(99,102,241,0.35); }
+        .nav-title { font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+        .nav-sub { font-size: 0.72rem; color: var(--text-2); font-weight: 400; margin-top: 1px; letter-spacing: 0.02em; }
+        .nav-actions { display: flex; align-items: center; gap: 10px; }
+        .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--text-2); padding: 9px 18px; border-radius: var(--radius-sm); font-family: var(--font-ui); font-size: 0.82rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.2s; letter-spacing: 0.01em; }
+        .btn-ghost:hover { background: var(--surface-hover); border-color: var(--border-lit); color: var(--text); }
+
+        /* ── Page header ──────────────────────────────────────────── */
+        .page-head { text-align: center; padding: 44px 24px 36px; border-radius: var(--radius-xl); margin-bottom: 24px; position: relative; overflow: hidden; }
+        .page-head::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(16,185,129,0.04) 50%, rgba(56,189,248,0.06) 100%); pointer-events: none; }
+        .page-eyebrow { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--indigo); margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .page-eyebrow::before, .page-eyebrow::after { content: ''; display: block; width: 28px; height: 1px; background: var(--indigo); opacity: 0.5; }
+        .page-title { font-family: var(--font-display); font-size: clamp(1.6rem, 3.6vw, 2.4rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 10px; }
+        .page-desc { color: var(--text-2); font-size: 0.92rem; max-width: 560px; margin: 0 auto; line-height: 1.5; }
+
+        /* ── Layout grid ──────────────────────────────────────────── */
+        .runway-grid { display: grid; grid-template-columns: minmax(320px, 400px) 1fr; gap: 20px; align-items: start; }
+        @media (max-width: 920px) { .runway-grid { grid-template-columns: 1fr; } }
+
+        /* ── Panel ────────────────────────────────────────────────── */
+        .panel { padding: 26px 26px 24px; border-radius: var(--radius-lg); }
+        .panel-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+        .panel-title .pt-icon { width: 30px; height: 30px; border-radius: 8px; background: var(--indigo-soft); display: flex; align-items: center; justify-content: center; color: var(--indigo); font-size: 0.74rem; }
+
+        .field { margin-bottom: 20px; }
+        .field:last-child { margin-bottom: 0; }
+        .field-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.78rem; font-weight: 500; color: var(--text-2); margin-bottom: 9px; }
+        .field-label .fl-hint { font-size: 0.68rem; color: var(--text-3); font-weight: 400; }
+        .field-value { font-family: var(--font-num); font-weight: 600; color: var(--text); font-size: 0.86rem; }
+
+        input[type="number"] {
+            width: 100%; padding: 11px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03); color: var(--text); font-family: var(--font-num); font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        input[type="number"]:focus { outline: none; border-color: var(--indigo); background: rgba(255,255,255,0.05); }
+        input[type="number"]::-webkit-inner-spin-button { opacity: 0.5; }
+
+        input[type="range"] {
+            width: 100%; height: 5px; border-radius: 999px; background: var(--border);
+            outline: none; -webkit-appearance: none; cursor: pointer; margin-top: 4px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+            background: var(--indigo); box-shadow: 0 0 0 4px rgba(99,102,241,0.18), 0 2px 8px rgba(0,0,0,0.4);
+            cursor: pointer; transition: transform 0.15s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.12); }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px; height: 18px; border-radius: 50%; border: none;
+            background: var(--indigo); box-shadow: 0 0 0 4px rgba(99,102,241,0.18); cursor: pointer;
+        }
+
+        .source-toggle { display: flex; gap: 8px; margin-bottom: 6px; }
+        .source-btn {
+            flex: 1; padding: 9px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-2); font-size: 0.76rem; font-weight: 500; cursor: pointer;
+            text-align: center; transition: all 0.2s;
+        }
+        .source-btn.active { background: var(--indigo-soft); border-color: var(--indigo); color: #fff; }
+        .source-btn:hover:not(.active) { background: var(--surface-hover); }
+
+        .capital-readout {
+            display: flex; align-items: baseline; justify-content: space-between;
+            padding: 14px 16px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border); margin-top: 6px;
+        }
+        .capital-readout-label { font-size: 0.74rem; color: var(--text-3); }
+        .capital-readout-value { font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; color: var(--emerald); }
+        .capital-readout-value.is-stale { color: var(--text-3); }
+
+        .extra-event { display: grid; grid-template-columns: 1fr 110px auto; gap: 8px; margin-bottom: 10px; align-items: center; }
+        .extra-event input[type="text"] {
+            padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03); color: var(--text); font-family: var(--font-ui); font-size: 0.82rem;
+        }
+        .extra-event input[type="text"]:focus, .extra-event input[type="number"]:focus { outline: none; border-color: var(--indigo); }
+        .extra-event input[type="number"] { padding: 9px 10px; font-size: 0.82rem; }
+        .icon-btn-del {
+            width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--rose-soft); color: var(--rose); cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .icon-btn-del:hover { background: rgba(244,63,94,0.22); }
+        .btn-add-event {
+            width: 100%; padding: 9px; border-radius: var(--radius-sm); border: 1px dashed var(--border-lit);
+            background: transparent; color: #A5B4FC; font-size: 0.78rem; font-weight: 500; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.2s;
+        }
+        .btn-add-event:hover { background: var(--indigo-soft); }
+
+        /* ── Result hero ──────────────────────────────────────────── */
+        .result-hero {
+            padding: 30px 30px 26px; border-radius: var(--radius-lg); position: relative; overflow: hidden;
+            transition: border-color 0.4s, background 0.4s;
+        }
+        .result-status-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+        .result-eyebrow { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
+        .result-headline { font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+        .result-sub { color: var(--text-2); font-size: 0.86rem; margin-top: 8px; line-height: 1.5; }
+
+        .status-chip {
+            display: inline-flex; align-items: center; gap: 7px; padding: 7px 16px; border-radius: 999px;
+            font-size: 0.76rem; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap;
+        }
+        .status-chip i { font-size: 0.7rem; }
+        .status-eternal { background: var(--emerald-soft); color: var(--emerald); border: 1px solid rgba(16,185,129,0.3); }
+        .status-safe    { background: var(--emerald-soft); color: var(--emerald); border: 1px solid rgba(16,185,129,0.3); }
+        .status-warn    { background: var(--amber-soft); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+        .status-danger  { background: var(--rose-soft); color: var(--rose); border: 1px solid rgba(244,63,94,0.3); }
+
+        /* runway meter */
+        .runway-meter { margin-top: 8px; }
+        .runway-meter-track { height: 14px; border-radius: 999px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); overflow: hidden; position: relative; }
+        .runway-meter-fill { height: 100%; border-radius: 999px; transition: width 1s cubic-bezier(0.23,1,0.32,1), background 0.4s; }
+        .runway-meter-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.68rem; color: var(--text-3); font-family: var(--font-num); }
+
+        /* stat tiles */
+        .stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 22px; }
+        .stat-tile { padding: 14px 16px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.03); border: 1px solid var(--border); }
+        .stat-tile-label { font-size: 0.66rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+        .stat-tile-value { font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; color: var(--text); }
+        .stat-tile-value.accent-emerald { color: var(--emerald); }
+        .stat-tile-value.accent-amber { color: var(--amber); }
+        .stat-tile-value.accent-rose { color: var(--rose); }
+
+        /* chart card */
+        .chart-card { padding: 24px 26px 20px; border-radius: var(--radius-lg); margin-top: 20px; }
+        .chart-header { margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; }
+        .chart-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 9px; }
+        .chart-title .ct-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--indigo-soft); display: flex; align-items: center; justify-content: center; color: var(--indigo); font-size: 0.72rem; }
+        .legend-row { display: flex; gap: 16px; font-size: 0.74rem; color: var(--text-2); }
+        .legend-row span { display: inline-flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+        .chart-wrap { position: relative; width: 100%; height: 340px; }
+
+        /* milestones */
+        .milestones { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+        .milestone-row {
+            display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--radius-sm);
+            background: rgba(255,255,255,0.025); border: 1px solid var(--border); font-size: 0.82rem;
+        }
+        .milestone-row .m-icon { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; flex-shrink: 0; }
+        .milestone-row .m-label { flex: 1; color: var(--text-2); }
+        .milestone-row .m-value { font-family: var(--font-num); font-weight: 600; color: var(--text); }
+
+        .footnote { margin-top: 18px; font-size: 0.74rem; color: var(--text-3); line-height: 1.6; padding: 14px 16px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.02); border: 1px solid var(--border); }
+        .footnote i { color: var(--sky); margin-right: 6px; }
+
+        .empty-accounts { text-align: center; padding: 30px 20px; color: var(--text-3); font-size: 0.84rem; }
+        .empty-accounts i { font-size: 1.6rem; color: var(--text-3); display: block; margin-bottom: 10px; }
+
+        @media (max-width: 560px) {
+            .layout { padding: 18px 14px 60px; }
+            .panel, .result-hero, .chart-card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="aurora" aria-hidden="true">
+    <div class="aurora-blob"></div>
+    <div class="aurora-blob"></div>
+    <div class="aurora-blob"></div>
+</div>
+
+<div class="layout">
+
+    <!-- ── Navigation ──────────────────────────────────── -->
+    <nav class="nav glass">
+        <div class="nav-brand">
+            <div class="nav-icon"><i class="fas fa-hourglass-half"></i></div>
+            <div>
+                <div class="nav-title">На сколько хватит</div>
+                <div class="nav-sub">Капитал · Расходы · Инфляция</div>
+            </div>
+        </div>
+        <div class="nav-actions">
+            <button onclick="window.location.href='http://localhost:8080/page/finance'" class="btn-ghost">
+                <i class="fas fa-arrow-left"></i> К финансам
+            </button>
+        </div>
+    </nav>
+
+    <!-- ── Page head ──────────────────────────────────────── -->
+    <div class="page-head glass">
+        <div class="page-eyebrow"><i class="fas fa-hourglass-half"></i> Симулятор запаса прочности</div>
+        <div class="page-title">На сколько хватит денег?</div>
+        <div class="page-desc">Берём ваш текущий капитал, считаем проценты на остаток и рост трат из-за инфляции — и смотрим, сколько лет вы продержитесь.</div>
+    </div>
+
+    <div class="runway-grid">
+
+        <!-- ── Controls panel ─────────────────────────────── -->
+        <div class="panel glass">
+            <div class="panel-title"><span class="pt-icon"><i class="fas fa-sliders-h"></i></span>Параметры</div>
+
+            <div class="field">
+                <div class="field-label">Стартовый капитал <span class="fl-hint">источник суммы</span></div>
+                <div class="source-toggle">
+                    <button type="button" class="source-btn active" id="srcAccountsBtn" onclick="setCapitalSource('accounts')">Со счетов</button>
+                    <button type="button" class="source-btn" id="srcManualBtn" onclick="setCapitalSource('manual')">Вручную</button>
+                </div>
+                <input type="number" id="capitalInput" min="0" step="1000" value="0">
+                <div class="capital-readout" id="capitalReadout" style="display:none">
+                    <span class="capital-readout-label"><i class="fas fa-wallet"></i> Сумма по всем счетам</span>
+                    <span class="capital-readout-value" id="capitalReadoutValue">—</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Ежемесячные траты <span class="field-value" id="spendLabel">0 ₽</span></div>
+                <input type="range" id="spendSlider" min="0" max="500000" step="1000" value="60000">
+                <input type="number" id="spendInput" min="0" step="1000" value="60000" style="margin-top:8px">
+            </div>
+
+            <div class="field">
+                <div class="field-label">Доходность вклада/счёта <span class="field-value" id="rateLabel">0% годовых</span></div>
+                <input type="range" id="rateSlider" min="0" max="30" step="0.1" value="14">
+            </div>
+
+            <div class="field">
+                <div class="field-label">Инфляция <span class="field-value" id="inflationLabel">0% в год</span></div>
+                <input type="range" id="inflationSlider" min="0" max="25" step="0.1" value="8">
+            </div>
+
+            <div class="field">
+                <div class="field-label">Крупные траты <span class="fl-hint">разово, в указанный месяц</span></div>
+                <div id="eventsContainer"></div>
+                <button type="button" class="btn-add-event" id="addEventBtn"><i class="fas fa-plus"></i> Добавить трату</button>
+            </div>
+        </div>
+
+        <!-- ── Results column ─────────────────────────────── -->
+        <div>
+            <div class="result-hero glass" id="resultHero">
+                <div class="result-status-row">
+                    <div>
+                        <div class="result-eyebrow">Прогноз</div>
+                        <div class="result-headline" id="resultHeadline">Считаем…</div>
+                        <div class="result-sub" id="resultSub"></div>
+                    </div>
+                    <div class="status-chip" id="statusChip"><i class="fas fa-circle-notch fa-spin"></i> <span>—</span></div>
+                </div>
+
+                <div class="runway-meter">
+                    <div class="runway-meter-track"><div class="runway-meter-fill" id="runwayFill" style="width:0%"></div></div>
+                    <div class="runway-meter-labels"><span>сегодня</span><span id="runwayMeterRight">горизонт 50 лет</span></div>
+                </div>
+
+                <div class="stat-tiles">
+                    <div class="stat-tile">
+                        <div class="stat-tile-label">Хватит на</div>
+                        <div class="stat-tile-value" id="tileDuration">—</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-label">Траты в первый год</div>
+                        <div class="stat-tile-value" id="tileFirstYearSpend">—</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-label">Доход с процентов / мес сейчас</div>
+                        <div class="stat-tile-value accent-emerald" id="tileMonthlyYield">—</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-label">Безубыточная ставка</div>
+                        <div class="stat-tile-value" id="tileBreakEvenRate">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-card glass">
+                <div class="chart-header">
+                    <div class="chart-title"><span class="ct-icon"><i class="fas fa-chart-area"></i></span>Баланс по годам</div>
+                    <div class="legend-row">
+                        <span><span class="legend-dot" style="background:var(--indigo)"></span>Номинальный баланс</span>
+                        <span><span class="legend-dot" style="background:var(--sky)"></span>В сегодняшних деньгах</span>
+                    </div>
+                </div>
+                <div class="chart-wrap"><canvas id="runwayChart"></canvas></div>
+
+                <div class="milestones" id="milestonesContainer"></div>
+
+                <div class="footnote">
+                    <i class="fas fa-circle-info"></i>
+                    Расчёт — приближённый сценарий, а не финансовый прогноз. Раз в год траты пересчитываются на размер инфляции, проценты на остаток капитализируются ежемесячно. Курс, ставки и реальные расходы могут отличаться.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = '/api/finance';
+    const MONTHS_HORIZON = 600; // 50 лет — потолок симуляции
+
+    let accountsTotal = 0;
+    let capitalSource = 'accounts';
+    let events = []; // { id, label, amount, month }
+    let eventIdSeq = 1;
+    let chart = null;
+
+    /* ── Formatters ───────────────────────────────────────────────── */
+    function formatCurrency(amount, fractionDigits = 0) {
+        let num = parseFloat(amount) || 0;
+        return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits }).format(num);
+    }
+    function formatCompact(amount) {
+        let num = parseFloat(amount) || 0;
+        return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', notation: 'compact', maximumFractionDigits: 1 }).format(num);
+    }
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    }
+
+    /* ── Fetch current capital from accounts ────────────────────────── */
+    async function fetchAccountsTotal() {
+        try {
+            let res = await fetch(`${API_BASE}/summary`);
+            if (!res.ok) throw new Error();
+            let summary = await res.json();
+            accountsTotal = parseFloat(summary.totalAmount) || 0;
+        } catch (e) {
+            accountsTotal = 0;
+        }
+        let readoutEl = document.getElementById('capitalReadoutValue');
+        if (accountsTotal > 0) {
+            readoutEl.textContent = formatCurrency(accountsTotal, 2);
+            readoutEl.classList.remove('is-stale');
+        } else {
+            readoutEl.textContent = 'Не удалось загрузить счета';
+            readoutEl.classList.add('is-stale');
+        }
+        if (capitalSource === 'accounts') {
+            document.getElementById('capitalInput').value = Math.round(accountsTotal);
+            runSimulation();
+        }
+    }
+
+    function setCapitalSource(source) {
+        capitalSource = source;
+        document.getElementById('srcAccountsBtn').classList.toggle('active', source === 'accounts');
+        document.getElementById('srcManualBtn').classList.toggle('active', source === 'manual');
+        let input = document.getElementById('capitalInput');
+        let readout = document.getElementById('capitalReadout');
+        if (source === 'accounts') {
+            input.disabled = true;
+            input.value = Math.round(accountsTotal);
+            readout.style.display = 'flex';
+        } else {
+            input.disabled = false;
+            readout.style.display = 'none';
+        }
+        runSimulation();
+    }
+
+    /* ── Extra one-off events (big purchases) ────────────────────────── */
+    function renderEvents() {
+        let cont = document.getElementById('eventsContainer');
+        if (!events.length) { cont.innerHTML = ''; return; }
+        cont.innerHTML = events.map(ev => `
+            <div class="extra-event" data-id="${ev.id}">
+                <input type="text" placeholder="Например: ремонт" value="${escapeHtml(ev.label)}" oninput="updateEvent(${ev.id}, 'label', this.value)">
+                <input type="number" placeholder="₸ / ₽" min="0" step="1000" value="${ev.amount}" oninput="updateEvent(${ev.id}, 'amount', this.value)">
+                <button type="button" class="icon-btn-del" onclick="removeEvent(${ev.id})"><i class="fas fa-trash"></i></button>
+            </div>`).join('');
+    }
+    function addEvent() {
+        events.push({ id: eventIdSeq++, label: '', amount: 0, month: 12 });
+        renderEvents();
+        runSimulation();
+    }
+    function updateEvent(id, field, value) {
+        let ev = events.find(e => e.id === id);
+        if (!ev) return;
+        ev[field] = field === 'amount' ? (parseFloat(value) || 0) : value;
+        runSimulation();
+    }
+    function removeEvent(id) {
+        events = events.filter(e => e.id !== id);
+        renderEvents();
+        runSimulation();
+    }
+
+    /* ── Simulation engine ───────────────────────────────────────────
+       Monthly step:
+         balance += balance * (annualRate/12)      // interest accrues on whatever is left
+         balance -= currentMonthlySpend             // living costs
+         balance -= one-off events scheduled this month
+       Every 12 months: currentMonthlySpend *= (1 + inflation)
+    ------------------------------------------------------------------- */
+    function simulate({ capital, monthlySpend, annualRatePct, inflationPct, events }) {
+        let rateMonthly = annualRatePct / 100 / 12;
+        let inflation = inflationPct / 100;
+        let balance = capital;
+        let spend = monthlySpend;
+
+        let series = [{ month: 0, nominal: balance, real: balance }];
+        let depletionMonth = null;
+        let yearlySpendTotals = [];
+        let currentYearSpend = 0;
+
+        for (let m = 1; m <= MONTHS_HORIZON; m++) {
+            balance += balance * rateMonthly;
+            balance -= spend;
+            currentYearSpend += spend;
+
+            let evThisMonth = events.filter(e => e.month === m);
+            for (let e of evThisMonth) balance -= (e.amount || 0);
+
+            if (depletionMonth === null && balance <= 0) {
+                depletionMonth = m;
+                balance = 0;
+            }
+
+            if (m % 12 === 0) {
+                yearlySpendTotals.push(currentYearSpend);
+                currentYearSpend = 0;
+                spend *= (1 + inflation);
+            }
+
+            let realFactor = Math.pow(1 + inflation, m / 12);
+            series.push({ month: m, nominal: balance, real: balance / realFactor });
+
+            if (depletionMonth !== null) {
+                // continue filling remaining months at 0 for clean chart, but stop computing further
+                for (let mm = m + 1; mm <= MONTHS_HORIZON; mm++) {
+                    series.push({ month: mm, nominal: 0, real: 0 });
+                }
+                break;
+            }
+        }
+
+        return { series, depletionMonth, firstYearSpend: yearlySpendTotals[0] || monthlySpend * 12 };
+    }
+
+    function monthsToYearsLabel(months) {
+        let y = Math.floor(months / 12);
+        let m = months % 12;
+        let parts = [];
+        if (y > 0) parts.push(`${y} ${y === 1 ? 'год' : (y < 5 ? 'года' : 'лет')}`);
+        if (m > 0) parts.push(`${m} ${m === 1 ? 'месяц' : (m < 5 ? 'месяца' : 'месяцев')}`);
+        return parts.length ? parts.join(' ') : 'меньше месяца';
+    }
+
+    /* ── Main render ──────────────────────────────────────────────── */
+    function runSimulation() {
+        let capital = parseFloat(document.getElementById('capitalInput').value) || 0;
+        let monthlySpend = parseFloat(document.getElementById('spendInput').value) || 0;
+        let annualRatePct = parseFloat(document.getElementById('rateSlider').value) || 0;
+        let inflationPct = parseFloat(document.getElementById('inflationSlider').value) || 0;
+
+        document.getElementById('spendLabel').textContent = formatCurrency(monthlySpend) + ' / мес';
+        document.getElementById('rateLabel').textContent = annualRatePct.toFixed(1) + '% годовых';
+        document.getElementById('inflationLabel').textContent = inflationPct.toFixed(1) + '% в год';
+
+        let result = simulate({ capital, monthlySpend, annualRatePct, inflationPct, events });
+
+        renderResultHero(result, { capital, monthlySpend, annualRatePct, inflationPct });
+        renderChart(result);
+        renderMilestones(result);
+    }
+
+    function renderResultHero(result, params) {
+        let { series, depletionMonth, firstYearSpend } = result;
+        let chip = document.getElementById('statusChip');
+        let headline = document.getElementById('resultHeadline');
+        let sub = document.getElementById('resultSub');
+        let fill = document.getElementById('runwayFill');
+        let meterRight = document.getElementById('runwayMeterRight');
+
+        let monthlyYieldNow = params.capital * (params.annualRatePct / 100 / 12);
+        document.getElementById('tileMonthlyYield').textContent = formatCurrency(monthlyYieldNow);
+        document.getElementById('tileFirstYearSpend').textContent = formatCompact(firstYearSpend);
+
+        // break-even rate: annual rate at which interest alone covers monthly spend forever
+        let breakEvenRate = params.capital > 0 ? (params.monthlySpend * 12 / params.capital) * 100 : 0;
+        document.getElementById('tileBreakEvenRate').textContent = params.capital > 0 ? breakEvenRate.toFixed(1) + '%' : '—';
+
+        if (depletionMonth === null) {
+            // Money never runs out within horizon — check if it's truly sustainable (balance trend not collapsing)
+            let last = series[series.length - 1];
+            let isGrowingOrStable = last.nominal >= params.capital * 0.5;
+            chip.className = 'status-chip status-eternal';
+            chip.innerHTML = '<i class="fas fa-infinity"></i><span>Бессрочно</span>';
+            headline.textContent = isGrowingOrStable
+                ? 'Денег хватит навсегда'
+                : `Хватит дольше, чем на ${monthsToYearsLabel(MONTHS_HORIZON)}`;
+            sub.textContent = isGrowingOrStable
+                ? 'Проценты на остаток покрывают траты быстрее, чем инфляция их разгоняет — капитал не уменьшается в долгую.'
+                : 'За горизонт 50 лет капитал не закончился, хотя постепенно снижается — на самом дальнем участке возможен дефицит.';
+            fill.style.width = '100%';
+            fill.style.background = 'linear-gradient(90deg, var(--emerald), #34D399)';
+            meterRight.textContent = '50+ лет';
+            document.getElementById('tileDuration').textContent = '50+ лет';
+            document.getElementById('tileDuration').className = 'stat-tile-value accent-emerald';
+        } else {
+            let years = depletionMonth / 12;
+            let pct = Math.min(100, (depletionMonth / MONTHS_HORIZON) * 100);
+            let durationLabel = monthsToYearsLabel(depletionMonth);
+
+            let level, levelClass, levelIcon;
+            if (years >= 20) { level = 'Запас прочности высокий'; levelClass = 'status-safe'; levelIcon = 'fa-shield-heart'; }
+            else if (years >= 7) { level = 'Запас прочности средний'; levelClass = 'status-warn'; levelIcon = 'fa-scale-balanced'; }
+            else { level = 'Запас прочности низкий'; levelClass = 'status-danger'; levelIcon = 'fa-triangle-exclamation'; }
+
+            chip.className = `status-chip ${levelClass}`;
+            chip.innerHTML = `<i class="fas ${levelIcon}"></i><span>${level}</span>`;
+            headline.textContent = `Хватит на ${durationLabel}`;
+
+            let today = new Date();
+            let depletionDate = new Date(today.getFullYear(), today.getMonth() + depletionMonth, 1);
+            let dateLabel = depletionDate.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+            sub.textContent = `При текущих тратах и инфляции деньги закончатся примерно в ${dateLabel}, если ничего не менять.`;
+
+            fill.style.width = pct + '%';
+            fill.style.background = years >= 20
+                ? 'linear-gradient(90deg, var(--emerald), #34D399)'
+                : (years >= 7 ? 'linear-gradient(90deg, var(--amber), #FBBF24)' : 'linear-gradient(90deg, var(--rose), #FB7185)');
+            meterRight.textContent = '50 лет';
+
+            document.getElementById('tileDuration').textContent = durationLabel;
+            document.getElementById('tileDuration').className = 'stat-tile-value ' + (years >= 20 ? 'accent-emerald' : (years >= 7 ? 'accent-amber' : 'accent-rose'));
+        }
+    }
+
+    function renderMilestones(result) {
+        let cont = document.getElementById('milestonesContainer');
+        let { series, depletionMonth } = result;
+        let checkpoints = [12, 60, 120, 240, 360];
+        let rows = [];
+        for (let cp of checkpoints) {
+            if (depletionMonth !== null && cp > depletionMonth) continue;
+            let point = series[cp];
+            if (!point) continue;
+            let years = cp / 12;
+            rows.push({
+                label: `Через ${years} ${years === 1 ? 'год' : (years < 5 ? 'года' : 'лет')}`,
+                value: formatCurrency(point.nominal),
+                icon: 'fa-calendar-check',
+                color: point.nominal > 0 ? 'var(--emerald)' : 'var(--rose)'
+            });
+        }
+        if (depletionMonth !== null) {
+            rows.push({
+                label: 'Капитал обнулится',
+                value: monthsToYearsLabel(depletionMonth) + ' от сегодня',
+                icon: 'fa-flag-checkered',
+                color: 'var(--rose)'
+            });
+        }
+        if (!rows.length) { cont.innerHTML = ''; return; }
+        cont.innerHTML = rows.map(r => `
+            <div class="milestone-row">
+                <span class="m-icon" style="background:${r.color}22;color:${r.color}"><i class="fas ${r.icon}"></i></span>
+                <span class="m-label">${r.label}</span>
+                <span class="m-value">${r.value}</span>
+            </div>`).join('');
+    }
+
+    function renderChart(result) {
+        let { series, depletionMonth } = result;
+        let cap = depletionMonth !== null ? Math.min(series.length - 1, depletionMonth + 24) : series.length - 1;
+        // Sample yearly points for a cleaner chart
+        let labels = [];
+        let nominalData = [];
+        let realData = [];
+        for (let m = 0; m <= cap; m += 12) {
+            let point = series[m];
+            if (!point) break;
+            labels.push(`${Math.round(m / 12)} г.`);
+            nominalData.push(Math.round(point.nominal));
+            realData.push(Math.round(point.real));
+        }
+        // ensure last point included
+        if ((cap) % 12 !== 0) {
+            let point = series[cap];
+            labels.push(`${(cap / 12).toFixed(1)} г.`);
+            nominalData.push(Math.round(point.nominal));
+            realData.push(Math.round(point.real));
+        }
+
+        let ctx = document.getElementById('runwayChart').getContext('2d');
+        if (chart) chart.destroy();
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Номинальный баланс',
+                        data: nominalData,
+                        borderColor: '#6366F1',
+                        backgroundColor: 'rgba(99,102,241,0.12)',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 0,
+                        borderWidth: 2.5
+                    },
+                    {
+                        label: 'В сегодняшних деньгах',
+                        data: realData,
+                        borderColor: '#38BDF8',
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 4],
+                        fill: false,
+                        tension: 0.35,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0D1529',
+                        borderColor: 'rgba(255,255,255,0.08)',
+                        borderWidth: 1,
+                        padding: 10,
+                        titleFont: { family: 'JetBrains Mono, monospace', size: 11 },
+                        bodyFont: { family: 'Inter, sans-serif', size: 12 },
+                        callbacks: { label: (c) => `${c.dataset.label}: ${formatCurrency(c.raw)}` }
+                    }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6B7E99', font: { size: 10 } } },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#6B7E99', font: { size: 10, family: 'JetBrains Mono, monospace' }, callback: v => formatCompact(v) }
+                    }
+                }
+            }
+        });
+    }
+
+    /* ── Event wiring ─────────────────────────────────────────────── */
+    document.getElementById('spendSlider').addEventListener('input', function() {
+        document.getElementById('spendInput').value = this.value;
+        runSimulation();
+    });
+    document.getElementById('spendInput').addEventListener('input', function() {
+        let v = Math.max(0, Math.min(parseFloat(this.value) || 0, 5000000));
+        document.getElementById('spendSlider').value = Math.min(v, 500000);
+        runSimulation();
+    });
+    document.getElementById('rateSlider').addEventListener('input', runSimulation);
+    document.getElementById('inflationSlider').addEventListener('input', runSimulation);
+    document.getElementById('capitalInput').addEventListener('input', runSimulation);
+    document.getElementById('addEventBtn').addEventListener('click', addEvent);
+
+    /* ── Boot ─────────────────────────────────────────────────────── */
+    setCapitalSource('accounts');
+    fetchAccountsTotal();
+    runSimulation();
+</script>
+</body>
+</html>
