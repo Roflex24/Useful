@@ -104,7 +104,33 @@
             transition: border-color 0.2s;
         }
         input[type="number"]:focus { outline: none; border-color: var(--indigo); background: rgba(255,255,255,0.05); }
-        input[type="number"]::-webkit-inner-spin-button { opacity: 0.5; }
+        /* hide native spin buttons — replaced with custom stepper below */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
+
+        /* ── Custom number stepper ───────────────────────────────── */
+        .num-stepper {
+            position: relative; display: flex; align-items: stretch;
+            border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03); transition: border-color 0.2s, background 0.2s;
+            overflow: hidden;
+        }
+        .num-stepper:focus-within { border-color: var(--indigo); background: rgba(255,255,255,0.05); }
+        .num-stepper input[type="number"] {
+            flex: 1; min-width: 0; border: none; background: transparent; padding: 11px 6px;
+            text-align: center;
+        }
+        .num-stepper input[type="number"]:focus { border: none; background: transparent; }
+        .num-stepper-btn {
+            flex-shrink: 0; width: 38px; display: flex; align-items: center; justify-content: center;
+            background: transparent; border: none; color: var(--text-2); cursor: pointer;
+            font-size: 1.05rem; font-weight: 500; line-height: 1; transition: background 0.15s, color 0.15s; padding: 0;
+        }
+        .num-stepper-btn.minus { border-right: 1px solid var(--border); }
+        .num-stepper-btn.plus { border-left: 1px solid var(--border); }
+        .num-stepper-btn:hover { background: var(--indigo-soft); color: var(--indigo); }
+        .num-stepper-btn:active { background: var(--indigo); color: #fff; }
 
         input[type="range"] {
             width: 100%; height: 5px; border-radius: 999px; background: var(--border);
@@ -139,13 +165,15 @@
         .capital-readout-value { font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; color: var(--emerald); }
         .capital-readout-value.is-stale { color: var(--text-3); }
 
-        .extra-event { display: grid; grid-template-columns: 1fr 110px auto; gap: 8px; margin-bottom: 10px; align-items: center; }
+        .extra-event { display: grid; grid-template-columns: 1fr 128px auto; gap: 8px; margin-bottom: 10px; align-items: center; }
         .extra-event input[type="text"] {
             padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);
             background: rgba(255,255,255,0.03); color: var(--text); font-family: var(--font-ui); font-size: 0.82rem;
         }
         .extra-event input[type="text"]:focus, .extra-event input[type="number"]:focus { outline: none; border-color: var(--indigo); }
-        .extra-event input[type="number"] { padding: 9px 10px; font-size: 0.82rem; }
+        .extra-event .num-stepper input[type="number"] { padding: 9px 6px 9px 10px; font-size: 0.82rem; }
+        .num-stepper.is-compact .num-stepper-btn { width: 26px; font-size: 0.95rem; }
+        .num-stepper.is-compact input[type="number"] { padding: 9px 4px; }
         .icon-btn-del {
             width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--border);
             background: var(--rose-soft); color: var(--rose); cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -257,7 +285,7 @@
     <div class="page-head glass">
         <div class="page-eyebrow"><i class="fas fa-hourglass-half"></i> Симулятор запаса прочности</div>
         <div class="page-title">На сколько хватит денег?</div>
-        <div class="page-desc">Берём ваш текущий капитал, считаем проценты на остаток и рост трат из-за инфляции — и смотрим, сколько лет вы продержитесь.</div>
+        <div class="page-desc">Берём ваш текущий капитал, считаем проценты на остаток, добавляем ежемесячную зарплату и рост трат из-за инфляции — и смотрим, сколько лет вы продержитесь.</div>
     </div>
 
     <div class="runway-grid">
@@ -272,7 +300,11 @@
                     <button type="button" class="source-btn active" id="srcAccountsBtn" onclick="setCapitalSource('accounts')">Со счетов</button>
                     <button type="button" class="source-btn" id="srcManualBtn" onclick="setCapitalSource('manual')">Вручную</button>
                 </div>
-                <input type="number" id="capitalInput" min="0" step="1000" value="0">
+                <div class="num-stepper">
+                    <button type="button" class="num-stepper-btn minus" tabindex="-1" onclick="stepNumberInput('capitalInput', -1)">−</button>
+                    <input type="number" id="capitalInput" min="0" step="1000" value="0">
+                    <button type="button" class="num-stepper-btn plus" tabindex="-1" onclick="stepNumberInput('capitalInput', 1)">+</button>
+                </div>
                 <div class="capital-readout" id="capitalReadout" style="display:none">
                     <span class="capital-readout-label"><i class="fas fa-wallet"></i> Сумма по всем счетам</span>
                     <span class="capital-readout-value" id="capitalReadoutValue">—</span>
@@ -282,7 +314,21 @@
             <div class="field">
                 <div class="field-label">Ежемесячные траты <span class="field-value" id="spendLabel">0 ₽</span></div>
                 <input type="range" id="spendSlider" min="0" max="500000" step="1000" value="60000">
-                <input type="number" id="spendInput" min="0" step="1000" value="60000" style="margin-top:8px">
+                <div class="num-stepper" style="margin-top:8px">
+                    <button type="button" class="num-stepper-btn minus" tabindex="-1" onclick="stepNumberInput('spendInput', -1)">−</button>
+                    <input type="number" id="spendInput" min="0" step="1000" value="60000">
+                    <button type="button" class="num-stepper-btn plus" tabindex="-1" onclick="stepNumberInput('spendInput', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Зарплата (доход) в месяц <span class="field-value" id="salaryLabel">0 ₽</span></div>
+                <input type="range" id="salarySlider" min="0" max="500000" step="1000" value="0">
+                <div class="num-stepper" style="margin-top:8px">
+                    <button type="button" class="num-stepper-btn minus" tabindex="-1" onclick="stepNumberInput('salaryInput', -1)">−</button>
+                    <input type="number" id="salaryInput" min="0" step="1000" value="0">
+                    <button type="button" class="num-stepper-btn plus" tabindex="-1" onclick="stepNumberInput('salaryInput', 1)">+</button>
+                </div>
             </div>
 
             <div class="field">
@@ -325,7 +371,7 @@
                         <div class="stat-tile-value" id="tileDuration">—</div>
                     </div>
                     <div class="stat-tile">
-                        <div class="stat-tile-label">Траты в первый год</div>
+                        <div class="stat-tile-label">Расходы / доход в 1-й год</div>
                         <div class="stat-tile-value" id="tileFirstYearSpend">—</div>
                     </div>
                     <div class="stat-tile">
@@ -353,7 +399,7 @@
 
                 <div class="footnote">
                     <i class="fas fa-circle-info"></i>
-                    Расчёт — приближённый сценарий, а не финансовый прогноз. Раз в год траты пересчитываются на размер инфляции, проценты на остаток капитализируются ежемесячно. Курс, ставки и реальные расходы могут отличаться.
+                    Расчёт — приближённый сценарий, а не финансовый прогноз. Раз в год траты и зарплата пересчитываются на размер инфляции, проценты на остаток капитализируются ежемесячно. Курс, ставки и реальные расходы могут отличаться.
                 </div>
             </div>
         </div>
@@ -432,7 +478,11 @@
         cont.innerHTML = events.map(ev => `
             <div class="extra-event" data-id="${ev.id}">
                 <input type="text" placeholder="Например: ремонт" value="${escapeHtml(ev.label)}" oninput="updateEvent(${ev.id}, 'label', this.value)">
-                <input type="number" placeholder="₸ / ₽" min="0" step="1000" value="${ev.amount}" oninput="updateEvent(${ev.id}, 'amount', this.value)">
+                <div class="num-stepper is-compact">
+                    <button type="button" class="num-stepper-btn minus" tabindex="-1" onclick="stepNumberInput('evAmount${ev.id}', -1)">−</button>
+                    <input type="number" id="evAmount${ev.id}" placeholder="₸ / ₽" min="0" step="1000" value="${ev.amount}" oninput="updateEvent(${ev.id}, 'amount', this.value)">
+                    <button type="button" class="num-stepper-btn plus" tabindex="-1" onclick="stepNumberInput('evAmount${ev.id}', 1)">+</button>
+                </div>
                 <button type="button" class="icon-btn-del" onclick="removeEvent(${ev.id})"><i class="fas fa-trash"></i></button>
             </div>`).join('');
     }
@@ -453,28 +503,48 @@
         runSimulation();
     }
 
+    /* ── Custom number stepper (replaces native spin buttons) ────────── */
+    function stepNumberInput(id, dir, after) {
+        let input = document.getElementById(id);
+        if (!input) return;
+        let step = parseFloat(input.step) || 1;
+        let min = input.min !== '' ? parseFloat(input.min) : -Infinity;
+        let max = input.max !== '' ? parseFloat(input.max) : Infinity;
+        let current = parseFloat(input.value) || 0;
+        let next = Math.min(max, Math.max(min, current + dir * step));
+        input.value = next;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        if (typeof after === 'function') after();
+    }
+
     /* ── Simulation engine ───────────────────────────────────────────
        Monthly step:
          balance += balance * (annualRate/12)      // interest accrues on whatever is left
          balance -= currentMonthlySpend             // living costs
+         balance += currentMonthlySalary            // monthly income (salary)
          balance -= one-off events scheduled this month
-       Every 12 months: currentMonthlySpend *= (1 + inflation)
+       Every 12 months: currentMonthlySpend *= (1 + inflation), currentMonthlySalary *= (1 + inflation)
     ------------------------------------------------------------------- */
-    function simulate({ capital, monthlySpend, annualRatePct, inflationPct, events }) {
+    function simulate({ capital, monthlySpend, monthlySalary, annualRatePct, inflationPct, events }) {
         let rateMonthly = annualRatePct / 100 / 12;
         let inflation = inflationPct / 100;
         let balance = capital;
         let spend = monthlySpend;
+        let salary = monthlySalary || 0;
 
         let series = [{ month: 0, nominal: balance, real: balance }];
         let depletionMonth = null;
         let yearlySpendTotals = [];
+        let yearlySalaryTotals = [];
         let currentYearSpend = 0;
+        let currentYearSalary = 0;
 
         for (let m = 1; m <= MONTHS_HORIZON; m++) {
             balance += balance * rateMonthly;
             balance -= spend;
+            balance += salary;
             currentYearSpend += spend;
+            currentYearSalary += salary;
 
             let evThisMonth = events.filter(e => e.month === m);
             for (let e of evThisMonth) balance -= (e.amount || 0);
@@ -486,8 +556,11 @@
 
             if (m % 12 === 0) {
                 yearlySpendTotals.push(currentYearSpend);
+                yearlySalaryTotals.push(currentYearSalary);
                 currentYearSpend = 0;
+                currentYearSalary = 0;
                 spend *= (1 + inflation);
+                salary *= (1 + inflation);
             }
 
             let realFactor = Math.pow(1 + inflation, m / 12);
@@ -502,7 +575,12 @@
             }
         }
 
-        return { series, depletionMonth, firstYearSpend: yearlySpendTotals[0] || monthlySpend * 12 };
+        return {
+            series,
+            depletionMonth,
+            firstYearSpend: yearlySpendTotals[0] || monthlySpend * 12,
+            firstYearSalary: yearlySalaryTotals[0] || salary * 12
+        };
     }
 
     function monthsToYearsLabel(months) {
@@ -518,16 +596,18 @@
     function runSimulation() {
         let capital = parseFloat(document.getElementById('capitalInput').value) || 0;
         let monthlySpend = parseFloat(document.getElementById('spendInput').value) || 0;
+        let monthlySalary = parseFloat(document.getElementById('salaryInput').value) || 0;
         let annualRatePct = parseFloat(document.getElementById('rateSlider').value) || 0;
         let inflationPct = parseFloat(document.getElementById('inflationSlider').value) || 0;
 
         document.getElementById('spendLabel').textContent = formatCurrency(monthlySpend) + ' / мес';
+        document.getElementById('salaryLabel').textContent = formatCurrency(monthlySalary) + ' / мес';
         document.getElementById('rateLabel').textContent = annualRatePct.toFixed(1) + '% годовых';
         document.getElementById('inflationLabel').textContent = inflationPct.toFixed(1) + '% в год';
 
-        let result = simulate({ capital, monthlySpend, annualRatePct, inflationPct, events });
+        let result = simulate({ capital, monthlySpend, monthlySalary, annualRatePct, inflationPct, events });
 
-        renderResultHero(result, { capital, monthlySpend, annualRatePct, inflationPct });
+        renderResultHero(result, { capital, monthlySpend, monthlySalary, annualRatePct, inflationPct });
         renderChart(result);
         renderMilestones(result);
     }
@@ -542,10 +622,14 @@
 
         let monthlyYieldNow = params.capital * (params.annualRatePct / 100 / 12);
         document.getElementById('tileMonthlyYield').textContent = formatCurrency(monthlyYieldNow);
-        document.getElementById('tileFirstYearSpend').textContent = formatCompact(firstYearSpend);
+        let firstYearSalary = result.firstYearSalary || 0;
+        document.getElementById('tileFirstYearSpend').textContent = firstYearSalary > 0
+            ? `${formatCompact(firstYearSpend)} / ${formatCompact(firstYearSalary)}`
+            : formatCompact(firstYearSpend);
 
-        // break-even rate: annual rate at which interest alone covers monthly spend forever
-        let breakEvenRate = params.capital > 0 ? (params.monthlySpend * 12 / params.capital) * 100 : 0;
+        // break-even rate: annual rate at which interest alone covers net monthly burn (spend minus salary) forever
+        let netMonthlySpend = params.monthlySpend - (params.monthlySalary || 0);
+        let breakEvenRate = params.capital > 0 ? (netMonthlySpend * 12 / params.capital) * 100 : 0;
         document.getElementById('tileBreakEvenRate').textContent = params.capital > 0 ? breakEvenRate.toFixed(1) + '%' : '—';
 
         if (depletionMonth === null) {
@@ -720,6 +804,15 @@
     });
     document.getElementById('rateSlider').addEventListener('input', runSimulation);
     document.getElementById('inflationSlider').addEventListener('input', runSimulation);
+    document.getElementById('salarySlider').addEventListener('input', function() {
+        document.getElementById('salaryInput').value = this.value;
+        runSimulation();
+    });
+    document.getElementById('salaryInput').addEventListener('input', function() {
+        let v = Math.max(0, Math.min(parseFloat(this.value) || 0, 5000000));
+        document.getElementById('salarySlider').value = Math.min(v, 500000);
+        runSimulation();
+    });
     document.getElementById('capitalInput').addEventListener('input', runSimulation);
     document.getElementById('addEventBtn').addEventListener('click', addEvent);
 
