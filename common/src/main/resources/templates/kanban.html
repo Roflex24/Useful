@@ -1515,7 +1515,8 @@
                     id: PROJECT_ID,
                     name: projectRq.name,
                     description: projectRq.description,
-                    createDate: projectData.createDate
+                    createDate: projectData.createDate,
+                    archived: projectRq.archived ?? projectData.archived
                 })
             });
             if (!response.ok) throw new Error(`Ошибка обновления проекта: ${response.status}`);

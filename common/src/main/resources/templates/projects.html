@@ -88,46 +88,43 @@
             flex-wrap: wrap;
         }
 
-        .planning-button {
+        .nav-button {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(79, 70, 229, 0.9));
-            color: white;
-            text-decoration: none;
-            padding: 0.6rem 1.4rem;
             border-radius: 2rem;
+            padding: 0.6rem 1.4rem;
             font-weight: 600;
             font-size: 0.9rem;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
             transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Фиолетовый вариант - Стратегическое планирование */
+        .nav-button--purple {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+        }
+
+        .nav-button--purple:hover {
+            background: rgba(139, 92, 246, 0.5);
+            transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .planning-button:hover {
+        /* Синий вариант - На главную */
+        .nav-button--blue {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+        }
+
+        .nav-button--blue:hover {
+            background: rgba(59, 130, 246, 0.5);
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
-        }
-
-        .home-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(37, 99, 235, 0.9));
-            color: white;
-            text-decoration: none;
-            padding: 0.6rem 1.4rem;
-            border-radius: 2rem;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .home-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
         }
 
         .header {
@@ -1059,8 +1056,12 @@
     <div class="top-navbar">
         <div class="logo"><span>✨</span> NeoProject Manager</div>
         <div class="nav-buttons">
-            <a href="/page/planning" class="planning-button"><span>🎯</span> Стратегическое планирование</a>
-            <a href="http://localhost:8080/" class="home-button"><span>🏠</span> На главную</a>
+            <a href="/page/planning" class="nav-button nav-button--purple">
+                <span>🎯</span> Стратегическое планирование
+            </a>
+            <a href="http://localhost:8080/" class="nav-button nav-button--blue">
+                <span>🏠</span> На главную
+            </a>
         </div>
     </div>
     <div class="header">

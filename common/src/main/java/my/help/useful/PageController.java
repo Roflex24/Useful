@@ -86,4 +86,9 @@ public class PageController {
     public String runwayPage() {
         return "runway";
     }
+
+    @GetMapping("/page/invest")
+    public String investPage() {
+        return "invest";
+    }
 }
