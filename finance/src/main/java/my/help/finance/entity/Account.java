@@ -24,5 +24,5 @@ public class Account {
     private String comment;           // Доп. описание
 
     @Enumerated(EnumType.STRING)
-    private AccountType type;         // DEPOSIT или INVESTMENT
+    private AccountType type;         // CARD, DEPOSIT, SAVINGS или INVESTMENT
 }

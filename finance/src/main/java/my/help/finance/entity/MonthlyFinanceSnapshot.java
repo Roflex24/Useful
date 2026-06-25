@@ -63,4 +63,7 @@ public class MonthlyFinanceSnapshot {
 
     @Column(columnDefinition = "TEXT")
     private String depositJson;  // Информация о депозите в JSON
+
+    @Column(columnDefinition = "TEXT")
+    private String securitiesJson; // Список бумаг в JSON (для INVESTMENT)
 }

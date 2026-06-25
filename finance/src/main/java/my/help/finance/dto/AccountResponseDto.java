@@ -21,5 +21,6 @@ public class AccountResponseDto {
     private String comment;
 
     private List<CashbackResponseDto> cashbacks;
-    private DepositInfoDto depositInfo; // Добавить поле
+    private DepositInfoDto depositInfo;
+    private List<SecurityResponseDto> securities;
 }

@@ -12,6 +12,7 @@ import my.help.finance.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,8 +28,13 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final CashbackService cashbackService;
-    private final DepositService depositService; // Добавить
+    private final DepositService depositService;
+    private final SecurityService securityService; // Добавлено
     private final FinanceSnapshotService snapshotService;
+
+    private boolean hasDepositInfo(AccountType type) {
+        return type == AccountType.DEPOSIT || type == AccountType.SAVINGS;
+    }
 
     public List<AccountResponseDto> getAllAccounts() {
         log.debug("Fetching all accounts");
@@ -50,18 +56,23 @@ public class AccountService {
     private AccountResponseDto toResponseDtoWithDetails(Account account) {
         AccountResponseDto dto = accountMapper.toResponseDto(account);
 
-        // Добавляем кешбеки для CARD
         if (account.getType() == AccountType.CARD) {
             dto.setCashbacks(cashbackService.getCashbacksByAccount(account.getId()));
         } else {
             dto.setCashbacks(Collections.emptyList());
         }
 
-        // Добавляем информацию о депозите для DEPOSIT
-        if (account.getType() == AccountType.DEPOSIT) {
+        if (hasDepositInfo(account.getType())) {
             dto.setDepositInfo(depositService.getDepositByAccountId(account.getId()));
         } else {
             dto.setDepositInfo(null);
+        }
+
+        // Добавляем бумаги для INVESTMENT
+        if (account.getType() == AccountType.INVESTMENT) {
+            dto.setSecurities(securityService.getSecuritiesByAccount(account.getId()));
+        } else {
+            dto.setSecurities(Collections.emptyList());
         }
 
         return dto;
@@ -71,17 +82,21 @@ public class AccountService {
     public AccountResponseDto createAccount(AccountRequestDto requestDto) {
         log.info("Creating new account: {}", requestDto.getBankName());
 
-        // Проверка: для DEPOSIT обязательно должен быть depositInfo
-        if (requestDto.getType() == AccountType.DEPOSIT && requestDto.getDepositInfoDto() == null) {
-            throw new RuntimeException("Deposit info is required for DEPOSIT account type");
+        if (hasDepositInfo(requestDto.getType()) && requestDto.getDepositInfoDto() == null) {
+            throw new RuntimeException("Deposit info is required for " + requestDto.getType() + " account type");
         }
 
         Account account = accountMapper.toEntity(requestDto);
+
+        // Для INVESTMENT счёт всегда создаётся с amount = 0 — бумаги ещё не добавлены
+        if (account.getType() == AccountType.INVESTMENT) {
+            account.setAmount(BigDecimal.ZERO);
+        }
+
         Account savedAccount = accountRepository.save(account);
         log.info("Account created successfully with id: {}", savedAccount.getId());
 
-        // Создаем депозит, если тип DEPOSIT
-        if (savedAccount.getType() == AccountType.DEPOSIT && requestDto.getDepositInfoDto() != null) {
+        if (hasDepositInfo(savedAccount.getType()) && requestDto.getDepositInfoDto() != null) {
             depositService.createDeposit(savedAccount, requestDto.getDepositInfoDto());
         }
 
@@ -97,11 +112,18 @@ public class AccountService {
 
         AccountType newType = requestDto.getType();
 
-        // Обновляем основные поля
         accountMapper.updateEntity(existingAccount, requestDto);
 
-        // Обновляем депозит, если тип DEPOSIT
-        if (newType == AccountType.DEPOSIT) {
+        // Для INVESTMENT amount не редактируется вручную — восстанавливаем
+        // авто-рассчитанное значение (на случай если форма прислала своё)
+        if (newType == AccountType.INVESTMENT) {
+            BigDecimal recalculated = securityService.getSecuritiesByAccount(id).stream()
+                    .map(s -> s.getTotalValue())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            existingAccount.setAmount(recalculated);
+        }
+
+        if (hasDepositInfo(newType)) {
             depositService.updateDeposit(id, requestDto.getDepositInfoDto());
         }
 
@@ -120,7 +142,6 @@ public class AccountService {
             throw new RuntimeException("Account not found with id: " + id);
         }
 
-        // Удаляем связанные данные
         Account account = accountRepository.findById(id).orElseThrow();
         if (account.getType() == AccountType.CARD) {
             List<Cashback> cashbacks = cashbackService.getCashbacksByAccountEntity(id);
@@ -128,8 +149,11 @@ public class AccountService {
                 cashbackService.deleteCashback(cb.getId());
             }
         }
-        if (account.getType() == AccountType.DEPOSIT) {
+        if (hasDepositInfo(account.getType())) {
             depositService.deleteDeposit(id);
+        }
+        if (account.getType() == AccountType.INVESTMENT) {
+            securityService.deleteAllSecuritiesForAccount(id);
         }
 
         accountRepository.deleteById(id);

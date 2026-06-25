@@ -18,5 +18,6 @@ public class MonthlyDynamicsDto {
     private BigDecimal totalAmount;         // Общая сумма всех средств
     private BigDecimal cardAmount;          // Карты/счета (CARD)
     private BigDecimal depositAmount;       // Вклады (DEPOSIT)
+    private BigDecimal savingsAmount;       // Накопительные счета (SAVINGS)
     private BigDecimal investmentAmount;    // Инвестиции (INVESTMENT)
 }

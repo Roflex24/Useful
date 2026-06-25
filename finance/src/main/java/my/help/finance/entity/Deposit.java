@@ -24,7 +24,7 @@ public class Deposit {
     @JoinColumn(name = "account_id", nullable = false, unique = true)
     private Account account;
 
-    private LocalDate endDate;              // Дата закрытия вклада
+    private LocalDate endDate;              // Дата закрытия вклада (null для SAVINGS — без фиксированного срока)
     private LocalDate interestPaymentDate;  // Дата выплаты процентов
     private BigDecimal interestRate;        // Текущая процентная ставка
 }

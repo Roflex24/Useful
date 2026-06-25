@@ -21,12 +21,16 @@ public class DepositService {
 
     @Transactional
     public Deposit createDeposit(Account account, DepositInfoDto depositInfo) {
-        if (account.getType() != AccountType.DEPOSIT) {
-            throw new RuntimeException("Deposit can only be created for DEPOSIT accounts");
+        if (account.getType() != AccountType.DEPOSIT && account.getType() != AccountType.SAVINGS) {
+            throw new RuntimeException("Deposit can only be created for DEPOSIT or SAVINGS accounts");
         }
 
         if (depositInfo == null) {
-            throw new RuntimeException("Deposit info is required for DEPOSIT account type");
+            throw new RuntimeException("Deposit info is required for " + account.getType() + " account type");
+        }
+
+        if (account.getType() == AccountType.DEPOSIT && depositInfo.getEndDate() == null) {
+            throw new RuntimeException("End date is required for DEPOSIT account type");
         }
 
         if (depositRepository.findByAccountId(account.getId()).isPresent()) {

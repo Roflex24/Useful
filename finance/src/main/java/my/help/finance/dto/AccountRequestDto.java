@@ -20,7 +20,9 @@ public class AccountRequestDto {
     private String bankName;
 
     @NotNull(message = "Сумма обязательна")
-    @DecimalMin(value = "0.01", message = "Сумма должна быть больше 0")
+    @DecimalMin(value = "0.00", message = "Сумма не может быть отрицательной")
+    // Для INVESTMENT это поле игнорируется и пересчитывается автоматически
+    // на основе бумаг (см. AccountService/SecurityService)
     private BigDecimal amount;
 
     @NotNull(message = "Тип счёта обязателен")
@@ -28,6 +30,6 @@ public class AccountRequestDto {
 
     private String comment;
 
-    // Для DEPOSIT обязательно, для других типов - null
+    // Для DEPOSIT и SAVINGS обязательно (для SAVINGS endDate можно не указывать), для CARD/INVESTMENT - null
     private DepositInfoDto depositInfoDto;
 }

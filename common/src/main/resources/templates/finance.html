@@ -27,6 +27,8 @@
             --rose:         #F43F5E;
             --rose-soft:    rgba(244,63,94,0.13);
             --sky:          #38BDF8;
+            --violet:       #A78BFA;
+            --violet-soft:  rgba(167,139,250,0.15);
 
             --text:         #F0F4FF;
             --text-2:       #B8C8E0;
@@ -535,6 +537,7 @@
         }
         .type-card       { background: rgba(56,189,248,0.12); color: var(--sky); border: 1px solid rgba(56,189,248,0.2); }
         .type-deposit    { background: var(--emerald-soft);   color: var(--emerald); border: 1px solid rgba(16,185,129,0.25); }
+        .type-savings    { background: var(--violet-soft);    color: var(--violet);  border: 1px solid rgba(167,139,250,0.25); }
         .type-investment { background: var(--amber-soft);     color: var(--amber);   border: 1px solid rgba(245,158,11,0.25); }
         .comment-cell { color: var(--text-2); font-size: 0.8rem; }
 
@@ -628,6 +631,58 @@
             transition: all 0.15s;
         }
         .chip-btn:hover { color: var(--text); background: var(--surface-hover); }
+
+        /* Securities (investment) */
+        .securities-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-3);
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 7px;
+        }
+        .securities-label i { color: var(--amber); }
+        .securities-label .add-security-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: var(--amber-soft); color: var(--amber);
+            border: 1px solid rgba(245,158,11,0.25);
+            border-radius: var(--radius-sm);
+            padding: 4px 10px;
+            font-size: 0.7rem; font-weight: 700;
+            text-transform: none; letter-spacing: 0;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .securities-label .add-security-btn:hover { background: rgba(245,158,11,0.22); }
+        .securities-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+        .securities-table th {
+            text-align: left; padding: 0 8px 8px 0;
+            font-size: 0.64rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.07em; color: var(--text-3);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .securities-table td {
+            padding: 9px 8px 9px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: var(--text-2);
+            vertical-align: middle;
+        }
+        .securities-table tr:last-child td { border-bottom: none; }
+        .sec-type-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 9px; border-radius: 999px;
+            font-size: 0.66rem; font-weight: 700;
+        }
+        .sec-type-stock          { background: rgba(56,189,248,0.12); color: var(--sky); }
+        .sec-type-bond           { background: var(--emerald-soft); color: var(--emerald); }
+        .sec-type-etf            { background: var(--indigo-soft); color: #A5B4FC; }
+        .sec-type-currency_metal { background: var(--violet-soft); color: var(--violet); }
+        .sec-ticker { font-weight: 700; color: var(--text); }
+        .sec-value  { font-family: var(--font-num); font-weight: 600; color: var(--text); }
+        .sec-bond-detail { font-size: 0.7rem; color: var(--text-3); }
 
         /* Cashback summary */
         .cashback-badge-chip {
@@ -1119,9 +1174,12 @@
                 <label>Название банка *</label>
                 <input type="text" id="bankName" required placeholder="Тинькофф, Сбер, Альфа...">
             </div>
-            <div class="form-group">
-                <label>Сумма *</label>
-                <input type="number" id="amount" step="0.01" min="0.01" required placeholder="0.00">
+            <div class="form-group" id="amountGroup">
+                <label id="amountLabel">Сумма *</label>
+                <input type="number" id="amount" step="0.01" min="0" required placeholder="0.00">
+                <div id="amountAutoNote" style="display:none;font-size:0.74rem;color:var(--text-3);margin-top:6px;">
+                    <i class="fas fa-circle-info"></i> Считается автоматически из бумаг счёта
+                </div>
             </div>
             <div class="form-group">
                 <label>
@@ -1133,12 +1191,13 @@
                 <select id="type" required>
                     <option value="CARD">💳 Карта / счёт</option>
                     <option value="DEPOSIT">🏦 Вклад</option>
+                    <option value="SAVINGS">🐷 Накопительный счёт</option>
                     <option value="INVESTMENT">📈 Инвестиции</option>
                 </select>
             </div>
             <div id="depositFields" class="deposit-fields" style="display:none">
-                <div class="deposit-fields-title"><i class="fas fa-university"></i> Параметры вклада</div>
-                <div class="form-group">
+                <div class="deposit-fields-title"><i class="fas fa-university"></i> <span id="depositFieldsTitle">Параметры вклада</span></div>
+                <div class="form-group" id="depositEndDateGroup">
                     <label>Дата окончания вклада *</label>
                     <input type="date" id="depositEndDate">
                 </div>
@@ -1211,6 +1270,68 @@
         <div id="allCashbacksContainer">
             <div class="loader-state">Загрузка...</div>
         </div>
+    </div>
+</div>
+
+<!-- ── Modal: Security ──────────────────────────────── -->
+<div id="securityModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="securityModalTitle">Добавить бумагу</h3>
+            <button class="close-modal" onclick="closeSecurityModal()">×</button>
+        </div>
+        <form id="securityForm">
+            <input type="hidden" id="securityId">
+            <input type="hidden" id="securityAccountId">
+            <div class="form-group">
+                <label>Счёт</label>
+                <input type="text" id="securityBankName" readonly style="opacity:0.6;">
+            </div>
+            <div class="form-group">
+                <label>Тип бумаги *</label>
+                <select id="securityType" required>
+                    <option value="STOCK">📊 Акция</option>
+                    <option value="BOND">📜 Облигация</option>
+                    <option value="ETF">🧺 ETF / Фонд</option>
+                    <option value="CURRENCY_METAL">🪙 Валюта/Металл</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Тикер / Название *</label>
+                <input type="text" id="securityTicker" required placeholder="SBER, FXUS, Золото...">
+            </div>
+            <div class="form-group">
+                <label>Количество *</label>
+                <input type="number" id="securityQuantity" step="0.000001" min="0.000001" required placeholder="10">
+            </div>
+            <div class="form-group">
+                <label>Текущая цена за единицу *</label>
+                <input type="number" id="securityCurrentPrice" step="0.01" min="0.01" required placeholder="250.50">
+            </div>
+            <div id="bondFields" class="deposit-fields" style="display:none">
+                <div class="deposit-fields-title"><i class="fas fa-file-contract"></i> Параметры облигации</div>
+                <div class="form-group">
+                    <label>Номинал</label>
+                    <input type="number" id="securityFaceValue" step="0.01" min="0" placeholder="1000">
+                </div>
+                <div class="form-group">
+                    <label>Дата погашения</label>
+                    <input type="date" id="securityMaturityDate">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label>Купонная ставка (%)</label>
+                    <div class="pct-input-wrap">
+                        <button type="button" class="pct-btn pct-btn-dec" onclick="stepPct('securityCouponRate',-0.5)"><i class="fas fa-minus"></i></button>
+                        <input type="number" id="securityCouponRate" step="0.01" min="0" placeholder="8.5" class="pct-input">
+                        <button type="button" class="pct-btn pct-btn-inc" onclick="stepPct('securityCouponRate',0.5)"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-ghost" onclick="closeSecurityModal()">Отмена</button>
+                <button type="submit" class="btn-primary">Сохранить</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -1360,16 +1481,19 @@
         });
     }
 
+    const DEPOSIT_LIKE_TYPES = ['DEPOSIT', 'SAVINGS']; // счета с депозитной информацией (срок/ставка/выплата %)
+    const TYPE_CHART_LABELS = { CARD: '💳 Карта/счёт', DEPOSIT: '🏦 Вклад', SAVINGS: '🐷 Накоп. счёт', INVESTMENT: '📈 Инвестиции' };
+    const TYPE_CHART_COLORS = { CARD: '#38BDF8', DEPOSIT: '#10B981', SAVINGS: '#A78BFA', INVESTMENT: '#F59E0B' };
+
     function updateCharts(summary) {
         let bankLabels = [], bankValues = [];
         if (summary.amountByBank) for (let [k, v] of Object.entries(summary.amountByBank)) if (parseFloat(v) > 0) { bankLabels.push(k); bankValues.push(parseFloat(v)); }
         if (!bankLabels.length) { bankLabels = ['Нет данных']; bankValues = [1]; }
         let bankColors = bankLabels.map(n => getBankColor(n));
 
-        let typeLabels = [], typeValues = [], typeMap = { CARD: '💳 Карта/счёт', DEPOSIT: '🏦 Вклад', INVESTMENT: '📈 Инвестиции' };
-        if (summary.amountByType) for (let [k, v] of Object.entries(summary.amountByType)) if (parseFloat(v) > 0) { typeLabels.push(typeMap[k] || k); typeValues.push(parseFloat(v)); }
-        if (!typeLabels.length) { typeLabels = ['Нет счетов']; typeValues = [1]; }
-        let typeColors = typeLabels.map(l => l.includes('Карта') ? '#38BDF8' : l.includes('Вклад') ? '#10B981' : '#F59E0B');
+        let typeLabels = [], typeValues = [], typeColors = [];
+        if (summary.amountByType) for (let [k, v] of Object.entries(summary.amountByType)) if (parseFloat(v) > 0) { typeLabels.push(TYPE_CHART_LABELS[k] || k); typeValues.push(parseFloat(v)); typeColors.push(TYPE_CHART_COLORS[k] || '#94A3B8'); }
+        if (!typeLabels.length) { typeLabels = ['Нет счетов']; typeValues = [1]; typeColors = ['#334155']; }
 
         drawDonutChart('bankPieChart', bankLabels, bankValues, bankColors);
         drawDonutChart('typePieChart', typeLabels, typeValues, typeColors);
@@ -1389,6 +1513,7 @@
             let labels = dynamicsData.map(d => d.monthLabel);
             let cardAmounts       = dynamicsData.map(d => parseFloat(d.cardAmount) || 0);
             let depositAmounts    = dynamicsData.map(d => parseFloat(d.depositAmount) || 0);
+            let savingsAmounts    = dynamicsData.map(d => parseFloat(d.savingsAmount) || 0);
             let investmentAmounts = dynamicsData.map(d => parseFloat(d.investmentAmount) || 0);
             let ctx = document.getElementById('trendStackedBarChart').getContext('2d');
             if (stackedBarChart) stackedBarChart.destroy();
@@ -1399,6 +1524,7 @@
                     datasets: [
                         { label: '💳 Карты/счета', data: cardAmounts, backgroundColor: 'rgba(56,189,248,0.75)', borderRadius: 0, barPercentage: 0.68, categoryPercentage: 0.85, stack: 'month' },
                         { label: '🏦 Вклады', data: depositAmounts, backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 0, barPercentage: 0.68, categoryPercentage: 0.85, stack: 'month' },
+                        { label: '🐷 Накоп. счета', data: savingsAmounts, backgroundColor: 'rgba(167,139,250,0.75)', borderRadius: 0, barPercentage: 0.68, categoryPercentage: 0.85, stack: 'month' },
                         { label: '📈 Инвестиции', data: investmentAmounts, backgroundColor: 'rgba(245,158,11,0.75)', borderRadius: 4, barPercentage: 0.68, categoryPercentage: 0.85, stack: 'month' },
                     ]
                 },
@@ -1471,14 +1597,22 @@
             <th style="text-align:right">Действия</th>
         </tr></thead><tbody>`;
 
+        const TYPE_DESC  = { CARD: '💳 Карта', DEPOSIT: '🏦 Вклад', SAVINGS: '🐷 Накоп. счёт', INVESTMENT: '📈 Инвестиции' };
+        const TYPE_CLASS = { CARD: 'type-card', DEPOSIT: 'type-deposit', SAVINGS: 'type-savings', INVESTMENT: 'type-investment' };
+
         for (let acc of accounts) {
-            let typeDesc  = acc.type === 'CARD' ? '💳 Карта' : acc.type === 'DEPOSIT' ? '🏦 Вклад' : '📈 Инвестиции';
-            let typeClass = acc.type === 'CARD' ? 'type-card' : acc.type === 'DEPOSIT' ? 'type-deposit' : 'type-investment';
-            let isExpandable = acc.type === 'CARD' || acc.type === 'DEPOSIT';
+            let typeDesc  = TYPE_DESC[acc.type] || acc.type;
+            let typeClass = TYPE_CLASS[acc.type] || 'type-card';
+            let isExpandable = acc.type === 'CARD' || DEPOSIT_LIKE_TYPES.includes(acc.type) || acc.type === 'INVESTMENT';
             let dis = isHistorical ? 'disabled style="opacity:0.3;cursor:not-allowed"' : '';
-            let cashBtn = (acc.type === 'CARD' && !isHistorical)
-                ? `<button class="act-btn act-btn-cash" title="Добавить кешбек" onclick="event.stopPropagation();openAddCashbackModal(${acc.id},'${escapeHtml(acc.bankName)}')"><i class="fas fa-percent"></i></button>`
-                : `<button class="act-btn" style="visibility:hidden" disabled><i class="fas fa-percent"></i></button>`;
+            let cashBtn;
+            if (acc.type === 'CARD' && !isHistorical) {
+                cashBtn = `<button class="act-btn act-btn-cash" title="Добавить кешбек" onclick="event.stopPropagation();openAddCashbackModal(${acc.id},'${escapeHtml(acc.bankName)}')"><i class="fas fa-percent"></i></button>`;
+            } else if (acc.type === 'INVESTMENT' && !isHistorical) {
+                cashBtn = `<button class="act-btn act-btn-cash" title="Добавить бумагу" onclick="event.stopPropagation();openAddSecurityModal(${acc.id},'${escapeHtml(acc.bankName)}')"><i class="fas fa-plus"></i></button>`;
+            } else {
+                cashBtn = `<button class="act-btn" style="visibility:hidden" disabled><i class="fas fa-percent"></i></button>`;
+            }
             let expandIcon = isExpandable
                 ? `<i class="fas fa-chevron-right expand-icon" id="expand-icon-${acc.id}"></i>`
                 : `<i class="fas fa-lock" style="color:var(--text-3);font-size:0.68rem;opacity:0.4"></i>`;
@@ -1501,7 +1635,9 @@
             <tr class="detail-row" id="detail-row-${acc.id}">
                 <td colspan="6" class="detail-cell">
                     <div class="detail-inner" id="cashbacks-${acc.id}">
-                        ${acc.type === 'CARD' ? renderCashbacksList(acc.cashbacks, acc.id, isHistorical) : renderDepositInfo(acc.depositInfo)}
+                        ${acc.type === 'CARD' ? renderCashbacksList(acc.cashbacks, acc.id, isHistorical)
+                : acc.type === 'INVESTMENT' ? renderSecuritiesList(acc.securities, acc.id, acc.bankName, isHistorical)
+                    : renderDepositInfo(acc.depositInfo, acc.type)}
                     </div>
                 </td>
             </tr>`;
@@ -1509,11 +1645,12 @@
         container.innerHTML = html + '</tbody></table>';
     }
 
-    function renderDepositInfo(depositInfo) {
-        if (!depositInfo) return `<div style="color:var(--text-3);font-size:0.82rem"><i class="fas fa-info-circle"></i> Нет данных о вкладе</div>`;
+    function renderDepositInfo(depositInfo, accountType) {
+        if (!depositInfo) return `<div style="color:var(--text-3);font-size:0.82rem"><i class="fas fa-info-circle"></i> Нет данных о ${accountType === 'SAVINGS' ? 'накопительном счёте' : 'вкладе'}</div>`;
         let fmt = d => d ? new Date(d).toLocaleDateString('ru-RU') : '—';
+        let endDateBlock = accountType === 'SAVINGS' ? '' : `<div class="di-item"><div class="di-label">Дата окончания</div><div class="di-value">${fmt(depositInfo.endDate)}</div></div>`;
         return `<div class="deposit-info-grid">
-            <div class="di-item"><div class="di-label">Дата окончания</div><div class="di-value">${fmt(depositInfo.endDate)}</div></div>
+            ${endDateBlock}
             <div class="di-item"><div class="di-label">Выплата %</div><div class="di-value">${fmt(depositInfo.interestPaymentDate)}</div></div>
             <div class="di-item"><div class="di-label">Ставка</div><div class="di-value em">${depositInfo.interestRate ? depositInfo.interestRate + '%' : '—'}</div></div>
         </div>`;
@@ -1531,6 +1668,42 @@
                 </div>
             </div>`).join('');
         return `<div class="cashbacks-label"><i class="fas fa-percent"></i> Кешбеки</div><div class="cashback-chips">${chips}</div>`;
+    }
+
+    const SEC_TYPE_DESC  = { STOCK: '📊 Акция', BOND: '📜 Облигация', ETF: '🧺 ETF', CURRENCY_METAL: '🪙 Валюта/Металл' };
+    const SEC_TYPE_CLASS = { STOCK: 'sec-type-stock', BOND: 'sec-type-bond', ETF: 'sec-type-etf', CURRENCY_METAL: 'sec-type-currency_metal' };
+    function renderSecuritiesList(securities, accountId, bankName, isHistorical) {
+        let addBtn = !isHistorical
+            ? `<button class="add-security-btn" onclick="event.stopPropagation();openAddSecurityModal(${accountId},'${escapeHtml(bankName)}')"><i class="fas fa-plus"></i> Добавить бумагу</button>`
+            : '';
+        if (!securities || !securities.length) {
+            return `<div class="securities-label"><span><i class="fas fa-chart-line"></i> Бумаги</span>${addBtn}</div><div style="color:var(--text-3);font-size:0.8rem">Нет бумаг на этом счёте</div>`;
+        }
+        let dis = isHistorical ? 'disabled style="opacity:0.4"' : '';
+        let rows = securities.map(s => {
+            let typeDesc  = SEC_TYPE_DESC[s.securityType] || s.securityType;
+            let typeClass = SEC_TYPE_CLASS[s.securityType] || 'sec-type-stock';
+            let bondDetail = s.securityType === 'BOND'
+                ? `<div class="sec-bond-detail">${s.maturityDate ? 'погашение ' + new Date(s.maturityDate).toLocaleDateString('ru-RU') : ''}${s.couponRate ? ' · купон ' + s.couponRate + '%' : ''}${s.faceValue ? ' · номинал ' + formatCurrency(s.faceValue) : ''}</div>`
+                : '';
+            return `<tr>
+                <td><span class="sec-type-badge ${typeClass}">${typeDesc}</span></td>
+                <td><span class="sec-ticker">${escapeHtml(s.ticker)}</span>${bondDetail}</td>
+                <td>${s.quantity}</td>
+                <td>${formatCurrency(s.currentPrice)}</td>
+                <td class="sec-value">${formatCurrency(s.totalValue)}</td>
+                <td style="text-align:right">
+                    <div class="action-btns" style="justify-content:flex-end">
+                        <button class="act-btn act-btn-edit" title="Изменить" onclick="editSecurity(${s.id},${accountId})" ${dis}><i class="fas fa-pen"></i></button>
+                        <button class="act-btn act-btn-del"  title="Удалить"  onclick="deleteSecurity(${s.id})" ${dis}><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+        return `<div class="securities-label"><span><i class="fas fa-chart-line"></i> Бумаги</span>${addBtn}</div>
+            <table class="securities-table"><thead><tr>
+                <th>Тип</th><th>Тикер</th><th>Кол-во</th><th>Цена</th><th>Стоимость</th><th></th>
+            </tr></thead><tbody>${rows}</tbody></table>`;
     }
 
     function renderCashbackSummary(summary) {
@@ -1631,6 +1804,9 @@
     async function createCashback(data) { let r = await fetch(`${API_BASE}/cashbacks`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }); if (!r.ok) throw new Error(); return r.json(); }
     async function updateCashback(id, data) { let r = await fetch(`${API_BASE}/cashbacks/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }); if (!r.ok) throw new Error(); return r.json(); }
     async function deleteCashback(id) { if (!confirm('Удалить кешбек?')) return; let r = await fetch(`${API_BASE}/cashbacks/${id}`, { method:'DELETE' }); if (r.ok) { await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Кешбек удалён', 'success'); } else showToast('Ошибка', 'error'); }
+    async function createSecurity(data) { let r = await fetch(`${API_BASE}/securities`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }); if (!r.ok) throw new Error(); return r.json(); }
+    async function updateSecurity(id, data) { let r = await fetch(`${API_BASE}/securities/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }); if (!r.ok) throw new Error(); return r.json(); }
+    async function deleteSecurity(id) { if (!confirm('Удалить бумагу?')) return; let r = await fetch(`${API_BASE}/securities/${id}`, { method:'DELETE' }); if (r.ok) { await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Бумага удалена', 'success'); } else showToast('Ошибка', 'error'); }
 
     /* ── Modals ──────────────────────────────────────────────────────── */
     function openAccountModal(title, data = null) {
@@ -1645,14 +1821,15 @@
             typeSelect.disabled                         = true;
             typeLock.style.display                      = 'inline-flex';
             document.getElementById('comment').value    = data.comment || '';
-            if (data.type === 'DEPOSIT') {
-                showDepositFields(true);
+            if (DEPOSIT_LIKE_TYPES.includes(data.type)) {
+                showDepositFields(data.type);
                 if (data.depositInfo) {
                     document.getElementById('depositEndDate').value             = data.depositInfo.endDate || '';
                     document.getElementById('depositInterestPaymentDate').value = data.depositInfo.interestPaymentDate || '';
                     document.getElementById('depositInterestRate').value        = data.depositInfo.interestRate || '';
                 }
-            } else showDepositFields(false);
+            } else showDepositFields(null);
+            updateAmountFieldForType(data.type);
         } else {
             document.getElementById('accountId').value = '';
             document.getElementById('bankName').value  = '';
@@ -1661,15 +1838,39 @@
             typeSelect.disabled                        = false;
             typeLock.style.display                     = 'none';
             document.getElementById('comment').value   = '';
-            showDepositFields(false);
+            showDepositFields(null);
+            updateAmountFieldForType('CARD');
         }
         document.getElementById('accountModal').classList.add('active');
     }
-    function closeAccountModal() { document.getElementById('accountModal').classList.remove('active'); document.getElementById('type').disabled = false; document.getElementById('typeLockBadge').style.display = 'none'; showDepositFields(false); }
-    function showDepositFields(show) {
+    function closeAccountModal() { document.getElementById('accountModal').classList.remove('active'); document.getElementById('type').disabled = false; document.getElementById('typeLockBadge').style.display = 'none'; showDepositFields(null); }
+    function updateAmountFieldForType(type) {
+        // Для INVESTMENT сумма считается автоматически из бумаг — поле блокируем
+        let isInvestment = type === 'INVESTMENT';
+        let amountInput = document.getElementById('amount');
+        amountInput.readOnly  = isInvestment;
+        amountInput.required  = !isInvestment;
+        amountInput.style.opacity = isInvestment ? '0.6' : '1';
+        document.getElementById('amountLabel').innerText = isInvestment ? 'Сумма (авто)' : 'Сумма *';
+        document.getElementById('amountAutoNote').style.display = isInvestment ? 'block' : 'none';
+        if (isInvestment && !amountInput.value) amountInput.value = '0';
+    }
+    function showDepositFields(type) {
+        // type: 'DEPOSIT' | 'SAVINGS' | null (скрыто)
+        let show = DEPOSIT_LIKE_TYPES.includes(type);
         document.getElementById('depositFields').style.display = show ? 'block' : 'none';
-        document.getElementById('depositEndDate').required     = show;
-        document.getElementById('depositInterestRate').required= show;
+
+        let isSavings = type === 'SAVINGS';
+        document.getElementById('depositFieldsTitle').innerText = isSavings ? 'Параметры накопительного счёта' : 'Параметры вклада';
+
+        let endDateGroup = document.getElementById('depositEndDateGroup');
+        let endDateInput = document.getElementById('depositEndDate');
+        let showEndDate = show && !isSavings;
+        endDateGroup.style.display = showEndDate ? 'block' : 'none';
+        endDateInput.required      = showEndDate;
+        if (!showEndDate) endDateInput.value = '';
+
+        document.getElementById('depositInterestRate').required = show;
     }
     function openAddCashbackModal(accountId, bankName) {
         document.getElementById('cashbackModalTitle').innerText = 'Добавить кешбек';
@@ -1695,6 +1896,73 @@
         }
     }
     function closeCashbackModal() { document.getElementById('cashbackModal').classList.remove('active'); }
+
+    function showBondFields(show) {
+        document.getElementById('bondFields').style.display = show ? 'block' : 'none';
+        if (!show) {
+            document.getElementById('securityFaceValue').value    = '';
+            document.getElementById('securityMaturityDate').value = '';
+            document.getElementById('securityCouponRate').value   = '';
+        }
+    }
+    function openAddSecurityModal(accountId, bankName) {
+        document.getElementById('securityModalTitle').innerText  = 'Добавить бумагу';
+        document.getElementById('securityId').value              = '';
+        document.getElementById('securityAccountId').value       = accountId;
+        document.getElementById('securityBankName').value        = bankName;
+        document.getElementById('securityType').value            = 'STOCK';
+        document.getElementById('securityTicker').value          = '';
+        document.getElementById('securityQuantity').value        = '';
+        document.getElementById('securityCurrentPrice').value    = '';
+        showBondFields(false);
+        document.getElementById('securityModal').classList.add('active');
+    }
+    async function editSecurity(id, accountId) {
+        let res = await fetch(`${API_BASE}/securities/account/${accountId}`);
+        let list = await res.json();
+        let sec = list.find(x => x.id === id);
+        if (sec) {
+            document.getElementById('securityModalTitle').innerText  = 'Редактировать бумагу';
+            document.getElementById('securityId').value              = sec.id;
+            document.getElementById('securityAccountId').value       = accountId;
+            document.getElementById('securityBankName').value        = sec.bankName;
+            document.getElementById('securityType').value            = sec.securityType;
+            document.getElementById('securityTicker').value          = sec.ticker;
+            document.getElementById('securityQuantity').value        = sec.quantity;
+            document.getElementById('securityCurrentPrice').value    = sec.currentPrice;
+            let isBond = sec.securityType === 'BOND';
+            showBondFields(isBond);
+            if (isBond) {
+                document.getElementById('securityFaceValue').value    = sec.faceValue || '';
+                document.getElementById('securityMaturityDate').value = sec.maturityDate || '';
+                document.getElementById('securityCouponRate').value   = sec.couponRate || '';
+            }
+            document.getElementById('securityModal').classList.add('active');
+        }
+    }
+    function closeSecurityModal() { document.getElementById('securityModal').classList.remove('active'); }
+    document.getElementById('securityType').addEventListener('change', function() { showBondFields(this.value === 'BOND'); });
+    document.getElementById('securityForm').addEventListener('submit', async(e) => {
+        e.preventDefault();
+        let id = document.getElementById('securityId').value;
+        let type = document.getElementById('securityType').value;
+        let payload = {
+            accountId: parseInt(document.getElementById('securityAccountId').value),
+            securityType: type,
+            ticker: document.getElementById('securityTicker').value.trim(),
+            quantity: parseFloat(document.getElementById('securityQuantity').value),
+            currentPrice: parseFloat(document.getElementById('securityCurrentPrice').value),
+        };
+        if (type === 'BOND') {
+            let fv = document.getElementById('securityFaceValue').value, md = document.getElementById('securityMaturityDate').value, cr = document.getElementById('securityCouponRate').value;
+            payload.faceValue    = fv ? parseFloat(fv) : null;
+            payload.maturityDate = md || null;
+            payload.couponRate   = cr ? parseFloat(cr) : null;
+        }
+        try { showLoading(true); if (id) await updateSecurity(parseInt(id), payload); else await createSecurity(payload); closeSecurityModal(); await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Бумага сохранена', 'success'); }
+        catch(e) { showToast('Ошибка: ' + e.message, 'error'); }
+        finally { showLoading(false); }
+    });
     async function openAllCashbacksModal() {
         if (isHistoryMode) { showToast('Недоступно в историческом режиме', 'warning'); return; }
         document.getElementById('allCashbacksModal').classList.add('active');
@@ -1724,20 +1992,23 @@
 
     /* ── Event wiring ──────────────────────────────────────────────────── */
     document.getElementById('type').addEventListener('change', function() {
-        showDepositFields(this.value === 'DEPOSIT');
-        if (this.value !== 'DEPOSIT') {
+        showDepositFields(DEPOSIT_LIKE_TYPES.includes(this.value) ? this.value : null);
+        if (!DEPOSIT_LIKE_TYPES.includes(this.value)) {
             document.getElementById('depositEndDate').value             = '';
             document.getElementById('depositInterestPaymentDate').value = '';
             document.getElementById('depositInterestRate').value        = '';
         }
+        updateAmountFieldForType(this.value);
     });
     document.getElementById('accountForm').addEventListener('submit', async(e) => {
         e.preventDefault();
         let id   = document.getElementById('accountId').value;
         let type = document.getElementById('type').value;
-        let payload = { bankName: document.getElementById('bankName').value.trim(), amount: parseFloat(document.getElementById('amount').value), type, comment: document.getElementById('comment').value.trim() || null };
-        if (type === 'DEPOSIT') {
-            let endDate = document.getElementById('depositEndDate').value, ipDate = document.getElementById('depositInterestPaymentDate').value, ir = document.getElementById('depositInterestRate').value;
+        let amount = type === 'INVESTMENT' ? (parseFloat(document.getElementById('amount').value) || 0) : parseFloat(document.getElementById('amount').value);
+        let payload = { bankName: document.getElementById('bankName').value.trim(), amount, type, comment: document.getElementById('comment').value.trim() || null };
+        if (DEPOSIT_LIKE_TYPES.includes(type)) {
+            let endDate = type === 'SAVINGS' ? null : document.getElementById('depositEndDate').value;
+            let ipDate = document.getElementById('depositInterestPaymentDate').value, ir = document.getElementById('depositInterestRate').value;
             payload.depositInfoDto = { endDate: endDate || null, interestPaymentDate: ipDate || null, interestRate: ir ? parseFloat(ir) : null };
         }
         try { showLoading(true); if (id) await updateAccount(parseInt(id), payload); else await createAccount(payload); closeAccountModal(); await fetchSummaryAndAccounts(); await loadStackedBarChartFromBackend(); await loadAvailableSnapshots(); showToast('Сохранено', 'success'); }
@@ -1762,6 +2033,7 @@
         if (e.target === document.getElementById('accountModal'))      closeAccountModal();
         if (e.target === document.getElementById('cashbackModal'))     closeCashbackModal();
         if (e.target === document.getElementById('allCashbacksModal')) closeAllCashbacksModal();
+        if (e.target === document.getElementById('securityModal'))     closeSecurityModal();
     };
 
     /* ── Boot ─────────────────────────────────────────────────────────── */

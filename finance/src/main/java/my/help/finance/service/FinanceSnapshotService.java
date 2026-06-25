@@ -7,10 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import my.help.finance.dto.*;
 import my.help.finance.entity.*;
 import my.help.finance.mapper.AccountMapper;
-import my.help.finance.repository.AccountRepository;
-import my.help.finance.repository.CashbackRepository;
-import my.help.finance.repository.DepositRepository;
-import my.help.finance.repository.MonthlyFinanceSnapshotRepository;
+import my.help.finance.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +26,8 @@ public class FinanceSnapshotService {
     private final MonthlyFinanceSnapshotRepository snapshotRepository;
     private final AccountRepository accountRepository;
     private final CashbackRepository cashbackRepository;
-    private final DepositRepository depositRepository; // ДОБАВИТЬ ПОЛЕ
+    private final DepositRepository depositRepository;
+    private final SecurityRepository securityRepository;
     private final AccountMapper accountMapper;
     private final ObjectMapper objectMapper;
 
@@ -38,12 +36,14 @@ public class FinanceSnapshotService {
             MonthlyFinanceSnapshotRepository snapshotRepository,
             AccountRepository accountRepository,
             CashbackRepository cashbackRepository,
-            DepositRepository depositRepository, // ДОБАВИТЬ ПАРАМЕТР
+            DepositRepository depositRepository,
+            SecurityRepository securityRepository,
             AccountMapper accountMapper) {
         this.snapshotRepository = snapshotRepository;
         this.accountRepository = accountRepository;
         this.cashbackRepository = cashbackRepository;
-        this.depositRepository = depositRepository; // ИНИЦИАЛИЗИРОВАТЬ
+        this.depositRepository = depositRepository;
+        this.securityRepository = securityRepository;
         this.accountMapper = accountMapper;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
@@ -92,10 +92,8 @@ public class FinanceSnapshotService {
                 cashbacksJson = "[]";
             }
 
-            // ===== НОВЫЙ КОД ДЛЯ ДЕПОЗИТОВ =====
-            // Получаем информацию о депозите, если тип DEPOSIT
             String depositJson = null;
-            if (account.getType() == AccountType.DEPOSIT) {
+            if (account.getType() == AccountType.DEPOSIT || account.getType() == AccountType.SAVINGS) {
                 Optional<Deposit> depositOpt = depositRepository.findByAccountId(account.getId());
                 if (depositOpt.isPresent()) {
                     Deposit deposit = depositOpt.get();
@@ -113,7 +111,29 @@ public class FinanceSnapshotService {
                     }
                 }
             }
-            // ===== КОНЕЦ НОВОГО КОДА =====
+
+            String securitiesJson = null;
+            if (account.getType() == AccountType.INVESTMENT) {
+                List<Security> securities = securityRepository.findByAccountId(account.getId());
+                List<SecuritySnapshotDto> securityDtos = securities.stream()
+                        .map(s -> SecuritySnapshotDto.builder()
+                                .id(s.getId())
+                                .securityType(s.getSecurityType())
+                                .ticker(s.getTicker())
+                                .quantity(s.getQuantity())
+                                .currentPrice(s.getCurrentPrice())
+                                .faceValue(s.getFaceValue())
+                                .couponRate(s.getCouponRate())
+                                .maturityDate(s.getMaturityDate())
+                                .build())
+                        .collect(Collectors.toList());
+                try {
+                    securitiesJson = objectMapper.writeValueAsString(securityDtos);
+                } catch (Exception e) {
+                    log.error("Failed to serialize securities for account {}", account.getId(), e);
+                    securitiesJson = "[]";
+                }
+            }
 
             MonthlyFinanceSnapshot snapshot = MonthlyFinanceSnapshot.builder()
                     .snapshotDate(snapshotDate)
@@ -123,7 +143,8 @@ public class FinanceSnapshotService {
                     .type(account.getType())
                     .comment(account.getComment())
                     .cashbacksJson(cashbacksJson)
-                    .depositJson(depositJson) // ДОБАВИТЬ ЭТУ СТРОКУ
+                    .depositJson(depositJson)
+                    .securitiesJson(securitiesJson)
                     .createdBy("SYSTEM_SCHEDULER")
                     .build();
 
@@ -240,6 +261,57 @@ public class FinanceSnapshotService {
             } catch (Exception e) {
                 log.error("Failed to parse cashbacks for snapshot {}", snapshot.getId(), e);
                 accountDto.setCashbacks(Collections.emptyList());
+            }
+
+            // Восстанавливаем информацию о депозите/накопительном счёте, если есть
+            if ((snapshot.getType() == AccountType.DEPOSIT || snapshot.getType() == AccountType.SAVINGS)
+                    && snapshot.getDepositJson() != null) {
+                try {
+                    DepositSnapshotDto depositDto = objectMapper.readValue(
+                            snapshot.getDepositJson(),
+                            DepositSnapshotDto.class
+                    );
+                    accountDto.setDepositInfo(DepositInfoDto.builder()
+                            .id(depositDto.getId())
+                            .endDate(depositDto.getEndDate())
+                            .interestPaymentDate(depositDto.getInterestPaymentDate())
+                            .interestRate(depositDto.getInterestRate())
+                            .build());
+                } catch (Exception e) {
+                    log.error("Failed to parse deposit for snapshot {}", snapshot.getId(), e);
+                }
+            }
+
+            if (snapshot.getType() == AccountType.INVESTMENT && snapshot.getSecuritiesJson() != null) {
+                try {
+                    List<SecuritySnapshotDto> securityDtos = objectMapper.readValue(
+                            snapshot.getSecuritiesJson(),
+                            new TypeReference<List<SecuritySnapshotDto>>() {}
+                    );
+
+                    List<SecurityResponseDto> securities = securityDtos.stream()
+                            .map(dto -> SecurityResponseDto.builder()
+                                    .id(dto.getId())
+                                    .accountId(snapshot.getAccountId())
+                                    .bankName(snapshot.getBankName())
+                                    .securityType(dto.getSecurityType())
+                                    .ticker(dto.getTicker())
+                                    .quantity(dto.getQuantity())
+                                    .currentPrice(dto.getCurrentPrice())
+                                    .totalValue(dto.getQuantity() != null && dto.getCurrentPrice() != null
+                                            ? dto.getQuantity().multiply(dto.getCurrentPrice())
+                                            : BigDecimal.ZERO)
+                                    .faceValue(dto.getFaceValue())
+                                    .couponRate(dto.getCouponRate())
+                                    .maturityDate(dto.getMaturityDate())
+                                    .build())
+                            .collect(Collectors.toList());
+
+                    accountDto.setSecurities(securities);
+                } catch (Exception e) {
+                    log.error("Failed to parse securities for snapshot {}", snapshot.getId(), e);
+                    accountDto.setSecurities(Collections.emptyList());
+                }
             }
 
             accounts.add(accountDto);
@@ -446,6 +518,7 @@ public class FinanceSnapshotService {
         BigDecimal total = BigDecimal.ZERO;
         BigDecimal cardTotal = BigDecimal.ZERO;
         BigDecimal depositTotal = BigDecimal.ZERO;
+        BigDecimal savingsTotal = BigDecimal.ZERO;
         BigDecimal investmentTotal = BigDecimal.ZERO;
 
         for (AccountResponseDto account : accounts) {
@@ -456,6 +529,8 @@ public class FinanceSnapshotService {
                 cardTotal = cardTotal.add(amount);
             } else if (account.getType() == AccountType.DEPOSIT) {
                 depositTotal = depositTotal.add(amount);
+            } else if (account.getType() == AccountType.SAVINGS) {
+                savingsTotal = savingsTotal.add(amount);
             } else if (account.getType() == AccountType.INVESTMENT) {
                 investmentTotal = investmentTotal.add(amount);
             }
@@ -469,6 +544,7 @@ public class FinanceSnapshotService {
                 .totalAmount(total)
                 .cardAmount(cardTotal)
                 .depositAmount(depositTotal)
+                .savingsAmount(savingsTotal)
                 .investmentAmount(investmentTotal)
                 .build();
     }
