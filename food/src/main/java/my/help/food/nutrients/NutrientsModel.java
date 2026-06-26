@@ -19,6 +19,7 @@ public class NutrientsModel {
     private double fat;
     private double carbohydrates;
     private double fiber;
+    private String comment;
 
     private List<ProductsPerDayModel> productsPerDay;
 }

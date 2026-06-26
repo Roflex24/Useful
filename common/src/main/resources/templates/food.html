@@ -1506,6 +1506,11 @@
                 </div>
             </div>
 
+            <div class="field-group" style="padding: 0 22px; margin-bottom: 14px;">
+                <label><i class="fas fa-comment-dots"></i> Комментарий к рациону</label>
+                <textarea id="dietDayComment" placeholder="Например: читмил на ужин, тренировка вечером..." style="width:100%; min-height: 60px; resize: vertical;"></textarea>
+            </div>
+
             <div class="button-group">
                 <button id="saveDietBtn" class="save-diet-btn">
                     <i class="fas fa-calendar-check"></i> Сохранить сегодня
@@ -2283,6 +2288,12 @@
 
             const dayData = await response.json();
 
+            const commentHtml = dayData.comment
+                ? `<div class="day-comment-block" style="padding: 12px 16px; margin-bottom: 14px; background: #fff7ed; border: 1px solid #ffe7cc; border-radius: 14px; font-size: 0.88rem; color: #57534e;">
+                       <i class="fas fa-comment-dots" style="color:#f97316; margin-right: 8px;"></i>${escapeHtml(dayData.comment)}
+                   </div>`
+                : '';
+
             if (dayData.productsPerDay && Array.isArray(dayData.productsPerDay) && dayData.productsPerDay.length > 0) {
                 const productsHtml = dayData.productsPerDay.map(product => {
                     const photoHtml = product.photoUrl ?
@@ -2307,9 +2318,9 @@
                         </div>
                     `;
                 }).join('');
-                container.innerHTML = productsHtml;
+                container.innerHTML = commentHtml + productsHtml;
             } else {
-                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;"><i class="fas fa-box-open"></i> Нет продуктов в этом рационе</div>';
+                container.innerHTML = commentHtml + '<div style="text-align: center; padding: 20px; color: #94a3b8;"><i class="fas fa-box-open"></i> Нет продуктов в этом рационе</div>';
             }
         } catch (e) {
             console.error('Ошибка загрузки продуктов дня:', e);
@@ -2341,6 +2352,8 @@
                 renderSelectedList();
                 updateTotalCalories(true);
                 saveToLocalStorage();
+                const commentInput = document.getElementById('dietDayComment');
+                if (commentInput) commentInput.value = dayData.comment || '';
                 showToast(`✅ Рацион за ${date} загружен (${selectedProducts.length} продуктов)`);
                 document.querySelector('.column:last-child').scrollIntoView({ behavior: 'smooth', block: 'start' });
             } else {
@@ -2369,6 +2382,7 @@
                         <i class="fas fa-chevron-down expand-icon" style="margin-right: 12px; color: #f97316; transition: transform 0.3s ease;"></i>
                         <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #f97316;"></i>
                         ${rec.date || '—'}
+                        ${rec.comment ? '<i class="fas fa-comment-dots" title="Есть комментарий" style="margin-left: 10px; color: #f97316; opacity: 0.7;"></i>' : ''}
                        </td>
                     <td style="text-align: center;">🔥 ${Math.round(rec.calories || 0)} ккал</td>
                     <td style="text-align: center;">🥩 ${(rec.protein || 0).toFixed(1)} г</td>
@@ -2466,6 +2480,8 @@
             shop: p.shop || null,
             quantity: p.quantity || 1
         }));
+        const commentInput = document.getElementById('dietDayComment');
+        const comment = commentInput ? commentInput.value.trim() : '';
         const payload = {
             date: date,
             calories: total,
@@ -2473,6 +2489,7 @@
             fat: fat,
             carbohydrates: carbs,
             fiber: fiber,
+            comment: comment,
             productsPerDay: productsPerDay
         };
         try {
