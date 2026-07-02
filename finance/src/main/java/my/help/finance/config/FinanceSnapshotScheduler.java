@@ -9,16 +9,16 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@EnableScheduling
 @RequiredArgsConstructor
+@EnableScheduling
 public class FinanceSnapshotScheduler {
 
     private final FinanceSnapshotService snapshotService;
 
     /**
-     * Каждый день в 03:00 проверяем и создаём снимок если нужно
+     * Каждый день в 7:30 проверяем и создаём снимок если нужно
      */
-    @Scheduled(cron = "0 0 3 * * *")
+    @Scheduled(cron = "0 0 7 * * *")
     public void checkAndCreateSnapshot() {
         if (snapshotService.shouldCreateSnapshot()) {
             log.info("Starting scheduled snapshot creation...");

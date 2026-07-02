@@ -91,4 +91,9 @@ public class PageController {
     public String investPage() {
         return "invest";
     }
+
+    @GetMapping("/page/avito")
+    public String avitoPage() {
+        return "avito";
+    }
 }
