@@ -1515,8 +1515,8 @@
                 <button id="saveDietBtn" class="save-diet-btn">
                     <i class="fas fa-calendar-check"></i> Сохранить сегодня
                 </button>
-                <button id="saveTomorrowDietBtn" class="save-tomorrow-btn">
-                    <i class="fas fa-calendar-plus"></i> Сохранить на завтра
+                <button id="savePlannedDietBtn" class="save-tomorrow-btn">
+                    <i class="fas fa-calendar-days"></i> Запланировать на дату
                 </button>
             </div>
 
@@ -1571,6 +1571,28 @@
             <div class="modal-buttons">
                 <button class="cancel-btn" id="cancelEditBtn">Отмена</button>
                 <button class="save-btn" id="saveEditBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно планирования рациона на выбранную дату -->
+<div id="planDateModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-calendar-days"></i> Запланировать рацион</h3>
+            <button class="modal-close" id="closePlanDateModalBtn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="edit-form-grid">
+                <div class="edit-field" style="grid-column: 1 / -1;">
+                    <label>Выберите дату</label>
+                    <input type="date" id="planDateInput">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelPlanDateBtn">Отмена</button>
+                <button class="save-btn" id="confirmPlanDateBtn">Сохранить</button>
             </div>
         </div>
     </div>
@@ -2518,12 +2540,31 @@
         saveDietForDate(today, `сегодня (${todayFormatted})`);
     };
 
-    const saveTomorrowDiet = () => {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowDate = tomorrow.toISOString().split('T')[0];
-        const tomorrowFormatted = tomorrow.toLocaleDateString('ru-RU');
-        saveDietForDate(tomorrowDate, `завтра (${tomorrowFormatted})`);
+    const planDateModal = document.getElementById('planDateModal');
+    const planDateInput = document.getElementById('planDateInput');
+
+    const openPlanDateModal = () => {
+        if(!planDateModal || !planDateInput) return;
+        if(!planDateInput.value) {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            planDateInput.value = tomorrow.toISOString().split('T')[0];
+        }
+        planDateModal.classList.add('active');
+    };
+
+    const confirmPlanDate = async () => {
+        const dateValue = planDateInput?.value;
+        if(!dateValue) {
+            showToast('❌ Выберите дату');
+            return;
+        }
+        const parsedDate = new Date(dateValue + 'T00:00:00');
+        const dateFormatted = parsedDate.toLocaleDateString('ru-RU');
+        const success = await saveDietForDate(dateValue, dateFormatted);
+        if(success) {
+            planDateModal.classList.remove('active');
+        }
     };
 
     let currentEditId = null;
@@ -2773,7 +2814,17 @@
         document.getElementById('closeModalBtn')?.addEventListener('click', () => {
             document.getElementById('editModal').classList.remove('active');
         });
-        document.getElementById('saveTomorrowDietBtn')?.addEventListener('click', saveTomorrowDiet);
+        document.getElementById('savePlannedDietBtn')?.addEventListener('click', openPlanDateModal);
+        document.getElementById('confirmPlanDateBtn')?.addEventListener('click', confirmPlanDate);
+        document.getElementById('cancelPlanDateBtn')?.addEventListener('click', () => {
+            planDateModal?.classList.remove('active');
+        });
+        document.getElementById('closePlanDateModalBtn')?.addEventListener('click', () => {
+            planDateModal?.classList.remove('active');
+        });
+        planDateModal?.addEventListener('click', (e) => {
+            if(e.target === planDateModal) planDateModal.classList.remove('active');
+        });
         document.getElementById('saveAsDietBtn')?.addEventListener('click', openSaveDietModal);
         document.getElementById('confirmSaveDietBtn')?.addEventListener('click', confirmSaveDiet);
         document.getElementById('cancelSaveDietBtn')?.addEventListener('click', () => {
