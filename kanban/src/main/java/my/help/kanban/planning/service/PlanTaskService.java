@@ -88,6 +88,7 @@ public class PlanTaskService {
         dto.setStatus(task.getStatus());
         dto.setComment(task.getComment());
         dto.setOrderIndex(task.getOrderIndex());
+        dto.setCreatedAt(task.getCreatedAt());
         return dto;
     }
 }

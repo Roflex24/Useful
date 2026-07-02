@@ -3,6 +3,8 @@ package my.help.kanban.planning.dto;
 import lombok.Data;
 import my.help.kanban.planning.entity.PlanStatus;
 
+import java.time.LocalDateTime;
+
 @Data
 public class PlanTaskResponseDto {
     private Long id;
@@ -12,4 +14,5 @@ public class PlanTaskResponseDto {
     private PlanStatus status;
     private String comment;
     private Integer orderIndex;
+    private LocalDateTime createdAt;
 }
