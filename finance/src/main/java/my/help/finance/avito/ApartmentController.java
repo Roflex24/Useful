@@ -120,6 +120,17 @@ public class ApartmentController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+
+    /**
+     * Полностью очищает таблицу квартир.
+     * Используется кнопкой "Очистить базу" на фронтенде.
+     */
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAllApartments() {
+        repository.deleteAllInBatch(); // быстрее, чем deleteAll() — один SQL DELETE без загрузки сущностей
+        return ResponseEntity.noContent().build();
+    }
+
     // ------------------------------------------------------------------
     // DTO ответа
     // ------------------------------------------------------------------

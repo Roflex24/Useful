@@ -144,6 +144,10 @@
     .btn-secondary { background: transparent; color: #A5B4FC; border: 1px solid var(--border-lit); text-decoration: none; }
     .btn-secondary:hover { background: var(--indigo-soft); border-color: var(--indigo); color: #fff; }
 
+    .btn-danger { background: transparent; color: #FDA4AF; border: 1px solid rgba(244,63,94,0.35); }
+    .btn-danger:hover:not(:disabled) { background: var(--rose-soft); border-color: var(--rose); color: #fff; }
+    .btn-danger:disabled { opacity: .38; cursor: not-allowed; }
+
     .btn-group { display: flex; gap: 12px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
 
     /* ── Status ── */
@@ -317,8 +321,13 @@
     <!-- Results -->
     <div id="results-section">
       <div class="results-header">
-        <h2>Квартиры в базе</h2>
-        <span class="badge" id="count-badge">0</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <h2>Квартиры в базе</h2>
+          <span class="badge" id="count-badge">0</span>
+        </div>
+        <button class="btn btn-danger" id="clear-db-btn" onclick="clearDatabase()">
+          🗑 Очистить базу
+        </button>
       </div>
 
       <div class="search-bar glass">
@@ -471,6 +480,33 @@
       setStatus("error", `❌ Ошибка: ${err.message}`);
     } finally {
       parseBtn.disabled = selectedFiles.length === 0;
+    }
+  }
+
+  // ── Очистка базы ──────────────────────────────────────────────────────────
+  async function clearDatabase() {
+    if (allApartments.length === 0) return;
+
+    const confirmed = confirm(
+            `Удалить ВСЕ квартиры из базы (${allApartments.length} шт.)? Это действие необратимо.`
+    );
+    if (!confirmed) return;
+
+    const clearBtn = document.getElementById("clear-db-btn");
+    clearBtn.disabled = true;
+    setStatus("loading", "⏳ Очищаем базу…");
+
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments`, { method: "DELETE" });
+      if (!res.ok) throw new Error(res.statusText);
+
+      allApartments = [];
+      renderCards(allApartments);
+      setStatus("success", "✅ База очищена");
+    } catch (err) {
+      setStatus("error", `❌ Не удалось очистить базу: ${err.message}`);
+    } finally {
+      clearBtn.disabled = false;
     }
   }
 
