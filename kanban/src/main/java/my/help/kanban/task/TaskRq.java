@@ -12,4 +12,5 @@ public class TaskRq {
     private String description;
     private int orderIndex;
     private Long columnId;
+    private Difficulty difficulty;
 }

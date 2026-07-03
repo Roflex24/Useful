@@ -39,6 +39,9 @@ public class TaskService {
 
     public void createTask(TaskRq rq) {
         TaskEntity taskEntity = taskMapper.toEntity(rq);
+        if (taskEntity.getDifficulty() == null) {
+            taskEntity.setDifficulty(Difficulty.BASE);
+        }
         taskEntity.setColumn(columnRepository.findById(rq.getColumnId()).get());
         taskRepository.save(taskEntity);
     }

@@ -661,7 +661,7 @@
             position: relative;
         }
 
-        .difficulty-button, .delete-task-btn {
+        .difficulty-button, .delete-task-btn, .clone-task-btn {
             background: none;
             border: none;
             cursor: pointer;
@@ -678,6 +678,12 @@
 
         .difficulty-button:hover {
             background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .clone-task-btn:hover {
+            background: rgba(139, 92, 246, 0.4);
+            color: #a78bfa;
             transform: scale(1.05);
         }
 
@@ -1795,6 +1801,29 @@
         } catch(e) { showToast('Ошибка создания', true); }
     }
 
+    async function cloneTask(taskId, colId) {
+        const tasks = tasksMap.get(colId) || [];
+        const original = tasks.find(t => t.id === taskId);
+        if (!original) { showToast('Задача не найдена', true); return; }
+        try {
+            await fetch(TASK_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: `${original.title} (копия)`,
+                    description: original.description || '',
+                    orderIndex: tasks.length,
+                    columnId: colId,
+                    difficulty: original.difficulty || 'BASE'
+                })
+            });
+            await fetchTasksByColumn(colId);
+            renderBoard();
+            await renderStats();
+            showToast('Задача клонирована');
+        } catch(e) { showToast('Ошибка клонирования', true); }
+    }
+
     async function updateTask(taskId, colId, title, desc, difficulty) {
         const tasks = tasksMap.get(colId) || [];
         const updated = tasks.map(t => t.id === taskId ? { ...t, title, description: desc, difficulty } : t);
@@ -2124,6 +2153,7 @@
                                         </div>
                                         <div class="task-actions-icons">
                                             <button class="difficulty-button" data-task-id="${task.id}" data-col-id="${col.id}" data-action="difficulty">${difficulty.emoji}</button>
+                                            <button class="clone-task-btn" data-task-id="${task.id}" data-col-id="${col.id}" data-action="clone" title="Клонировать задачу">⧉</button>
                                             <button class="delete-task-btn" data-task-id="${task.id}" data-col-id="${col.id}" data-action="delete">✕</button>
                                         </div>
                                     </div>
@@ -2227,6 +2257,10 @@
             btn.removeEventListener('click', handleDeleteClick);
             btn.addEventListener('click', handleDeleteClick);
         });
+        document.querySelectorAll('.clone-task-btn').forEach(btn => {
+            btn.removeEventListener('click', handleCloneClick);
+            btn.addEventListener('click', handleCloneClick);
+        });
         document.querySelectorAll('.create-task-btn').forEach(btn => {
             btn.removeEventListener('click', handleCreateTask);
             btn.addEventListener('click', handleCreateTask);
@@ -2242,8 +2276,8 @@
     }
 
     function handleCardClick(e) {
-        if (e.target.classList.contains('difficulty-button') || e.target.classList.contains('delete-task-btn') ||
-            e.target.closest('.difficulty-button') || e.target.closest('.delete-task-btn')) return;
+        if (e.target.classList.contains('difficulty-button') || e.target.classList.contains('delete-task-btn') || e.target.classList.contains('clone-task-btn') ||
+            e.target.closest('.difficulty-button') || e.target.closest('.delete-task-btn') || e.target.closest('.clone-task-btn')) return;
         const card = e.currentTarget;
         const taskId = parseInt(card.dataset.taskId);
         const colId = parseInt(card.dataset.colId);
@@ -2264,6 +2298,13 @@
         const taskId = parseInt(e.currentTarget.dataset.taskId);
         const colId = parseInt(e.currentTarget.dataset.colId);
         deleteTask(taskId, colId);
+    }
+
+    function handleCloneClick(e) {
+        e.stopPropagation();
+        const taskId = parseInt(e.currentTarget.dataset.taskId);
+        const colId = parseInt(e.currentTarget.dataset.colId);
+        cloneTask(taskId, colId);
     }
 
     function handleCreateTask(e) {
