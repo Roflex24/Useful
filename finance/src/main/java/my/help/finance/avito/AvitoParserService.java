@@ -14,9 +14,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Сервис парсинга HTML-страниц Авито.
+ * Сервис парсинга HTML-страниц выдачи Авито.
  *
- * Зависимость (Maven):
+ * Извлекает из каждой карточки [data-marker=item] максимум того, что
+ * реально есть в разметке страницы поиска: структурные параметры из
+ * заголовка (комнаты/площадь/этаж), полную цену и цену за м², адрес
+ * по частям (улица, дом, метро/район с временем в пути), координаты,
+ * полное описание, ВСЕ фотографии, бейджи объявления и продавца,
+ * данные продавца, статус "новое"/"продвигается" и дату публикации.
+ *
+ * Зависимости (Maven):
  * <dependency>
  *     <groupId>org.jsoup</groupId>
  *     <artifactId>jsoup</artifactId>
@@ -30,6 +37,14 @@ public class AvitoParserService {
 
     private static final String STOP_MARKER = "Похоже на то, что вы ищете";
     private static final String AVITO_BASE  = "https://www.avito.ru";
+
+    // Заголовок вида "3-к. квартира, 66,7 м², 9/9 эт." или "Студия, 25 м², 3/9 эт."
+    private static final Pattern TITLE_ROOMS  = Pattern.compile("^(\\d+)-к\\.");
+    private static final Pattern TITLE_STUDIO = Pattern.compile("(?i)студия");
+    private static final Pattern TITLE_AREA   = Pattern.compile("([\\d]+(?:[.,]\\d+)?)\\s*м²");
+    private static final Pattern TITLE_FLOOR  = Pattern.compile("(\\d+)\\s*/\\s*(\\d+)\\s*эт");
+
+    private static final Pattern DIGITS = Pattern.compile("\\d+");
 
     private final ApartmentRepository repository;
 
@@ -51,7 +66,8 @@ public class AvitoParserService {
      * внутри одного файла, схлопываются в памяти ДО обращения к БД —
      * побеждает последнее по порядку вхождение.
      * Затем для каждого уникального avitoId делается upsert:
-     * если запись уже есть в базе — обновляется, если нет — создаётся.
+     * если запись уже есть в базе — обновляется (включая фото и бейджи),
+     * если нет — создаётся.
      */
     @Transactional
     public List<Apartment> parseAndSaveMultiple(List<String> htmlContents) {
@@ -78,7 +94,7 @@ public class AvitoParserService {
     }
 
     // ------------------------------------------------------------------
-    // Приватные методы
+    // Парсинг страницы
     // ------------------------------------------------------------------
 
     private List<Apartment> parseHtml(String html) {
@@ -154,122 +170,348 @@ public class AvitoParserService {
         return result;
     }
 
-    /** Парсит один элемент объявления в объект Apartment. */
+    // ------------------------------------------------------------------
+    // Парсинг одной карточки
+    // ------------------------------------------------------------------
+
+    /** Парсит один элемент объявления в объект Apartment со всеми доступными полями. */
     private Optional<Apartment> parseItem(Element el, Map<String, double[]> coordsByItemId) {
         String avitoId = el.attr("data-item-id");
         if (avitoId.isBlank()) return Optional.empty();
 
-        String title    = text(el, "[data-marker=item-title]");
-        String priceRaw = text(el, "[data-marker=item-price]");
+        Apartment apt = new Apartment();
+        apt.setAvitoId(avitoId);
 
-        // Адрес состоит из 1-2 строк внутри [data-marker=item-location]:
-        //   1-я строка — улица и дом ("ул. Старых Производственников, 11")
-        //   2-я строка (не всегда есть) — метро с временем в пути
-        //     ("Парк Культуры, 16–20 мин.") либо название района ("р-н Приокский")
-        String[] addressLines = parseAddressLines(el);
-        String address = addressLines[0];
-        String metro   = addressLines[1];
+        String title = text(el, "[data-marker=item-title]");
+        apt.setTitle(title);
+        parseTitleStructure(title, apt);
 
-        Element descEl = el.selectFirst("[itemprop=description]");
-        String description = (descEl != null) ? descEl.attr("content") : null;
-
-        String imageUrl = extractImageUrl(el);
-
-        Element urlEl = el.selectFirst("a[itemprop=url]");
-        String url = null;
-        if (urlEl != null) {
-            String href = urlEl.attr("href");
-            url = href.startsWith("http") ? href : AVITO_BASE + href;
-        }
+        parsePrice(el, apt);
+        parseAddress(el, apt);
+        parseDescription(el, apt);
+        parseImages(el, apt);
+        parseUrl(el, apt);
+        parseStatusFlags(el, apt);
+        parseSeller(el, apt);
+        parseBadges(el, apt);
 
         double[] coords = coordsByItemId.get(avitoId);
-        Double latitude  = (coords != null) ? coords[0] : null;
-        Double longitude = (coords != null) ? coords[1] : null;
-
-        Apartment apt = Apartment.builder()
-                .avitoId(avitoId)
-                .title(title)
-                .priceRaw(priceRaw)
-                .price(cleanPrice(priceRaw))
-                .address(address)
-                .metro(metro)
-                .latitude(latitude)
-                .longitude(longitude)
-                .description(description)
-                .url(url)
-                .imageUrl(imageUrl)
-                .build();
+        if (coords != null) {
+            apt.setLatitude(coords[0]);
+            apt.setLongitude(coords[1]);
+        }
 
         return Optional.of(apt);
     }
 
     /**
-     * Извлекает URL главной фотографии объявления.
-     * Поддерживает два формата разметки Авито:
-     *   1) Старый: элемент с itemprop="image" и атрибутом src.
-     *   2) Новый (актуальный): реальный URL картинки закодирован прямо
-     *      в атрибуте data-marker первого слайда фотослайдера —
-     *      data-marker="slider-image/image-&lt;URL&gt;". Тег &lt;img&gt; с src
-     *      в статичном HTML отсутствует (картинки лениво подгружаются JS),
-     *      поэтому URL приходится доставать из этого маркера.
+     * Достаёт из заголовка ("3-к. квартира, 66,7 м², 9/9 эт." /
+     * "Студия, 25 м², 3/9 эт.") количество комнат (или флаг студии),
+     * площадь, этаж и этажность дома.
      */
-    private String extractImageUrl(Element el) {
-        Element imgEl = el.selectFirst("[itemprop=image]");
-        if (imgEl != null) {
-            String src = imgEl.attr("src");
-            if (!src.isBlank()) return src;
+    private void parseTitleStructure(String title, Apartment apt) {
+        if (title == null) return;
+
+        Matcher mRooms = TITLE_ROOMS.matcher(title);
+        if (mRooms.find()) {
+            apt.setRooms(Integer.parseInt(mRooms.group(1)));
+            apt.setStudio(false);
+        } else if (TITLE_STUDIO.matcher(title).find()) {
+            apt.setStudio(true);
         }
 
-        Element sliderImg = el.selectFirst("[data-marker^=slider-image/image-]");
-        if (sliderImg != null) {
-            String marker = sliderImg.attr("data-marker");
-            String prefix = "slider-image/image-";
-            int idx = marker.indexOf(prefix);
-            if (idx != -1) {
-                String url = marker.substring(idx + prefix.length());
-                if (!url.isBlank()) return url;
-            }
+        Matcher mArea = TITLE_AREA.matcher(title);
+        if (mArea.find()) {
+            apt.setTotalArea(parseDoubleSafe(mArea.group(1)));
         }
 
-        return null;
+        Matcher mFloor = TITLE_FLOOR.matcher(title);
+        if (mFloor.find()) {
+            apt.setFloor(parseIntSafe(mFloor.group(1)));
+            apt.setTotalFloors(parseIntSafe(mFloor.group(2)));
+        }
     }
 
     /**
-     * Извлекает адрес и метро/район как отдельные строки.
-     * Внутри блока [data-marker=item-address] есть вложенный
-     * [data-marker=item-location] с одним или двумя дочерними &lt;p&gt;:
-     *   - если один &lt;p&gt; — это просто адрес без метро/района;
-     *   - если два &lt;p&gt; — первый это адрес, второй метро/район.
-     *
-     * @return массив из двух элементов: [address, metro] (любой может быть null)
+     * Цена берётся из микроразметки schema.org (itemprop="price"/"priceCurrency"),
+     * это надёжнее, чем чистить видимый текст. Отдельно, если есть, достаётся
+     * цена за квадратный метр (блок ".price-inlineNormalizedPrice...").
      */
-    private String[] parseAddressLines(Element el) {
-        Element location = el.selectFirst("[data-marker=item-address] [data-marker=item-location]");
-        if (location == null) {
-            return new String[]{ null, null };
+    private void parsePrice(Element el, Apartment apt) {
+        Element priceMeta = el.selectFirst("[data-marker=item-price] [itemprop=price]");
+        if (priceMeta != null) {
+            apt.setPrice(parseLongDigits(priceMeta.attr("content")));
         }
+        Element currencyMeta = el.selectFirst("[data-marker=item-price] [itemprop=priceCurrency]");
+        if (currencyMeta != null) {
+            apt.setCurrency(cleanText(currencyMeta.attr("content")));
+        }
+        apt.setPriceRaw(text(el, "[data-marker=item-price-value]"));
 
-        Elements paragraphs = location.select("> p");
-        String address = paragraphs.size() > 0 ? cleanText(paragraphs.get(0).text()) : null;
-        String metro   = paragraphs.size() > 1 ? cleanText(paragraphs.get(1).text()) : null;
-
-        return new String[]{ address, metro };
+        // Класс у Авито хэшированный ("price-inlineNormalizedPrice-J8EYv"),
+        // поэтому ищем по префиксу через contains-селектор.
+        Element pricePerMeterEl = el.selectFirst("[class*=inlineNormalizedPrice]");
+        if (pricePerMeterEl != null) {
+            apt.setPricePerMeter(parseLongDigits(pricePerMeterEl.text()));
+        }
     }
 
-    /** Upsert: обновляет существующую запись или создаёт новую. */
+    /**
+     * Извлекает адрес по частям. Внутри [data-marker=item-address] есть
+     * вложенный [data-marker=item-location] с одним или двумя дочерними &lt;p&gt;:
+     *   - 1-я строка — улица (street_link) и дом (house_link);
+     *   - 2-я строка (не всегда есть) — метро (metro_link) с временем в пути,
+     *     либо просто название района, если метро в объявлении не указано.
+     */
+    private void parseAddress(Element el, Apartment apt) {
+        Element location = el.selectFirst("[data-marker=item-address] [data-marker=item-location]");
+        if (location == null) return;
+
+        Elements paragraphs = location.select("> p");
+
+        if (paragraphs.size() > 0) {
+            Element line1 = paragraphs.get(0);
+            apt.setAddress(cleanText(line1.text()));
+
+            Element streetEl = line1.selectFirst("[data-marker=street_link]");
+            if (streetEl != null) {
+                apt.setStreet(cleanText(streetEl.text()));
+                apt.setStreetLink(absoluteUrl(streetEl.attr("href")));
+            }
+            Element houseEl = line1.selectFirst("[data-marker=house_link]");
+            if (houseEl != null) {
+                apt.setHouseNumber(cleanText(houseEl.text()));
+                apt.setHouseLink(absoluteUrl(houseEl.attr("href")));
+            }
+        }
+
+        if (paragraphs.size() > 1) {
+            Element line2 = paragraphs.get(1);
+            String line2Text = cleanText(line2.text());
+            apt.setMetro(line2Text);
+
+            Element metroEl = line2.selectFirst("[data-marker=metro_link]");
+            if (metroEl != null) {
+                String metroName = cleanText(metroEl.text());
+                apt.setMetroName(metroName);
+                apt.setMetroLink(absoluteUrl(metroEl.attr("href")));
+
+                // Остаток строки после названия станции — это время в пути,
+                // например "Горьковская, от 31 мин." -> "от 31 мин."
+                if (line2Text != null && metroName != null) {
+                    int idx = line2Text.indexOf(metroName);
+                    if (idx != -1) {
+                        String rest = line2Text.substring(idx + metroName.length())
+                                .replaceFirst("^[,\\s]+", "")
+                                .trim();
+                        if (!rest.isBlank()) {
+                            apt.setMetroDistanceRaw(rest);
+                            apt.setMetroMinutes(extractLastNumber(rest));
+                        }
+                    }
+                }
+            } else {
+                // Метро не указано — вторая строка это название района
+                apt.setDistrict(line2Text);
+            }
+        }
+    }
+
+    /**
+     * Короткое описание — из meta itemprop="description" (Авито его обрезает).
+     * Полное описание — видимый текст в нижнем блоке карточки. У Авито
+     * там нет стабильного data-marker, поэтому используем префикс класса
+     * "iva-item-bottomBlock" (суффикс — хэш сборки, префикс стабилен) и
+     * явно исключаем дату публикации, которая лежит в том же блоке.
+     * Если разметка поменяется и селектор перестанет находить текст,
+     * остаётся хотя бы короткое description — полный текст просто не
+     * заполнится.
+     */
+    private void parseDescription(Element el, Apartment apt) {
+        Element descMeta = el.selectFirst("[itemprop=description]");
+        if (descMeta != null) {
+            apt.setDescription(cleanText(descMeta.attr("content")));
+        }
+
+        Element fullDescEl = el.selectFirst("div[class^=iva-item-bottomBlock] p:not([data-marker=item-date])");
+        if (fullDescEl != null) {
+            apt.setDescriptionFull(cleanText(fullDescEl.text()));
+        }
+    }
+
+    /**
+     * Собирает ВСЕ фотографии объявления, а не только первую.
+     * Поддерживает два формата разметки Авито:
+     *   1) Актуальный: URL картинок закодирован в data-marker
+     *      слайдов фотослайдера — data-marker="slider-image/image-&lt;URL&gt;".
+     *      Тег &lt;img&gt; с src в статичном HTML часто отсутствует
+     *      (картинки лениво подгружаются JS).
+     *   2) Старый: элементы с itemprop="image" и атрибутом src.
+     */
+    private void parseImages(Element el, Apartment apt) {
+        List<String> urls = new ArrayList<>();
+
+        Elements sliderImages = el.select("[data-marker^=slider-image/image-]");
+        String prefix = "slider-image/image-";
+        for (Element sliderImg : sliderImages) {
+            String marker = sliderImg.attr("data-marker");
+            int idx = marker.indexOf(prefix);
+            if (idx != -1) {
+                String url = marker.substring(idx + prefix.length());
+                if (!url.isBlank() && !urls.contains(url)) {
+                    urls.add(url);
+                }
+            }
+        }
+
+        if (urls.isEmpty()) {
+            Elements imgEls = el.select("[itemprop=image]");
+            for (Element imgEl : imgEls) {
+                String src = imgEl.attr("src");
+                if (!src.isBlank() && !urls.contains(src)) {
+                    urls.add(src);
+                }
+            }
+        }
+
+        for (int i = 0; i < urls.size(); i++) {
+            apt.addImage(ApartmentImage.builder().url(urls.get(i)).position(i).build());
+        }
+
+        apt.setImageUrl(urls.isEmpty() ? null : urls.get(0));
+    }
+
+    private void parseUrl(Element el, Apartment apt) {
+        Element urlEl = el.selectFirst("a[itemprop=url]");
+        if (urlEl != null) {
+            apt.setUrl(absoluteUrl(urlEl.attr("href")));
+        }
+    }
+
+    /**
+     * Плашка "Новое объявление" на фото и признак платного продвижения
+     * (VAS). Класс продвижения хэширован ("...vas-icon_type-promoted-uOr_s"),
+     * поэтому используется contains-селектор по стабильной части имени.
+     */
+    private void parseStatusFlags(Element el, Apartment apt) {
+        boolean isNew = false;
+        for (Element badge : el.select("[class*=textBadgeContent]")) {
+            if ("Новое объявление".equalsIgnoreCase(cleanText(badge.text()))) {
+                isNew = true;
+                break;
+            }
+        }
+        apt.setIsNew(isNew);
+
+        boolean promoted = !el.select("[class*=vas-icon_type-promoted]").isEmpty();
+        apt.setIsPromoted(promoted);
+
+        apt.setPublishedDateRaw(text(el, "[data-marker=item-date]"));
+    }
+
+    /**
+     * Данные продавца: имя/название агентства, ссылка на профиль и
+     * строка вида "3 завершённых объявления" (плюс число из неё, если
+     * формат строки совпал с ожидаемым).
+     */
+    private void parseSeller(Element el, Apartment apt) {
+        Element sellerBlock = el.selectFirst("[class^=iva-item-sellerInfo]");
+        if (sellerBlock == null) return;
+
+        Element nameLink = sellerBlock.selectFirst("a[href^=/user/]");
+        if (nameLink != null) {
+            apt.setSellerName(cleanText(nameLink.text()));
+            apt.setSellerProfileUrl(absoluteUrl(nameLink.attr("href")));
+        }
+
+        Element listingsEl = sellerBlock.selectFirst("[class^=iva-item-text]");
+        if (listingsEl != null) {
+            String raw = cleanText(listingsEl.text());
+            apt.setSellerCompletedListingsRaw(raw);
+            if (raw != null) {
+                Matcher m = DIGITS.matcher(raw);
+                if (m.find()) {
+                    apt.setSellerCompletedListingsCount(parseIntSafe(m.group()));
+                }
+            }
+        }
+    }
+
+    /**
+     * Бейджи объявления (data-marker="iva-item/&lt;код&gt;", например
+     * "Собственник", "Проверено в Росреестре", "Кирпичный дом") и
+     * бейджи продавца (data-marker="badge-title-&lt;код&gt;", например
+     * "Документы проверены", "Реквизиты проверены").
+     */
+    private void parseBadges(Element el, Apartment apt) {
+        for (Element badgeEl : el.select("[data-marker^=iva-item/]")) {
+            String label = cleanText(badgeEl.text());
+            if (label == null || label.isBlank()) continue;
+            apt.addBadge(ApartmentBadge.builder()
+                    .type(ApartmentBadge.BadgeType.ITEM)
+                    .code(badgeEl.attr("data-marker"))
+                    .label(label)
+                    .build());
+        }
+
+        for (Element badgeEl : el.select("[data-marker^=badge-title]")) {
+            String label = cleanText(badgeEl.text());
+            if (label == null || label.isBlank()) continue;
+            apt.addBadge(ApartmentBadge.builder()
+                    .type(ApartmentBadge.BadgeType.SELLER)
+                    .code(badgeEl.attr("data-marker"))
+                    .label(label)
+                    .build());
+        }
+    }
+
+    /** Upsert: обновляет существующую запись (включая фото и бейджи) или создаёт новую. */
     private Apartment upsert(Apartment incoming) {
         return repository.findByAvitoId(incoming.getAvitoId())
                 .map(existing -> {
                     existing.setTitle(incoming.getTitle());
+                    existing.setRooms(incoming.getRooms());
+                    existing.setStudio(incoming.getStudio());
+                    existing.setTotalArea(incoming.getTotalArea());
+                    existing.setFloor(incoming.getFloor());
+                    existing.setTotalFloors(incoming.getTotalFloors());
+
                     existing.setPrice(incoming.getPrice());
                     existing.setPriceRaw(incoming.getPriceRaw());
+                    existing.setCurrency(incoming.getCurrency());
+                    existing.setPricePerMeter(incoming.getPricePerMeter());
+
                     existing.setAddress(incoming.getAddress());
+                    existing.setStreet(incoming.getStreet());
+                    existing.setStreetLink(incoming.getStreetLink());
+                    existing.setHouseNumber(incoming.getHouseNumber());
+                    existing.setHouseLink(incoming.getHouseLink());
                     existing.setMetro(incoming.getMetro());
+                    existing.setMetroName(incoming.getMetroName());
+                    existing.setMetroLink(incoming.getMetroLink());
+                    existing.setMetroDistanceRaw(incoming.getMetroDistanceRaw());
+                    existing.setMetroMinutes(incoming.getMetroMinutes());
+                    existing.setDistrict(incoming.getDistrict());
                     existing.setLatitude(incoming.getLatitude());
                     existing.setLongitude(incoming.getLongitude());
+
                     existing.setDescription(incoming.getDescription());
+                    existing.setDescriptionFull(incoming.getDescriptionFull());
+
                     existing.setUrl(incoming.getUrl());
                     existing.setImageUrl(incoming.getImageUrl());
+                    existing.replaceImages(incoming.getImages());
+                    existing.replaceBadges(incoming.getBadges());
+
+                    existing.setIsNew(incoming.getIsNew());
+                    existing.setIsPromoted(incoming.getIsPromoted());
+                    existing.setPublishedDateRaw(incoming.getPublishedDateRaw());
+
+                    existing.setSellerName(incoming.getSellerName());
+                    existing.setSellerProfileUrl(incoming.getSellerProfileUrl());
+                    existing.setSellerCompletedListingsRaw(incoming.getSellerCompletedListingsRaw());
+                    existing.setSellerCompletedListingsCount(incoming.getSellerCompletedListingsCount());
+
                     return repository.save(existing);
                 })
                 .orElseGet(() -> repository.save(incoming));
@@ -293,19 +535,57 @@ public class AvitoParserService {
         return t.isEmpty() ? null : t;
     }
 
+    /** Достраивает относительную ссылку Авито до абсолютной. */
+    private String absoluteUrl(String href) {
+        if (href == null || href.isBlank()) return null;
+        return href.startsWith("http") ? href : AVITO_BASE + href;
+    }
+
     /**
-     * Преобразует строку цены "13 146 300 ₽" в Long.
-     * Удаляет все нецифровые символы.
+     * Преобразует строку вида "13 146 300 ₽" или "133 581 ₽ за м²" в Long,
+     * удаляя все нецифровые символы.
      */
-    private Long cleanPrice(String priceRaw) {
-        if (priceRaw == null || priceRaw.isBlank()) return null;
-        String digits = priceRaw.replaceAll("[^\\d]", "");
+    private Long parseLongDigits(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        String digits = raw.replaceAll("[^\\d]", "");
         if (digits.isEmpty()) return null;
         try {
             return Long.parseLong(digits);
         } catch (NumberFormatException e) {
-            log.warn("Cannot parse price: {}", priceRaw);
+            log.warn("Cannot parse number: {}", raw);
             return null;
         }
+    }
+
+    private Integer parseIntSafe(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Double parseDoubleSafe(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            return Double.parseDouble(raw.replace(',', '.'));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Из строки вида "от 31 мин." / "21–30 мин." / "до 5 мин." достаёт
+     * последнее (то есть наибольшее, верхнюю границу) число.
+     */
+    private Integer extractLastNumber(String raw) {
+        if (raw == null) return null;
+        Matcher m = DIGITS.matcher(raw);
+        Integer last = null;
+        while (m.find()) {
+            last = parseIntSafe(m.group());
+        }
+        return last;
     }
 }
