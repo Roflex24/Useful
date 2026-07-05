@@ -20,6 +20,7 @@ import java.util.List;
  *                                 распарсить и сохранить (обновить существующие)
  *   GET  /api/apartments        — получить все квартиры из БД
  *   GET  /api/apartments/{id}   — получить квартиру по avito_id
+ *   DELETE /api/apartments      — полностью очистить базу
  */
 @RestController
 @RequestMapping("/api/apartments")
@@ -120,14 +121,24 @@ public class ApartmentController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // ------------------------------------------------------------------
+    // DELETE /api/apartments
+    // ------------------------------------------------------------------
 
     /**
-     * Полностью очищает таблицу квартир.
+     * Полностью очищает таблицу квартир (и связанные фото/бейджи).
      * Используется кнопкой "Очистить базу" на фронтенде.
+     *
+     * Раньше здесь был repository.deleteAllInBatch() напрямую — это
+     * ломалось, как только появились apartment_images/apartment_badges
+     * с внешним ключом на apartments: прямой batch-delete родителя не
+     * запускает JPA cascade, и БД отвергала запрос из-за нарушения FK.
+     * parserService.deleteAllApartments() удаляет в правильном порядке
+     * (дети -> родитель).
      */
     @DeleteMapping
     public ResponseEntity<Void> deleteAllApartments() {
-        repository.deleteAllInBatch(); // быстрее, чем deleteAll() — один SQL DELETE без загрузки сущностей
+        parserService.deleteAllApartments();
         return ResponseEntity.noContent().build();
     }
 

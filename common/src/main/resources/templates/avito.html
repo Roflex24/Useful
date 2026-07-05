@@ -202,6 +202,50 @@
     .apt-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .apt-id { font-size: 11px; color: var(--text-3); }
 
+    /* ── Оценка / скоринг ─────────────────────────────────────── */
+    .score-card { padding: 22px 26px; border-radius: var(--radius-lg); margin-bottom: 24px; }
+    .score-card h2 {
+      font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--text);
+      display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+    }
+    .score-card .score-hint { font-size: 12.5px; color: var(--text-3); margin-bottom: 18px; line-height: 1.5; }
+
+    .weights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px 22px; margin-bottom: 18px; }
+    .weight-item label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+    .weight-item label .w-val { font-family: var(--font-num); color: #A5B4FC; }
+    .weight-item input[type="range"] {
+      width: 100%; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px;
+      background: var(--surface); border: 1px solid var(--border); outline: none; cursor: pointer;
+    }
+    .weight-item input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--indigo), #4F46E5); border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(99,102,241,0.4);
+      cursor: pointer;
+    }
+    .weight-item input[type="range"]::-moz-range-thumb {
+      width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(135deg, var(--indigo), #4F46E5);
+      border: 2px solid #fff; cursor: pointer;
+    }
+    .weight-item .w-desc { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+    /* ── Бейдж оценки на карточке ── */
+    .apt-card { position: relative; }
+    .apt-score {
+      position: absolute; top: 10px; right: 10px; z-index: 2; min-width: 40px; height: 40px; padding: 0 8px;
+      border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 2px;
+      font-family: var(--font-num); font-weight: 700; font-size: 15px; color: #fff;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35); backdrop-filter: blur(6px); cursor: help;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+    .apt-score.score-high { background: linear-gradient(135deg, #10B981, #059669); }
+    .apt-score.score-mid  { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .apt-score.score-low  { background: linear-gradient(135deg, #F43F5E, #BE123C); }
+    .apt-score .rank { position: absolute; top: -8px; left: -8px; background: #0B1326; border: 1px solid var(--border); color: var(--text-2); font-size: 10px; font-weight: 700; border-radius: 999px; padding: 1px 6px; font-family: var(--font-ui); }
+
+    .sort-hint { font-size: 12px; color: var(--text-3); margin-bottom: 12px; display: none; align-items: center; gap: 8px; }
+    .sort-hint.show { display: flex; }
+    .sort-hint button { border: none; background: none; color: #A5B4FC; cursor: pointer; font-size: 12px; text-decoration: underline; font-family: var(--font-ui); padding: 0; }
+
     /* ── View toggle (список / карта) ── */
     .view-toggle { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 3px; margin-bottom: 16px; }
     .view-toggle button {
@@ -318,6 +362,26 @@
       </div>
     </div>
 
+    <!-- Оценка / скоринг -->
+    <div class="score-card glass">
+      <h2><i class="fas fa-star" style="color:var(--indigo)"></i> Оценка и топ квартир</h2>
+      <div class="score-hint">
+        Настройте вес каждого критерия (0 — не учитывать) и нажмите «Собрать топ».
+        Оценка считается относительно квартир, которые сейчас в базе: например,
+        цена за м² сравнивается не с фиксированным порогом, а с остальными
+        загруженными объявлениями — самая дешёвая в подборке получит 100, самая дорогая — 0.
+      </div>
+      <div class="weights-grid" id="weights-grid"></div>
+      <div class="btn-group" style="margin-top:0;">
+        <button class="btn btn-primary" id="rank-btn" onclick="rankApartments()">
+          🏆 Собрать топ
+        </button>
+        <button class="btn btn-secondary" onclick="resetRanking()">
+          ↺ Сбросить оценку
+        </button>
+      </div>
+    </div>
+
     <!-- Results -->
     <div id="results-section">
       <div class="results-header">
@@ -328,6 +392,11 @@
         <button class="btn btn-danger" id="clear-db-btn" onclick="clearDatabase()">
           🗑 Очистить базу
         </button>
+      </div>
+
+      <div class="sort-hint" id="sort-hint">
+        📊 Список отсортирован по оценке
+        <button onclick="resetRanking()">сбросить</button>
       </div>
 
       <div class="search-bar glass">
@@ -362,6 +431,24 @@
   // ── Состояние ─────────────────────────────────────────────────────────────
   let allApartments = [];
   let selectedFiles = [];   // массив File — можно накопить несколько .html/.htm
+
+  // ── Оценка / скоринг ─────────────────────────────────────────────────────
+  // Ключи должны совпадать с ScoringCriterion.getKey() на бэкенде.
+  // weight — значение слайдера по умолчанию (0..5), hint — короткое пояснение под ним.
+  const CRITERIA = [
+    { key: "pricePerMeter",     label: "Цена за м²",         weight: 3, hint: "дешевле относительно других объявлений — выше балл" },
+    { key: "metroDistance",     label: "Близость к метро",   weight: 2, hint: "меньше минут пешком — выше балл" },
+    { key: "trust",             label: "Доверие",             weight: 2, hint: "проверенные документы/реквизиты, собственник" },
+    { key: "floorPosition",     label: "Этаж",                weight: 1, hint: "средние этажи лучше первого и последнего" },
+    { key: "area",              label: "Площадь",             weight: 1, hint: "больше площадь — выше балл" },
+    { key: "sellerExperience",  label: "Опыт продавца",       weight: 0, hint: "число завершённых объявлений продавца" },
+    { key: "freshness",         label: "Свежесть",            weight: 0, hint: "недавно опубликованные — выше балл" },
+    { key: "priceTotal",        label: "Полная цена",         weight: 0, hint: "дешевле в целом — выше балл (обычно достаточно цены за м²)" },
+  ];
+
+  // avitoId -> { totalScore, rank, breakdown }, заполняется после "Собрать топ"
+  let apartmentScores = {};
+  let isRanked = false;
 
   // ── Drop-zone ─────────────────────────────────────────────────────────────
   const dropZone  = document.getElementById("drop-zone");
@@ -501,6 +588,9 @@
       if (!res.ok) throw new Error(res.statusText);
 
       allApartments = [];
+      apartmentScores = {};
+      isRanked = false;
+      document.getElementById("sort-hint").classList.remove("show");
       renderCards(allApartments);
       setStatus("success", "✅ База очищена");
     } catch (err) {
@@ -519,6 +609,115 @@
 
   function hideStatus() {
     document.getElementById("status").className = "status";
+  }
+
+  // ── Оценка / скоринг ──────────────────────────────────────────────────────
+
+  /** Строит слайдеры весов по конфигу CRITERIA (один раз при загрузке страницы). */
+  function renderWeightSliders() {
+    const grid = document.getElementById("weights-grid");
+    grid.innerHTML = CRITERIA.map(c => `
+      <div class="weight-item">
+        <label>
+          <span>${esc(c.label)}</span>
+          <span class="w-val" id="w-val-${c.key}">${c.weight}</span>
+        </label>
+        <input type="range" id="w-${c.key}" min="0" max="5" step="0.5" value="${c.weight}"
+               oninput="document.getElementById('w-val-${c.key}').textContent = this.value">
+        <div class="w-desc">${esc(c.hint)}</div>
+      </div>
+    `).join("");
+  }
+
+  /** Собирает текущие значения слайдеров в объект {criterionKey: weight}. */
+  function collectWeights() {
+    const weights = {};
+    for (const c of CRITERIA) {
+      weights[c.key] = parseFloat(document.getElementById(`w-${c.key}`).value) || 0;
+    }
+    return weights;
+  }
+
+  /** Отправляет веса на бэкенд, получает оценку по каждой квартире и пересортировывает список. */
+  async function rankApartments() {
+    if (allApartments.length === 0) return;
+
+    const weights = collectWeights();
+    if (Object.values(weights).every(w => w === 0)) {
+      setStatus("error", "❌ Все веса равны нулю — задайте хотя бы один критерий");
+      return;
+    }
+
+    const rankBtn = document.getElementById("rank-btn");
+    rankBtn.disabled = true;
+    setStatus("loading", "⏳ Считаем оценку…");
+
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments/rank`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weights }),
+      });
+      if (!res.ok) throw new Error(res.statusText);
+
+      const ranked = await res.json(); // List<ApartmentScoreResult>
+      apartmentScores = {};
+      for (const r of ranked) {
+        apartmentScores[r.avitoId] = { totalScore: r.totalScore, rank: r.rank, breakdown: r.breakdown };
+      }
+      isRanked = true;
+
+      // Пересортировываем текущую выборку по оценке (квартиры без оценки — в конец)
+      allApartments = [...allApartments].sort((a, b) => {
+        const sa = apartmentScores[a.avitoId]?.totalScore;
+        const sb = apartmentScores[b.avitoId]?.totalScore;
+        if (sa == null && sb == null) return 0;
+        if (sa == null) return 1;
+        if (sb == null) return -1;
+        return sb - sa;
+      });
+
+      document.getElementById("sort-hint").classList.add("show");
+      hideStatus();
+      renderCards(allApartments);
+    } catch (err) {
+      setStatus("error", `❌ Не удалось посчитать оценку: ${err.message}`);
+    } finally {
+      rankBtn.disabled = false;
+    }
+  }
+
+  /** Убирает оценку и сортировку по ней, возвращает список к порядку из базы. */
+  function resetRanking() {
+    apartmentScores = {};
+    isRanked = false;
+    document.getElementById("sort-hint").classList.remove("show");
+    renderCards(allApartments);
+  }
+
+  /** css-класс бейджа по величине оценки. */
+  function scoreClass(score) {
+    if (score >= 70) return "score-high";
+    if (score >= 40) return "score-mid";
+    return "score-low";
+  }
+
+  /** HTML бейджа оценки для карточки (пусто, если квартира ещё не оценена). */
+  function scoreBadgeHTML(apt) {
+    const info = apartmentScores[apt.avitoId ?? apt.avito_id];
+    if (!info || info.totalScore == null) return "";
+
+    const top3 = (info.breakdown || [])
+            .filter(b => b.weight > 0)
+            .sort((a, b) => b.weightedContribution - a.weightedContribution)
+            .slice(0, 3)
+            .map(b => `${b.criterion}: ${b.normalizedScore?.toFixed(0) ?? "—"}`)
+            .join(" · ");
+
+    return `
+      <div class="apt-score ${scoreClass(info.totalScore)}" title="${esc(top3)}">
+        <span class="rank">#${info.rank}</span>${info.totalScore.toFixed(0)}
+      </div>`;
   }
 
   // ── Render cards ──────────────────────────────────────────────────────────
@@ -558,6 +757,7 @@
 
     return `
       <div class="apt-card">
+        ${scoreBadgeHTML(apt)}
         ${img}${imgPh}
         <div class="apt-body">
           <div class="apt-price">${esc(price)}</div>
@@ -696,6 +896,7 @@
   }
 
   // ── Старт ─────────────────────────────────────────────────────────────────
+  renderWeightSliders();
   loadAllApartments();
 </script>
 

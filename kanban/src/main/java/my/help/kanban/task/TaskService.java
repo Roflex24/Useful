@@ -29,8 +29,10 @@ public class TaskService {
                 taskRepository.findByColumnId(columnId));
 
         if (column.getOrderIndex() == 3) {
+            LocalDate limitDate = LocalDate.now().minusDays(DAYS_LIMIT_FOR_ARCHIVE);
             return list.stream()
-                    .filter(e -> e.getCloseDate().isAfter(LocalDate.now().minusDays(DAYS_LIMIT_FOR_ARCHIVE)))
+                    .filter(e -> e.getCloseDate() == null ||
+                            e.getCloseDate().isAfter(limitDate))
                     .toList();
         } else {
             return list;

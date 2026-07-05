@@ -3,6 +3,8 @@ package my.help.finance.avito;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 /**
  * Одна фотография объявления. Авито в статичном HTML лениво подгружает
@@ -31,8 +33,17 @@ public class ApartmentImage {
     /** Порядковый номер в слайдере, начиная с 0 (0 — главное фото) */
     private Integer position;
 
+    /**
+     * @OnDelete(CASCADE) заставляет Hibernate создать FK с ON DELETE CASCADE
+     * на уровне самой БД. Это важно: repository.deleteAllInBatch() в
+     * ApartmentController/AvitoParserService шлёт прямой SQL DELETE, минуя
+     * JPA-каскад (cascade/orphanRemoval работают только при удалении через
+     * EntityManager) — без ON DELETE CASCADE такой batch-delete родителя
+     * упадёт с нарушением внешнего ключа.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "apartment_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonIgnore
     private Apartment apartment;
 }

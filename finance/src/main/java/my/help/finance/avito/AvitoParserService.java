@@ -47,6 +47,8 @@ public class AvitoParserService {
     private static final Pattern DIGITS = Pattern.compile("\\d+");
 
     private final ApartmentRepository repository;
+    private final ApartmentImageRepository imageRepository;
+    private final ApartmentBadgeRepository badgeRepository;
 
     // ------------------------------------------------------------------
     // Публичный API
@@ -91,6 +93,22 @@ public class AvitoParserService {
                 htmlContents.size(), totalParsed, deduped.size(), saved.size());
 
         return saved;
+    }
+
+    /**
+     * Полностью очищает базу квартир (используется кнопкой "Очистить базу").
+     * Порядок важен: apartments — родитель для apartment_images и
+     * apartment_badges (FK apartment_id NOT NULL), поэтому детей удаляем
+     * первыми. deleteAllInBatch() — это прямой SQL DELETE, JPA-каскад при
+     * нём не срабатывает (он работает только при удалении через
+     * EntityManager/remove()), поэтому удалять родителя первым нельзя —
+     * упадёт с нарушением внешнего ключа.
+     */
+    @Transactional
+    public void deleteAllApartments() {
+        imageRepository.deleteAllInBatch();
+        badgeRepository.deleteAllInBatch();
+        repository.deleteAllInBatch();
     }
 
     // ------------------------------------------------------------------
