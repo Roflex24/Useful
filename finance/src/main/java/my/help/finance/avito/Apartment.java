@@ -292,6 +292,17 @@ public class Apartment {
     @Column(name = "sale_conditions", length = 255)
     private String saleConditions;
 
+    /** "Высота потолков" в метрах, например 2.6 */
+    @Column(name = "ceiling_height")
+    private Double ceilingHeight;
+
+    /**
+     * "Стоимость ремонта" — Авито показывает это отдельной ссылкой-оценкой,
+     * а не простым текстом: "от 840 000 ₽ за 60 м²".
+     */
+    @Column(name = "renovation_cost_estimate", length = 255)
+    private String renovationCostEstimate;
+
     // ------------------------------------------------------------------
     // Раздел "О доме" на детальной странице
     // ------------------------------------------------------------------
@@ -300,6 +311,10 @@ public class Apartment {
     @Column(name = "building_type", length = 255)
     private String buildingType;
 
+    /** "Год постройки" дома, например 1973 */
+    @Column(name = "year_built")
+    private Integer yearBuilt;
+
     /** "Пассажирский лифт": обычно количество ("1", "2") или "нет" */
     @Column(name = "passenger_elevator", length = 64)
     private String passengerElevator;
@@ -307,6 +322,18 @@ public class Apartment {
     /** "Грузовой лифт": количество или "нет" */
     @Column(name = "freight_elevator", length = 64)
     private String freightElevator;
+
+    /** "В доме": коммуникации дома, например "газ" */
+    @Column(name = "house_utilities", length = 255)
+    private String houseUtilities;
+
+    /** "Двор": благоустройство двора, например "детская площадка" */
+    @Column(name = "yard_features", length = 255)
+    private String yardFeatures;
+
+    /** "Парковка": например "открытая во дворе" */
+    @Column(length = 255)
+    private String parking;
 
     /** Рейтинг дома (например 4.5), если Авито его показывает */
     @Column(name = "house_rating")
@@ -319,6 +346,50 @@ public class Apartment {
     /** Ссылка на карточку дома в каталоге ("Узнать больше о доме") */
     @Column(name = "house_catalog_url", length = 1024)
     private String houseCatalogUrl;
+
+    // ------------------------------------------------------------------
+    // "Проверка в Росреестре" — блок domoteka-entry-block на детальной
+    // странице. Авито показывает его в виде списка коротких утверждений
+    // с иконкой "done"/"attention", без стабильных отдельных полей на
+    // каждое утверждение, поэтому сохраняем и сырой список, и несколько
+    // наиболее полезных распознанных значений.
+    // ------------------------------------------------------------------
+
+    /** Заголовок блока, обычно "Проверка в Росреестре" */
+    @Column(name = "rosreestr_check_title", length = 255)
+    private String rosreestrCheckTitle;
+
+    /** Все строки блока проверки одним JSON-массивом строк, как есть */
+    @Column(name = "rosreestr_checks_json", columnDefinition = "TEXT")
+    private String rosreestrChecksJson;
+
+    /** Строка про число собственников, например "2 собственника или больше" */
+    @Column(name = "rosreestr_owners_count_raw", length = 255)
+    private String rosreestrOwnersCountRaw;
+
+    /** Строка про последнюю смену собственника, например "Последняя смена собственника 15 апреля 2016" */
+    @Column(name = "rosreestr_last_owner_change_raw", length = 255)
+    private String rosreestrLastOwnerChangeRaw;
+
+    /**
+     * Найдены ли ограничения/обременения. true — найдены, false — Авито
+     * явно написал "Не найдены ограничения и обременения", null — блок
+     * либо отсутствует, либо формулировка не распознана.
+     */
+    @Column(name = "rosreestr_has_restrictions")
+    private Boolean rosreestrHasRestrictions;
+
+    /**
+     * Совпадают ли площадь/адрес/этаж с данными Росреестра. true — Авито
+     * написал "Совпадают площадь, адрес и этаж", false — явно написал
+     * про несовпадение, null — не распознано.
+     */
+    @Column(name = "rosreestr_data_matches")
+    private Boolean rosreestrDataMatches;
+
+    /** Кадастровый номер, если Авито его показывает (часто пустой) */
+    @Column(name = "rosreestr_cadastral_number", length = 64)
+    private String rosreestrCadastralNumber;
 
     // ------------------------------------------------------------------
     // Адрес, координаты, просмотры, контакт — с детальной страницы

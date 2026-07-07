@@ -81,6 +81,41 @@ public enum ScoringCriterion {
             "Свежесть объявления (недавно опубликовано — лучше)",
             RankDirection.CUSTOM_0_100,
             ScoringCriterion::freshnessScore
+    ),
+
+    CEILING_HEIGHT(
+            "ceilingHeight",
+            "Высота потолков (выше — лучше)",
+            RankDirection.HIGHER_IS_BETTER,
+            Apartment::getCeilingHeight
+    ),
+
+    BUILDING_AGE(
+            "buildingAge",
+            "Год постройки дома (новее дом — лучше)",
+            RankDirection.HIGHER_IS_BETTER,
+            apt -> apt.getYearBuilt() != null ? apt.getYearBuilt().doubleValue() : null
+    ),
+
+    HOUSE_RATING(
+            "houseRating",
+            "Рейтинг дома по отзывам жильцов (выше — лучше)",
+            RankDirection.HIGHER_IS_BETTER,
+            Apartment::getHouseRating
+    ),
+
+    RENOVATION_QUALITY(
+            "renovationQuality",
+            "Качество ремонта (по формулировке Авито: дизайнерский/евро/косметический/без ремонта)",
+            RankDirection.CUSTOM_0_100,
+            ScoringCriterion::renovationQualityScore
+    ),
+
+    ROSREESTR_CHECK(
+            "rosreestrCheck",
+            "Проверка в Росреестре: совпадение площади/адреса/этажа и отсутствие ограничений",
+            RankDirection.CUSTOM_0_100,
+            ScoringCriterion::rosreestrCheckScore
     );
 
     public enum RankDirection { LOWER_IS_BETTER, HIGHER_IS_BETTER, CUSTOM_0_100 }
@@ -91,7 +126,7 @@ public enum ScoringCriterion {
     private final Function<Apartment, Double> extractor;
 
     ScoringCriterion(String key, String description, RankDirection direction,
-                      Function<Apartment, Double> extractor) {
+                     Function<Apartment, Double> extractor) {
         this.key = key;
         this.description = description;
         this.direction = direction;
@@ -140,12 +175,53 @@ public enum ScoringCriterion {
                 case "Проверено в Росреестре" -> score += 30;
                 case "Реквизиты проверены" -> score += 25;
                 case "Документы проверены" -> score += 20;
+                case "Данные подтверждены" -> score += 20;
                 case "Надёжный партнёр" -> score += 15;
                 case "Собственник" -> score += 10;
                 default -> { /* прочие бейджи ("Кирпичный дом" и т.п.) на доверие не влияют */ }
             }
         }
         return Math.min(100.0, score);
+    }
+
+    /**
+     * Формулировка ремонта у Авито — свободный текст, не перечисление, поэтому
+     * матчим по ключевым словам. Формулировка не распознана или отсутствует —
+     * null, критерий не наказывает и не поощряет квартиру (нейтральные 50).
+     */
+    private static Double renovationQualityScore(Apartment apt) {
+        String renovation = apt.getRenovation();
+        if (renovation == null || renovation.isBlank()) return null;
+        String r = renovation.toLowerCase();
+
+        if (r.contains("дизайнерск")) return 100.0;
+        if (r.contains("евро")) return 85.0;
+        if (r.contains("хорош") || r.contains("частичн")) return 65.0;
+        if (r.contains("косметическ")) return 55.0;
+        if (r.contains("требует ремонта") || r.contains("без ремонта")) return 15.0;
+        return 50.0; // формулировка не распознана — нейтрально
+    }
+
+    /**
+     * Собирает {@link Apartment#getRosreestrDataMatches()} и
+     * {@link Apartment#getRosreestrHasRestrictions()} в единую оценку 0..100.
+     * Если проверки не было вовсе (оба флага null) — null, чтобы отдельно от
+     * этого критерия квартира получила нейтральную оценку, а не штраф за
+     * то, что бот ещё не обошёл объявление.
+     */
+    private static Double rosreestrCheckScore(Apartment apt) {
+        Boolean matches = apt.getRosreestrDataMatches();
+        Boolean restrictions = apt.getRosreestrHasRestrictions();
+        if (matches == null && restrictions == null) return null;
+
+        double score = 50.0;
+        if (Boolean.TRUE.equals(matches)) score += 20;
+        else if (Boolean.FALSE.equals(matches)) score -= 25;
+
+        if (Boolean.FALSE.equals(restrictions)) score += 30;
+        else if (Boolean.TRUE.equals(restrictions)) score -= 40;
+
+        return Math.max(0.0, Math.min(100.0, score));
     }
 
     private static final Pattern DAYS_AGO = Pattern.compile("(\\d+)\\s*д[ен]");

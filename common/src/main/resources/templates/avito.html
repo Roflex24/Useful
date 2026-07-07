@@ -269,6 +269,9 @@
     #map { height: 600px; width: 100%; border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.35); z-index: 0; border: 1px solid var(--border); }
     .map-empty-hint { margin-top: 10px; font-size: 12px; color: var(--text-3); text-align: center; }
 
+    .map-legend { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: center; margin-top: 10px; font-size: 12px; color: var(--text-2); }
+    .map-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; box-shadow: 0 0 0 2px rgba(255,255,255,0.15); }
+
     /* Тёмная тема для тайлов Leaflet + попапов */
     .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9) saturate(0.9); }
     .leaflet-popup-content-wrapper { background: #0F1729; color: var(--text); border-radius: var(--radius-sm); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
@@ -284,6 +287,9 @@
     .map-popup-title { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
     .map-popup-address { font-size: 11px; color: var(--text-2); margin-bottom: 2px; }
     .map-popup-metro { font-size: 11px; color: var(--text-2); margin-bottom: 6px; }
+    .map-popup-score { font-size: 11.5px; color: var(--text-2); margin-bottom: 6px; display: flex; align-items: center; }
+    .map-popup-score .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+    .map-popup-score b { color: var(--text); font-family: var(--font-num); }
     .map-popup-link { display: inline-block; font-size: 12px; font-weight: 600; color: #A5B4FC; text-decoration: none; }
     .map-popup-link:hover { text-decoration: underline; }
     .apt-link { font-size: 12px; color: #A5B4FC; text-decoration: none; font-weight: 600; }
@@ -374,6 +380,12 @@
 
     .dd-house-rating { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
     .dd-house-rating b { color: #FCD34D; font-family: var(--font-num); }
+
+    .dd-rosreestr-list { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; list-style: none; padding: 0; }
+    .dd-rosreestr-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 1.5; color: var(--text-2); }
+    .dd-rosreestr-item i { color: var(--emerald); margin-top: 2px; flex-shrink: 0; }
+    .dd-rosreestr-item.warn { color: #FCD34D; }
+    .dd-rosreestr-item.warn i { color: var(--amber); }
 
     .dd-contact { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-2); }
     .dd-contact b { color: var(--text); }
@@ -475,26 +487,6 @@
       </div>
     </div>
 
-    <!-- Оценка / скоринг -->
-    <div class="score-card glass">
-      <h2><i class="fas fa-star" style="color:var(--indigo)"></i> Оценка и топ квартир</h2>
-      <div class="score-hint">
-        Настройте вес каждого критерия (0 — не учитывать) и нажмите «Собрать топ».
-        Оценка считается относительно квартир, которые сейчас в базе: например,
-        цена за м² сравнивается не с фиксированным порогом, а с остальными
-        загруженными объявлениями — самая дешёвая в подборке получит 100, самая дорогая — 0.
-      </div>
-      <div class="weights-grid" id="weights-grid"></div>
-      <div class="btn-group" style="margin-top:0;">
-        <button class="btn btn-primary" id="rank-btn" onclick="rankApartments()">
-          🏆 Собрать топ
-        </button>
-        <button class="btn btn-secondary" onclick="resetRanking()">
-          ↺ Сбросить оценку
-        </button>
-      </div>
-    </div>
-
     <!-- Бот-обходчик -->
     <div class="bot-card glass">
       <h2><i class="fas fa-robot" style="color:var(--indigo)"></i> Очередь для бота-обходчика</h2>
@@ -540,6 +532,26 @@
       </div>
     </div>
 
+    <!-- Оценка / скоринг -->
+    <div class="score-card glass">
+      <h2><i class="fas fa-star" style="color:var(--indigo)"></i> Оценка и топ квартир</h2>
+      <div class="score-hint">
+        Настройте вес каждого критерия (0 — не учитывать) и нажмите «Собрать топ».
+        Оценка считается относительно квартир, которые сейчас в базе: например,
+        цена за м² сравнивается не с фиксированным порогом, а с остальными
+        загруженными объявлениями — самая дешёвая в подборке получит 100, самая дорогая — 0.
+      </div>
+      <div class="weights-grid" id="weights-grid"></div>
+      <div class="btn-group" style="margin-top:0;">
+        <button class="btn btn-primary" id="rank-btn" onclick="rankApartments()">
+          🏆 Собрать топ
+        </button>
+        <button class="btn btn-secondary" onclick="resetRanking()">
+          ↺ Сбросить оценку
+        </button>
+      </div>
+    </div>
+
     <!-- Results -->
     <div id="results-section">
       <div class="results-header">
@@ -573,6 +585,12 @@
         <div class="map-empty-hint" id="map-empty-hint" style="display:none;">
           Ни у одной из квартир в текущей выборке нет координат — попробуйте загрузить свежий HTML со страницы Авито.
         </div>
+        <div class="map-legend" id="map-legend" style="display:none;">
+          <span><span class="dot" style="background:#10B981"></span>оценка ≥ 70</span>
+          <span><span class="dot" style="background:#F59E0B"></span>оценка 40–69</span>
+          <span><span class="dot" style="background:#F43F5E"></span>оценка &lt; 40</span>
+          <span><span class="dot" style="background:#6366F1"></span>без оценки</span>
+        </div>
       </div>
     </div>
 
@@ -605,8 +623,13 @@
     { key: "pricePerMeter",     label: "Цена за м²",         weight: 3, hint: "дешевле относительно других объявлений — выше балл" },
     { key: "metroDistance",     label: "Близость к метро",   weight: 2, hint: "меньше минут пешком — выше балл" },
     { key: "trust",             label: "Доверие",             weight: 2, hint: "проверенные документы/реквизиты, собственник" },
+    { key: "rosreestrCheck",    label: "Проверка в Росреестре", weight: 2, hint: "совпадают площадь/адрес/этаж, нет ограничений и обременений" },
     { key: "floorPosition",     label: "Этаж",                weight: 1, hint: "средние этажи лучше первого и последнего" },
     { key: "area",              label: "Площадь",             weight: 1, hint: "больше площадь — выше балл" },
+    { key: "renovationQuality", label: "Качество ремонта",    weight: 0, hint: "дизайнерский/евро — выше балл, без ремонта — ниже" },
+    { key: "ceilingHeight",     label: "Высота потолков",     weight: 0, hint: "выше потолки — выше балл" },
+    { key: "houseRating",       label: "Рейтинг дома",        weight: 0, hint: "по отзывам жильцов — выше балл" },
+    { key: "buildingAge",       label: "Возраст дома",        weight: 0, hint: "новее дом — выше балл" },
     { key: "sellerExperience",  label: "Опыт продавца",       weight: 0, hint: "число завершённых объявлений продавца" },
     { key: "freshness",         label: "Свежесть",            weight: 0, hint: "недавно опубликованные — выше балл" },
     { key: "priceTotal",        label: "Полная цена",         weight: 0, hint: "дешевле в целом — выше балл (обычно достаточно цены за м²)" },
@@ -1149,20 +1172,26 @@
       ["Общая площадь", apt.totalArea ? apt.totalArea + " м²" : null],
       ["Жилая площадь", apt.livingArea ? apt.livingArea + " м²" : null],
       ["Площадь кухни", apt.kitchenArea ? apt.kitchenArea + " м²" : null],
+      ["Высота потолков", apt.ceilingHeight ? apt.ceilingHeight + " м" : null],
       ["Этаж", (apt.floor && apt.totalFloors) ? `${apt.floor} из ${apt.totalFloors}` : (apt.floor ?? null)],
       ["Тип комнат", apt.roomsType],
       ["Санузел", apt.bathroomType],
       ["Балкон/лоджия", apt.balconyOrLoggia],
       ["Окна", apt.windowsView],
       ["Ремонт", apt.renovation],
+      ["Стоимость ремонта", apt.renovationCostEstimate],
       ["Способ продажи", apt.saleMethod],
       ["Условия продажи", apt.saleConditions],
     ].filter(([, v]) => v !== null && v !== undefined && v !== "");
 
     const houseRows = [
       ["Тип дома", apt.buildingType],
+      ["Год постройки", apt.yearBuilt],
       ["Пассажирский лифт", apt.passengerElevator],
       ["Грузовой лифт", apt.freightElevator],
+      ["В доме", apt.houseUtilities],
+      ["Двор", apt.yardFeatures],
+      ["Парковка", apt.parking],
     ].filter(([, v]) => v);
 
     const kv = rows => rows.map(([label, value]) =>
@@ -1179,6 +1208,31 @@
 
     const houseSection = (houseRows.length || houseRatingLine)
             ? `<div class="dd-section"><h4>О доме</h4>${houseRatingLine}${houseRows.length ? `<div class="dd-kv-grid">${kv(houseRows)}</div>` : ""}</div>`
+            : "";
+
+    // "Проверка в Росреестре" — список коротких утверждений от Авито.
+    // Готовых иконок с бэка нет, поэтому подсвечиваем строку жёлтым,
+    // если по ней распознано наличие ограничений/несовпадений.
+    const rosreestrItems = (() => {
+      if (!apt.rosreestrChecksJson) return [];
+      try {
+        const parsed = JSON.parse(apt.rosreestrChecksJson);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    })();
+
+    const rosreestrSection = rosreestrItems.length
+            ? `<div class="dd-section"><h4>${esc(apt.rosreestrCheckTitle || "Проверка в Росреестре")}</h4>
+           <ul class="dd-rosreestr-list">${rosreestrItems.map(text => {
+              const lower = String(text).toLowerCase();
+              const isWarning = (apt.rosreestrHasRestrictions === true && /ограничен|обременен/.test(lower))
+                      || (apt.rosreestrDataMatches === false && /совпада/.test(lower));
+              return `<li class="dd-rosreestr-item${isWarning ? " warn" : ""}"><i class="fa-solid ${isWarning ? "fa-triangle-exclamation" : "fa-circle-check"}"></i><span>${esc(text)}</span></li>`;
+            }).join("")}</ul>
+           ${apt.rosreestrCadastralNumber ? `<p class="dd-text" style="margin-top:8px;opacity:.65;font-size:11.5px;">Кадастровый номер: ${esc(apt.rosreestrCadastralNumber)}</p>` : ""}
+         </div>`
             : "";
 
     const fullAddress = apt.fullAddress || apt.address;
@@ -1232,6 +1286,7 @@
       ${apt.url ? `<a class="apt-link" href="${esc(apt.url)}" target="_blank" rel="noopener">Открыть объявление на Авито →</a>` : ""}
       ${apartmentSection}
       ${houseSection}
+      ${rosreestrSection}
       ${locationSection}
       ${descriptionSection}
       ${viewsLine}
@@ -1280,6 +1335,19 @@
   }
 
   /**
+   * Цвет маркера по оценке квартиры — та же палитра, что и у бейджа
+   * оценки на карточке (score-high/mid/low), плюс нейтральный цвет для
+   * квартир без оценки (топ ещё не собирали, либо конкретно у этой
+   * квартиры не хватает данных для расчёта).
+   */
+  function markerColor(score) {
+    if (score == null) return "#6366F1";     // нейтральный — оценки нет
+    if (score >= 70) return "#10B981";       // score-high
+    if (score >= 40) return "#F59E0B";       // score-mid
+    return "#F43F5E";                        // score-low
+  }
+
+  /**
    * Обновляет маркеры на карте по текущей выборке квартир.
    * Безопасно вызывать даже если карта ещё не создана (например,
    * сразу после загрузки страницы, пока открыт вид "Список") —
@@ -1297,11 +1365,22 @@
       const lng = apt.longitude ?? apt.lng;
       if (typeof lat !== "number" || typeof lng !== "number") continue;
 
-      L.marker([lat, lng]).bindPopup(mapPopupHTML(apt)).addTo(markersLayer);
+      const info = apartmentScores[apt.avitoId ?? apt.avito_id];
+      const score = info?.totalScore ?? null;
+
+      L.circleMarker([lat, lng], {
+        radius: 9,
+        weight: 2,
+        color: "rgba(255,255,255,0.85)",
+        fillColor: markerColor(score),
+        fillOpacity: 0.9,
+      }).bindPopup(mapPopupHTML(apt, info)).addTo(markersLayer);
+
       points.push([lat, lng]);
     }
 
     document.getElementById("map-empty-hint").style.display = points.length ? "none" : "block";
+    document.getElementById("map-legend").style.display = isRanked ? "flex" : "none";
 
     if (points.length) {
       leafletMap.fitBounds(points, { padding: [30, 30], maxZoom: 15 });
@@ -1309,7 +1388,7 @@
   }
 
   /** HTML содержимого всплывающей подсказки маркера на карте. */
-  function mapPopupHTML(apt) {
+  function mapPopupHTML(apt, scoreInfo) {
     const priceRaw = apt.priceRaw ?? apt.price_raw;
     const imageUrl = apt.imageUrl ?? apt.image_url;
 
@@ -1325,6 +1404,10 @@
             ? `<a class="map-popup-link" href="${esc(apt.url)}" target="_blank" rel="noopener">Открыть на Авито →</a>`
             : "";
 
+    const scoreLine = (scoreInfo && scoreInfo.totalScore != null)
+            ? `<div class="map-popup-score"><span class="dot" style="background:${markerColor(scoreInfo.totalScore)}"></span>Оценка: <b>${scoreInfo.totalScore.toFixed(0)}</b> · #${scoreInfo.rank}</div>`
+            : "";
+
     return `
       <div class="map-popup">
         ${img}
@@ -1332,6 +1415,7 @@
         <div class="map-popup-title">${esc(apt.title || "—")}</div>
         <div class="map-popup-address">📍 ${esc(apt.address || "Адрес не указан")}</div>
         ${apt.metro ? `<div class="map-popup-metro">🚇 ${esc(apt.metro)}</div>` : ""}
+        ${scoreLine}
         ${link}
       </div>`;
   }

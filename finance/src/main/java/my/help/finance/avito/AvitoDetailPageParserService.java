@@ -8,8 +8,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,6 +49,9 @@ public class AvitoDetailPageParserService {
 
     private static final Pattern DIGITS_DECIMAL = Pattern.compile("(\\d+(?:[.,]\\d+)?)");
     private static final Pattern DIGITS = Pattern.compile("\\d+");
+    private static final Pattern OWNERS_COUNT = Pattern.compile("\\d+\\s*собственник", Pattern.CASE_INSENSITIVE);
+    private static final Pattern LAST_OWNER_CHANGE = Pattern.compile("смена собственника", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CADASTRAL_NUMBER_JSON = Pattern.compile("\"cadastralNumber\"\\s*:\\s*\"([^\"]*)\"");
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -87,6 +92,7 @@ public class AvitoDetailPageParserService {
         parsePhoneAndContact(doc, apt);
         parseQuickFeatures(doc, apt);
         parsePhotos(doc, apt);
+        parseRosreestrCheck(doc, apt);
 
         return true;
     }
@@ -160,6 +166,8 @@ public class AvitoDetailPageParserService {
         putString(all, "Ремонт", apt::setRenovation);
         putString(all, "Способ продажи", apt::setSaleMethod);
         putString(all, "Условия продажи", apt::setSaleConditions);
+        putArea(all, "Высота потолков", apt::setCeilingHeight);
+        putString(all, "Стоимость ремонта", apt::setRenovationCostEstimate);
 
         // "Этаж" здесь дублирует заголовок ("5 из 9") — используем только
         // как подстраховку, если по какой-то причине не распарсился заголовок.
@@ -176,6 +184,14 @@ public class AvitoDetailPageParserService {
         putString(all, "Тип дома", apt::setBuildingType);
         putString(all, "Пассажирский лифт", apt::setPassengerElevator);
         putString(all, "Грузовой лифт", apt::setFreightElevator);
+        putString(all, "В доме", apt::setHouseUtilities);
+        putString(all, "Двор", apt::setYardFeatures);
+        putString(all, "Парковка", apt::setParking);
+
+        String yearBuiltRaw = all.get("Год постройки");
+        if (yearBuiltRaw != null) {
+            apt.setYearBuilt(parseIntSafe(yearBuiltRaw));
+        }
 
         String houseFloors = all.get("Этажей в доме");
         if (houseFloors != null && apt.getTotalFloors() == null) {
@@ -378,6 +394,85 @@ public class AvitoDetailPageParserService {
             apt.replaceImages(newImages);
             if (apt.getImageUrl() == null) {
                 apt.setImageUrl(newImages.get(0).getUrl());
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // "Проверка в Росреестре" (блок data-marker="domoteka-entry-block")
+    //
+    // На детальной странице это отдельный виджет: заголовок <h2> и список
+    // строк <p data-marker="TeaserData.item"> с иконкой done/attention
+    // рядом с каждой. Готовых отдельных полей под "число собственников",
+    // "дата смены собственника" и т.п. Авито не даёт — это просто текст,
+    // поэтому сохраняем весь список как есть и вдобавок пытаемся
+    // распознать несколько самых полезных фактов по ключевым словам.
+    // Кадастровый номер в саму разметку блока не попадает — он лежит
+    // только в JSON-снапшоте страницы (window.__staticRouterHydrationData),
+    // поэтому его достаём отдельной регуляркой по всему документу.
+    // ------------------------------------------------------------------
+
+    private void parseRosreestrCheck(Document doc, Apartment apt) {
+        Element block = doc.selectFirst("[data-marker=domoteka-entry-block]");
+        if (block == null) {
+            return;
+        }
+
+        Element titleEl = block.selectFirst("h2");
+        if (titleEl != null) {
+            apt.setRosreestrCheckTitle(cleanText(titleEl.text()));
+        }
+
+        Elements items = block.select("p[data-marker=TeaserData.item]");
+        if (items.isEmpty()) {
+            return;
+        }
+
+        List<String> texts = new ArrayList<>();
+        for (Element item : items) {
+            String t = cleanText(item.text());
+            if (t != null) {
+                texts.add(t);
+            }
+        }
+        if (texts.isEmpty()) {
+            return;
+        }
+
+        try {
+            apt.setRosreestrChecksJson(objectMapper.writeValueAsString(texts));
+        } catch (Exception e) {
+            log.warn("Не удалось сериализовать проверки Росреестра {}: {}", apt.getAvitoId(), e.getMessage());
+        }
+
+        for (String t : texts) {
+            String lower = t.toLowerCase();
+
+            if (OWNERS_COUNT.matcher(t).find()) {
+                apt.setRosreestrOwnersCountRaw(t);
+            }
+            if (LAST_OWNER_CHANGE.matcher(t).find()) {
+                apt.setRosreestrLastOwnerChangeRaw(t);
+            }
+
+            if (lower.contains("не найдены ограничения") || lower.contains("не найдены обременения")) {
+                apt.setRosreestrHasRestrictions(false);
+            } else if (lower.contains("ограничен") || lower.contains("обременен")) {
+                apt.setRosreestrHasRestrictions(true);
+            }
+
+            if (lower.contains("совпадают площадь") || lower.contains("совпадают адрес")) {
+                apt.setRosreestrDataMatches(true);
+            } else if (lower.contains("не совпада")) {
+                apt.setRosreestrDataMatches(false);
+            }
+        }
+
+        Matcher cadastralMatcher = CADASTRAL_NUMBER_JSON.matcher(doc.outerHtml());
+        if (cadastralMatcher.find()) {
+            String cadastral = cadastralMatcher.group(1);
+            if (cadastral != null && !cadastral.isBlank()) {
+                apt.setRosreestrCadastralNumber(cadastral);
             }
         }
     }
