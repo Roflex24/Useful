@@ -222,6 +222,159 @@ public class Apartment {
     private Integer sellerCompletedListingsCount;
 
     // ------------------------------------------------------------------
+    // Обход ботом: статус посещения детальной страницы объявления
+    // ------------------------------------------------------------------
+
+    /**
+     * true — бот уже открыл страницу объявления и распарсил её в поля ниже.
+     * Null/false — объявление ещё стоит в очереди на обход.
+     */
+    @Column(name = "detail_visited")
+    private Boolean detailVisited;
+
+    /** Когда бот последний раз успешно распарсил страницу объявления. */
+    @Column(name = "detail_visited_at")
+    private LocalDateTime detailVisitedAt;
+
+    /**
+     * Устарело: раньше сюда писался путь к сохранённому HTML-файлу.
+     * Текущая версия бота файлы не создаёт (копирует исходник через буфер
+     * обмена и сразу парсит в поля ниже), но колонка оставлена — она может
+     * пригодиться, если когда-нибудь снова понадобится сохранять сырой HTML.
+     */
+    @Column(name = "detail_file_path", length = 1024)
+    private String detailFilePath;
+
+    /** Сколько раз бот пытался открыть страницу (для диагностики зависших/сбойных попыток). */
+    @Column(name = "detail_visit_attempts")
+    @Builder.Default
+    private Integer detailVisitAttempts = 0;
+
+    // ------------------------------------------------------------------
+    // Данные со страницы САМОГО объявления (не из выдачи поиска) —
+    // заполняются AvitoDetailPageParserService после обхода ботом.
+    // Раздел "О квартире" на детальной странице.
+    // ------------------------------------------------------------------
+
+    /** "Площадь кухни" в м² */
+    @Column(name = "kitchen_area")
+    private Double kitchenArea;
+
+    /** "Жилая площадь" в м² */
+    @Column(name = "living_area")
+    private Double livingArea;
+
+    /** "Балкон или лоджия": "балкон, лоджия" */
+    @Column(name = "balcony_or_loggia", length = 255)
+    private String balconyOrLoggia;
+
+    /** "Тип комнат": "изолированные, смежные" */
+    @Column(name = "rooms_type", length = 255)
+    private String roomsType;
+
+    /** "Санузел": "раздельный" / "совмещённый" */
+    @Column(name = "bathroom_type", length = 255)
+    private String bathroomType;
+
+    /** "Окна": "во двор" / "на улицу" / "во двор и на улицу" */
+    @Column(name = "windows_view", length = 255)
+    private String windowsView;
+
+    /** "Ремонт": "косметический" / "требует ремонта" / "евро" и т.д. */
+    @Column(length = 255)
+    private String renovation;
+
+    /** "Способ продажи": "свободная" / "альтернативная" */
+    @Column(name = "sale_method", length = 255)
+    private String saleMethod;
+
+    /** "Условия продажи": "возможна ипотека" и т.п. */
+    @Column(name = "sale_conditions", length = 255)
+    private String saleConditions;
+
+    // ------------------------------------------------------------------
+    // Раздел "О доме" на детальной странице
+    // ------------------------------------------------------------------
+
+    /** "Тип дома": "панельный" / "кирпичный" / "монолитный" и т.д. */
+    @Column(name = "building_type", length = 255)
+    private String buildingType;
+
+    /** "Пассажирский лифт": обычно количество ("1", "2") или "нет" */
+    @Column(name = "passenger_elevator", length = 64)
+    private String passengerElevator;
+
+    /** "Грузовой лифт": количество или "нет" */
+    @Column(name = "freight_elevator", length = 64)
+    private String freightElevator;
+
+    /** Рейтинг дома (например 4.5), если Авито его показывает */
+    @Column(name = "house_rating")
+    private Double houseRating;
+
+    /** Число отзывов о доме */
+    @Column(name = "house_reviews_count")
+    private Integer houseReviewsCount;
+
+    /** Ссылка на карточку дома в каталоге ("Узнать больше о доме") */
+    @Column(name = "house_catalog_url", length = 1024)
+    private String houseCatalogUrl;
+
+    // ------------------------------------------------------------------
+    // Адрес, координаты, просмотры, контакт — с детальной страницы
+    // ------------------------------------------------------------------
+
+    /** Полный адрес одной строкой: "Нижегородская обл., Нижний Новгород, ул. Буревестника, 16" */
+    @Column(name = "full_address", length = 512)
+    private String fullAddress;
+
+    /**
+     * Весь блок "Расположение" как есть (адрес + станции метро + время
+     * пешком) — на случай, если структурированного metro-парсинга
+     * недостаточно. Сырой текст, без разметки.
+     */
+    @Column(name = "location_section_raw", columnDefinition = "TEXT")
+    private String locationSectionRaw;
+
+    /** Полное описание с детальной страницы (описание из выдачи поиска Авито обрезает) */
+    @Column(name = "description_full_detail", columnDefinition = "TEXT")
+    private String descriptionFullDetail;
+
+    /** Имя контактного лица (риелтора/собственника), если удалось распознать */
+    @Column(name = "contact_person_name", length = 255)
+    private String contactPersonName;
+
+    /** Замаскированный телефон вида "8 958 XXX-XX-XX" (полный номер недоступен без клика "Показать телефон") */
+    @Column(name = "phone_masked", length = 64)
+    private String phoneMasked;
+
+    /** Сколько раз объявление посмотрели всего */
+    @Column(name = "total_views")
+    private Integer totalViews;
+
+    /** Сколько раз посмотрели сегодня */
+    @Column(name = "today_views")
+    private Integer todayViews;
+
+    /** Дата/время публикации как показано на детальной странице: "3 июля в 10:09" */
+    @Column(name = "detail_published_raw", length = 128)
+    private String detailPublishedRaw;
+
+    /** Быстрые особенности-чипсы объявления через запятую: "Изолир. комнаты, Окна во двор, Раздельный с/у" */
+    @Column(name = "quick_features", length = 512)
+    private String quickFeatures;
+
+    /**
+     * ВСЕ пары ключ-значение из разделов "О квартире" и "О доме" одним
+     * JSON-объектом ({"Количество комнат":"3","Общая площадь":"63 м²",...}).
+     * Дедуцированные поля выше — это удобные колонки для частых запросов,
+     * а здесь — полный сырой набор на случай, если Авито добавит что-то
+     * новое, что ещё не вынесено в отдельную колонку.
+     */
+    @Column(name = "detail_params_json", columnDefinition = "TEXT")
+    private String detailParamsJson;
+
+    // ------------------------------------------------------------------
     // Служебные поля
     // ------------------------------------------------------------------
 

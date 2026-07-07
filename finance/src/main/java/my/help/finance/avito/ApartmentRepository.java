@@ -2,6 +2,7 @@ package my.help.finance.avito;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -31,4 +32,24 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Long> {
     @Override
     @EntityGraph(attributePaths = {"images", "badges"})
     List<Apartment> findAll();
+
+    /**
+     * Очередь для бота-обходчика: объявления с известной ссылкой,
+     * страницу которых ещё не скачали (detail_visited не true).
+     * Сортировка по id — бот идёт по объявлениям в порядке загрузки,
+     * это стабильно и предсказуемо между запусками.
+     *
+     * @EntityGraph здесь обязателен: бот работает в фоновом потоке без
+     * HTTP-запроса (никакого Open-Session-In-View), поэтому Hibernate-сессия
+     * закрывается сразу же после этого запроса. Пока бот проходит между
+     * объявлениями (секунды-минуты паузы), сущности уже detached — если
+     * images не подгружены заранее, попытка их прочитать/заменить в
+     * AvitoDetailPageParserService (parsePhotos -> replaceImages) упадёт с
+     * LazyInitializationException "no session".
+     */
+    @EntityGraph(attributePaths = {"images", "badges"})
+    @Query("select a from Apartment a " +
+            "where a.url is not null and (a.detailVisited is null or a.detailVisited = false) " +
+            "order by a.id asc")
+    List<Apartment> findQueueForBot();
 }

@@ -228,8 +228,17 @@
     }
     .weight-item .w-desc { font-size: 11px; color: var(--text-3); margin-top: 4px; }
 
-    /* ── Бейдж оценки на карточке ── */
+    /* ── Индикатор полноты данных (обошёл ли бот объявление) ── */
     .apt-card { position: relative; }
+    .apt-status-dot {
+      position: absolute; top: 10px; left: 10px; z-index: 2; width: 12px; height: 12px;
+      border-radius: 50%; cursor: help; box-shadow: 0 0 0 2px rgba(6,12,26,0.55), 0 0 8px currentColor;
+    }
+    .apt-status-dot.visited   { background: var(--emerald); color: var(--emerald); }
+    .apt-status-dot.pending   { background: var(--rose); color: var(--rose); animation: dot-pulse 1.8s ease-in-out infinite; }
+    @keyframes dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+    /* ── Бейдж оценки на карточке ── */
     .apt-score {
       position: absolute; top: 10px; right: 10px; z-index: 2; min-width: 40px; height: 40px; padding: 0 8px;
       border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 2px;
@@ -279,6 +288,110 @@
     .map-popup-link:hover { text-decoration: underline; }
     .apt-link { font-size: 12px; color: #A5B4FC; text-decoration: none; font-weight: 600; }
     .apt-link:hover { text-decoration: underline; }
+
+    /* ── Бот-обходчик ─────────────────────────────────────────── */
+    .bot-card { padding: 26px 28px; border-radius: var(--radius-lg); margin-bottom: 24px; }
+    .bot-card h2 {
+      font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--text);
+      display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+    }
+    .bot-hint { font-size: 12.5px; color: var(--text-3); margin-bottom: 16px; line-height: 1.5; }
+    .bot-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .bot-stat {
+      display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 8px 14px; font-size: 13px; color: var(--text-2);
+    }
+    .bot-stat b { font-family: var(--font-num); color: var(--text); font-size: 15px; }
+    .bot-queue-wrap { max-height: 320px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    table.bot-queue { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    table.bot-queue thead th {
+      position: sticky; top: 0; background: var(--bg2); text-align: left; padding: 9px 12px;
+      color: var(--text-3); font-weight: 600; border-bottom: 1px solid var(--border);
+    }
+    table.bot-queue tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text-2); vertical-align: middle; }
+    table.bot-queue tbody tr:last-child td { border-bottom: none; }
+    table.bot-queue tbody tr:hover { background: var(--surface-hover); }
+    table.bot-queue .bq-url { max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+    table.bot-queue .bq-attempts { font-family: var(--font-num); }
+    table.bot-queue .bq-attempts.warn { color: var(--amber); }
+    .bot-empty { text-align: center; padding: 24px; color: var(--text-3); font-size: 13px; }
+
+    /* ── Панель "Подробнее" ───────────────────────────────────── */
+    .detail-overlay {
+      position: fixed; inset: 0; z-index: 200; background: rgba(3,6,16,0.6);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      opacity: 0; pointer-events: none; transition: opacity .25s ease;
+    }
+    .detail-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .detail-drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 92vw);
+      background: var(--bg2); border-left: 1px solid var(--border);
+      box-shadow: -20px 0 60px rgba(0,0,0,0.45);
+      transform: translateX(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+      overflow-y: auto; z-index: 201;
+    }
+    .detail-overlay.open .detail-drawer { transform: translateX(0); }
+
+    .detail-close {
+      position: sticky; top: 16px; float: right; margin-right: 16px;
+      width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text-2); font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; z-index: 5; transition: all .2s;
+    }
+    .detail-close:hover { background: var(--surface-hover); color: var(--text); border-color: var(--border-lit); }
+
+    .detail-drawer-content { padding: 24px 26px 60px; clear: both; }
+    .detail-drawer-content .dd-loading { text-align: center; padding: 60px 0; color: var(--text-3); }
+
+    .dd-gallery { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 18px; border-radius: var(--radius); }
+    .dd-gallery img { width: 140px; height: 105px; object-fit: cover; border-radius: var(--radius-sm); flex-shrink: 0; border: 1px solid var(--border); }
+
+    .dd-price { font-family: var(--font-num); font-size: 1.6rem; font-weight: 700; color: var(--text); }
+    .dd-price-per-meter { font-size: 12.5px; color: var(--text-3); margin-top: 2px; }
+    .dd-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; color: var(--text); margin: 10px 0 4px; }
+    .dd-address { font-size: 13px; color: var(--text-2); margin-bottom: 4px; }
+    .dd-metro { font-size: 12.5px; color: var(--sky); margin-bottom: 14px; }
+
+    .dd-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .dd-badge {
+      font-size: 11.5px; padding: 4px 10px; border-radius: 999px; background: var(--indigo-soft);
+      color: #C7D2FE; border: 1px solid rgba(99,102,241,0.3);
+    }
+    .dd-badge.warn { background: var(--amber-soft); color: #FCD34D; border-color: rgba(245,158,11,0.3); }
+
+    .dd-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .dd-section h4 {
+      font-family: var(--font-display); font-size: 0.82rem; font-weight: 700; color: var(--text-2);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;
+    }
+    .dd-section p.dd-text { font-size: 13.5px; line-height: 1.6; color: var(--text-2); white-space: pre-line; }
+
+    .dd-kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+    .dd-kv { font-size: 12.5px; display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+    .dd-kv .dd-kv-label { color: var(--text-3); }
+    .dd-kv .dd-kv-value { color: var(--text); font-family: var(--font-num); text-align: right; }
+
+    .dd-house-rating { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
+    .dd-house-rating b { color: #FCD34D; font-family: var(--font-num); }
+
+    .dd-contact { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-2); }
+    .dd-contact b { color: var(--text); }
+
+    .dd-not-visited {
+      background: var(--amber-soft); border: 1px solid rgba(245,158,11,0.3); color: #FCD34D;
+      border-radius: var(--radius-sm); padding: 12px 14px; font-size: 12.5px; margin-bottom: 16px; line-height: 1.5;
+    }
+
+    .dd-raw-json {
+      font-family: var(--font-num); font-size: 11px; color: var(--text-3); background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; max-height: 220px;
+      overflow: auto; white-space: pre-wrap; word-break: break-word;
+    }
+    .dd-toggle-raw {
+      background: none; border: none; color: var(--sky); font-size: 12px; cursor: pointer; padding: 0;
+      margin-bottom: 8px; text-decoration: underline;
+    }
 
     /* ── Empty / skeleton ── */
     .empty { text-align: center; padding: 60px 20px; color: var(--text-3); font-size: 15px; }
@@ -382,6 +495,51 @@
       </div>
     </div>
 
+    <!-- Бот-обходчик -->
+    <div class="bot-card glass">
+      <h2><i class="fas fa-robot" style="color:var(--indigo)"></i> Очередь для бота-обходчика</h2>
+      <div class="bot-hint">
+        Здесь — данные для локального Java-бота (<code>AvitoVisitorBot</code>), который открывает
+        объявления в настоящем браузере и сохраняет их полные HTML-страницы на диск.
+        Бот сам читает эти данные через <code>GET /api/apartments/bot/queue</code>;
+        таблица ниже — то же самое, но для человека, чтобы видеть прогресс обхода.
+      </div>
+
+      <div class="bot-stats">
+        <div class="bot-stat">🕓 В очереди: <b id="bot-stat-pending">–</b></div>
+        <div class="bot-stat">✅ Уже скачано: <b id="bot-stat-visited">–</b></div>
+        <div class="bot-stat">📦 Всего объявлений: <b id="bot-stat-total">–</b></div>
+      </div>
+
+      <div class="btn-group" style="margin-top:0; margin-bottom:8px;">
+        <button class="btn btn-primary" id="bot-start-btn" onclick="startBot()">
+          ▶️ Запустить бота
+        </button>
+        <button class="btn btn-danger" id="bot-stop-btn" onclick="stopBot()" disabled>
+          ⏹ Остановить
+        </button>
+        <button class="btn btn-secondary" onclick="loadBotQueue()">
+          ↻ Обновить очередь
+        </button>
+      </div>
+      <div class="bot-hint" id="bot-status-line" style="margin-bottom:16px;">Бот не запущен.</div>
+
+      <div class="bot-queue-wrap">
+        <table class="bot-queue" id="bot-queue-table">
+          <thead>
+          <tr>
+            <th>Avito ID</th>
+            <th>Ссылка</th>
+            <th>Попыток</th>
+          </tr>
+          </thead>
+          <tbody id="bot-queue-body">
+          <tr><td colspan="3" class="bot-empty">Загрузка…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Results -->
     <div id="results-section">
       <div class="results-header">
@@ -420,6 +578,14 @@
 
   </main>
 
+</div>
+
+<!-- Панель "Подробнее" -->
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetailDrawer(event)">
+  <aside class="detail-drawer" id="detail-drawer" onclick="event.stopPropagation()">
+    <button class="detail-close" onclick="closeDetailDrawer()" aria-label="Закрыть">✕</button>
+    <div class="detail-drawer-content" id="detail-drawer-content"><!-- рендерится в JS --></div>
+  </aside>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -517,6 +683,7 @@
         hideStatus();
       }
       renderCards(allApartments);
+      updateBotStatsFromApartments(allApartments);
     } catch (err) {
       setStatus("error", `❌ Не удалось загрузить данные: ${err.message}`);
     }
@@ -562,6 +729,7 @@
       selectedFiles = [];
       renderFileList();
       await loadAllApartments();
+      await loadBotQueue();
 
     } catch (err) {
       setStatus("error", `❌ Ошибка: ${err.message}`);
@@ -592,12 +760,149 @@
       isRanked = false;
       document.getElementById("sort-hint").classList.remove("show");
       renderCards(allApartments);
+      updateBotStatsFromApartments(allApartments);
+      await loadBotQueue();
       setStatus("success", "✅ База очищена");
     } catch (err) {
       setStatus("error", `❌ Не удалось очистить базу: ${err.message}`);
     } finally {
       clearBtn.disabled = false;
     }
+  }
+
+  // ── Управление ботом (старт/стоп/статус) ─────────────────────────────────
+  let botPollTimer = null;
+
+  /** Запускает бота на backend'е (реальный Robot начнёт двигать мышь/клавиатуру). */
+  async function startBot() {
+    document.getElementById("bot-start-btn").disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments/bot/start`, { method: "POST" });
+      const status = await res.json();
+      renderBotStatus(status);
+      if (status.status === "RUNNING") ensureBotPolling();
+    } catch (err) {
+      alert("Не удалось запустить бота: " + err.message);
+      document.getElementById("bot-start-btn").disabled = false;
+    }
+  }
+
+  /** Просит бота остановиться после текущего объявления. */
+  async function stopBot() {
+    document.getElementById("bot-stop-btn").disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments/bot/stop`, { method: "POST" });
+      renderBotStatus(await res.json());
+    } catch (err) {
+      alert("Не удалось остановить бота: " + err.message);
+    }
+  }
+
+  /** Опрашивает /bot/status раз в 2 секунды, пока бот работает. */
+  async function pollBotStatus() {
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments/bot/status`);
+      if (!res.ok) return;
+      const status = await res.json();
+      renderBotStatus(status);
+
+      if (status.status === "IDLE") {
+        stopBotPolling();
+        // Бот закончил (или упал) — подтягиваем свежие данные и очередь
+        await loadAllApartments();
+        await loadBotQueue();
+      }
+    } catch (err) {
+      // сетевые сбои при поллинге не показываем пользователю — просто попробуем ещё раз
+    }
+  }
+
+  function ensureBotPolling() {
+    if (botPollTimer) return;
+    botPollTimer = setInterval(pollBotStatus, 2000);
+  }
+
+  function stopBotPolling() {
+    if (botPollTimer) {
+      clearInterval(botPollTimer);
+      botPollTimer = null;
+    }
+  }
+
+  /** Отрисовывает статус бота: кнопки + текстовая строка прогресса/ошибки. */
+  function renderBotStatus(status) {
+    const running = status.status === "RUNNING" || status.status === "STOPPING";
+    document.getElementById("bot-start-btn").disabled = running;
+    document.getElementById("bot-stop-btn").disabled = !running;
+
+    const line = document.getElementById("bot-status-line");
+    if (status.status === "RUNNING" || status.status === "STOPPING") {
+      const label = status.status === "STOPPING" ? "останавливается…" : "работает";
+      const current = status.currentAvitoId ? ` — сейчас открыто: ${esc(status.currentAvitoId)}` : "";
+      line.textContent = `🤖 Бот ${label}: ${status.processed}/${status.total}${current}`;
+    } else if (status.lastError) {
+      line.textContent = `⚠️ ${status.lastError}`;
+    } else {
+      line.textContent = "Бот не запущен.";
+    }
+  }
+
+  /** При открытии страницы проверяем — вдруг бот уже был запущен раньше (например, из другой вкладки). */
+  async function initBotStatus() {
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments/bot/status`);
+      if (!res.ok) return;
+      const status = await res.json();
+      renderBotStatus(status);
+      if (status.status !== "IDLE") ensureBotPolling();
+    } catch (err) {
+      // бэкенд может быть ещё не поднят в момент открытия страницы — не страшно
+    }
+  }
+
+  // ── Очередь бота-обходчика ───────────────────────────────────────────────
+  /**
+   * Тянет /api/apartments/bot/queue — список объявлений, чьи страницы бот
+   * ещё не скачал — и рисует таблицу. Именно этот эндпоинт использует сам
+   * Java-бот (AvitoVisitorBot); здесь та же выборка просто для наблюдения.
+   */
+  async function loadBotQueue() {
+    const tbody = document.getElementById("bot-queue-body");
+    tbody.innerHTML = `<tr><td colspan="3" class="bot-empty">Загрузка…</td></tr>`;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments/bot/queue`);
+      if (!res.ok) throw new Error(res.statusText);
+      const queue = await res.json();
+
+      document.getElementById("bot-stat-pending").textContent = queue.length;
+
+      if (queue.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="bot-empty">Очередь пуста — все объявления уже обойдены 🎉</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = queue.map(item => {
+        const attempts = item.previousAttempts ?? 0;
+        const attemptsClass = attempts > 0 ? "bq-attempts warn" : "bq-attempts";
+        return `
+          <tr>
+            <td>${esc(item.avitoId)}</td>
+            <td><a class="apt-link bq-url" href="${esc(item.url)}" target="_blank" rel="noopener">${esc(item.url)}</a></td>
+            <td class="${attemptsClass}">${attempts}</td>
+          </tr>`;
+      }).join("");
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="3" class="bot-empty">❌ Не удалось загрузить очередь: ${esc(err.message)}</td></tr>`;
+    }
+  }
+
+  /** Считает "всего / скачано" по уже загруженному списку квартир (без лишнего запроса к бэкенду). */
+  function updateBotStatsFromApartments(apartments) {
+    const total = apartments.length;
+    const visited = apartments.filter(a => a.detailVisited === true).length;
+    document.getElementById("bot-stat-total").textContent = total;
+    document.getElementById("bot-stat-visited").textContent = visited;
   }
 
   // ── Status helpers ────────────────────────────────────────────────────────
@@ -755,8 +1060,13 @@
     const imgPh = `<div class="apt-img-placeholder" style="${imageUrl ? 'display:none' : ''}">🏢</div>`;
     const link  = apt.url ? `<a class="apt-link" href="${esc(apt.url)}" target="_blank" rel="noopener">Открыть →</a>` : "";
 
+    const statusDot = apt.detailVisited
+            ? `<div class="apt-status-dot visited" title="Полная информация собрана"></div>`
+            : `<div class="apt-status-dot pending" title="Бот ещё не обошёл объявление — данные неполные"></div>`;
+
     return `
       <div class="apt-card">
+        ${statusDot}
         ${scoreBadgeHTML(apt)}
         ${img}${imgPh}
         <div class="apt-body">
@@ -767,7 +1077,7 @@
           ${apt.description ? `<div class="apt-desc">${esc(apt.description)}</div>` : ""}
         </div>
         <div class="apt-footer">
-          <span class="apt-id">ID: ${esc(avitoId)}</span>
+          <span class="apt-id">ID: ${esc(avitoId)} · <button class="apt-link" style="background:none;border:none;cursor:pointer;font:inherit;padding:0;" onclick="openDetailDrawer('${esc(avitoId)}')">Подробнее</button></span>
           ${link}
         </div>
       </div>`;
@@ -784,6 +1094,160 @@
               .some(f => f && f.toLowerCase().includes(q));
     });
     renderCards(filtered);
+  }
+
+  // ── Панель "Подробнее" ────────────────────────────────────────────────────
+
+  /** Открывает панель и рендерит всё, что известно об объявлении (apt уже есть в allApartments). */
+  function openDetailDrawer(avitoId) {
+    const apt = allApartments.find(a => (a.avitoId ?? a.avito_id) === avitoId);
+    const overlay = document.getElementById("detail-overlay");
+    const content = document.getElementById("detail-drawer-content");
+
+    if (!apt) {
+      content.innerHTML = `<div class="dd-loading">Объявление не найдено в текущей выборке</div>`;
+    } else {
+      content.innerHTML = detailDrawerHTML(apt);
+    }
+
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeDetailDrawer(evt) {
+    // Клик по самой карточке (не по фону-оверлею) не должен закрывать панель —
+    // но мы вызываем stopPropagation() на drawer, так что сюда попадает
+    // либо клик по фону, либо явный вызов кнопкой закрытия (evt === undefined).
+    document.getElementById("detail-overlay").classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  /** Собирает полное содержимое панели по объявлению — использует все поля детальной страницы, если они есть. */
+  function detailDrawerHTML(apt) {
+    const price = apt.price ? apt.price.toLocaleString("ru-RU") + " ₽" : (apt.priceRaw || "Цена не указана");
+    const images = (apt.images || []).slice().sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
+    const gallery = images.length
+            ? `<div class="dd-gallery">${images.map(im => `<img src="${esc(im.url)}" loading="lazy" alt="">`).join("")}</div>`
+            : (apt.imageUrl ? `<div class="dd-gallery"><img src="${esc(apt.imageUrl)}" loading="lazy" alt=""></div>` : "");
+
+    const notVisitedNotice = !apt.detailVisited
+            ? `<div class="dd-not-visited">🤖 Бот ещё не обходил это объявление — показаны только данные со страницы поиска. Расширенные характеристики, полное описание и фото появятся после обхода.</div>`
+            : "";
+
+    const quickChips = apt.quickFeatures
+            ? `<div class="dd-badges">${apt.quickFeatures.split(",").map(f => `<span class="dd-badge">${esc(f.trim())}</span>`).join("")}</div>`
+            : "";
+
+    const badgesFromList = (apt.badges || []).length
+            ? `<div class="dd-badges">${apt.badges.map(b => `<span class="dd-badge${b.type === 'SELLER' ? ' warn' : ''}">${esc(b.label ?? "")}</span>`).join("")}</div>`
+            : "";
+
+    // "О квартире" — сначала выделенные колонки, к ним же можно добавить общий JSON-фолбэк
+    const apartmentRows = [
+      ["Комнат", apt.rooms ?? (apt.studio ? "Студия" : null)],
+      ["Общая площадь", apt.totalArea ? apt.totalArea + " м²" : null],
+      ["Жилая площадь", apt.livingArea ? apt.livingArea + " м²" : null],
+      ["Площадь кухни", apt.kitchenArea ? apt.kitchenArea + " м²" : null],
+      ["Этаж", (apt.floor && apt.totalFloors) ? `${apt.floor} из ${apt.totalFloors}` : (apt.floor ?? null)],
+      ["Тип комнат", apt.roomsType],
+      ["Санузел", apt.bathroomType],
+      ["Балкон/лоджия", apt.balconyOrLoggia],
+      ["Окна", apt.windowsView],
+      ["Ремонт", apt.renovation],
+      ["Способ продажи", apt.saleMethod],
+      ["Условия продажи", apt.saleConditions],
+    ].filter(([, v]) => v !== null && v !== undefined && v !== "");
+
+    const houseRows = [
+      ["Тип дома", apt.buildingType],
+      ["Пассажирский лифт", apt.passengerElevator],
+      ["Грузовой лифт", apt.freightElevator],
+    ].filter(([, v]) => v);
+
+    const kv = rows => rows.map(([label, value]) =>
+            `<div class="dd-kv"><span class="dd-kv-label">${esc(label)}</span><span class="dd-kv-value">${esc(String(value))}</span></div>`
+    ).join("");
+
+    const apartmentSection = apartmentRows.length
+            ? `<div class="dd-section"><h4>О квартире</h4><div class="dd-kv-grid">${kv(apartmentRows)}</div></div>`
+            : "";
+
+    const houseRatingLine = (apt.houseRating || apt.houseReviewsCount)
+            ? `<div class="dd-house-rating">🏠 ${apt.houseRating ? `<b>${apt.houseRating}</b>` : ""}${apt.houseReviewsCount ? ` · ${apt.houseReviewsCount} отзывов` : ""}${apt.houseCatalogUrl ? ` · <a class="apt-link" href="${esc(apt.houseCatalogUrl)}" target="_blank" rel="noopener">карточка дома</a>` : ""}</div>`
+            : "";
+
+    const houseSection = (houseRows.length || houseRatingLine)
+            ? `<div class="dd-section"><h4>О доме</h4>${houseRatingLine}${houseRows.length ? `<div class="dd-kv-grid">${kv(houseRows)}</div>` : ""}</div>`
+            : "";
+
+    const fullAddress = apt.fullAddress || apt.address;
+    const locationSection = (fullAddress || apt.locationSectionRaw)
+            ? `<div class="dd-section"><h4>Расположение</h4>
+           ${fullAddress ? `<p class="dd-text">📍 ${esc(fullAddress)}</p>` : ""}
+           ${(apt.latitude && apt.longitude) ? `<p class="dd-text" style="opacity:.6;font-size:11.5px;">${apt.latitude.toFixed(6)}, ${apt.longitude.toFixed(6)}</p>` : ""}
+         </div>`
+            : "";
+
+    const descriptionText = apt.descriptionFullDetail || apt.description;
+    const descriptionSection = descriptionText
+            ? `<div class="dd-section"><h4>Описание</h4><p class="dd-text">${esc(descriptionText)}</p></div>`
+            : "";
+
+    const viewsLine = (apt.totalViews || apt.todayViews || apt.detailPublishedRaw)
+            ? `<div class="dd-section"><h4>Активность</h4><p class="dd-text">
+           ${apt.totalViews ? `👁 всего просмотров: ${apt.totalViews}` : ""}
+           ${apt.todayViews ? ` · сегодня: +${apt.todayViews}` : ""}
+           ${apt.detailPublishedRaw ? `<br>🗓 опубликовано: ${esc(apt.detailPublishedRaw)}` : ""}
+         </p></div>`
+            : "";
+
+    const contactSection = (apt.sellerName || apt.contactPersonName || apt.phoneMasked)
+            ? `<div class="dd-section"><h4>Контакт</h4><div class="dd-contact">
+           ${apt.sellerName ? `<div>🏢 <b>${esc(apt.sellerName)}</b></div>` : ""}
+           ${apt.contactPersonName ? `<div>👤 ${esc(apt.contactPersonName)}</div>` : ""}
+           ${apt.phoneMasked ? `<div>📞 ${esc(apt.phoneMasked)} <span style="opacity:.6">(полный номер открывается только по клику на Авито)</span></div>` : ""}
+           ${apt.sellerProfileUrl ? `<div><a class="apt-link" href="${esc(apt.sellerProfileUrl)}" target="_blank" rel="noopener">Профиль продавца →</a></div>` : ""}
+         </div></div>`
+            : "";
+
+    const rawJsonId = "dd-raw-" + (apt.avitoId ?? apt.avito_id);
+    const rawJsonSection = apt.detailParamsJson
+            ? `<div class="dd-section">
+           <button class="dd-toggle-raw" onclick="document.getElementById('${rawJsonId}').style.display = document.getElementById('${rawJsonId}').style.display === 'none' ? 'block' : 'none'">Показать все характеристики (сырые данные)</button>
+           <pre class="dd-raw-json" id="${rawJsonId}" style="display:none">${esc(formatParamsJson(apt.detailParamsJson))}</pre>
+         </div>`
+            : "";
+
+    return `
+      ${gallery}
+      ${notVisitedNotice}
+      <div class="dd-price">${esc(price)}</div>
+      ${apt.pricePerMeter ? `<div class="dd-price-per-meter">${apt.pricePerMeter.toLocaleString("ru-RU")} ₽ за м²</div>` : ""}
+      <div class="dd-title">${esc(apt.title || "—")}</div>
+      <div class="dd-address">📍 ${esc(apt.address || "Адрес не указан")}</div>
+      ${apt.metro ? `<div class="dd-metro">🚇 ${esc(apt.metro)}</div>` : ""}
+      ${quickChips}
+      ${badgesFromList}
+      ${apt.url ? `<a class="apt-link" href="${esc(apt.url)}" target="_blank" rel="noopener">Открыть объявление на Авито →</a>` : ""}
+      ${apartmentSection}
+      ${houseSection}
+      ${locationSection}
+      ${descriptionSection}
+      ${viewsLine}
+      ${contactSection}
+      ${rawJsonSection}
+    `;
+  }
+
+  /** detailParamsJson хранится как JSON-строка — красиво печатаем построчно "ключ: значение". */
+  function formatParamsJson(jsonStr) {
+    try {
+      const obj = JSON.parse(jsonStr);
+      return Object.entries(obj).map(([k, v]) => `${k}: ${v}`).join("\n");
+    } catch (e) {
+      return jsonStr;
+    }
   }
 
   // ── Escape helper ─────────────────────────────────────────────────────────
@@ -895,9 +1359,15 @@
     setTimeout(() => leafletMap.invalidateSize(), 0);
   }
 
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDetailDrawer();
+  });
+
   // ── Старт ─────────────────────────────────────────────────────────────────
   renderWeightSliders();
   loadAllApartments();
+  loadBotQueue();
+  initBotStatus();
 </script>
 
 </body>
