@@ -111,6 +111,25 @@ public class AvitoParserService {
         repository.deleteAllInBatch();
     }
 
+    /**
+     * Удаляет одну квартиру по её avitoId (вместе с фото и бейджами).
+     * В отличие от deleteAllApartments(), здесь используется обычный
+     * repository.delete() через EntityManager — он корректно каскадирует
+     * удаление images/badges (CascadeType.ALL + orphanRemoval на Apartment),
+     * так что отдельно чистить дочерние таблицы не нужно.
+     *
+     * @return true, если квартира была найдена и удалена; false, если её не было
+     */
+    @Transactional
+    public boolean deleteApartmentByAvitoId(String avitoId) {
+        return repository.findByAvitoId(avitoId)
+                .map(apt -> {
+                    repository.delete(apt);
+                    return true;
+                })
+                .orElse(false);
+    }
+
     // ------------------------------------------------------------------
     // Парсинг страницы
     // ------------------------------------------------------------------

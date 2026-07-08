@@ -199,8 +199,13 @@
       display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
     }
 
-    .apt-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .apt-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .apt-id { font-size: 11px; color: var(--text-3); }
+    .apt-delete-btn {
+      border: none; background: none; color: var(--text-3); cursor: pointer; font-size: 14px;
+      line-height: 1; padding: 4px 6px; border-radius: 6px; flex-shrink: 0; transition: all .15s;
+    }
+    .apt-delete-btn:hover { background: var(--rose-soft); color: var(--rose); }
 
     /* ── Оценка / скоринг ─────────────────────────────────────── */
     .score-card { padding: 22px 26px; border-radius: var(--radius-lg); margin-bottom: 24px; }
@@ -346,6 +351,14 @@
       display: flex; align-items: center; justify-content: center; z-index: 5; transition: all .2s;
     }
     .detail-close:hover { background: var(--surface-hover); color: var(--text); border-color: var(--border-lit); }
+
+    .detail-delete {
+      position: sticky; top: 16px; float: right; margin-right: 8px;
+      height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--rose); font-size: 12.5px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; z-index: 5; transition: all .2s;
+    }
+    .detail-delete:hover { background: var(--rose-soft); border-color: var(--rose); }
 
     .detail-drawer-content { padding: 24px 26px 60px; clear: both; }
     .detail-drawer-content .dd-loading { text-align: center; padding: 60px 0; color: var(--text-3); }
@@ -602,6 +615,7 @@
 <div class="detail-overlay" id="detail-overlay" onclick="closeDetailDrawer(event)">
   <aside class="detail-drawer" id="detail-drawer" onclick="event.stopPropagation()">
     <button class="detail-close" onclick="closeDetailDrawer()" aria-label="Закрыть">✕</button>
+    <button class="detail-delete" id="detail-delete-btn" onclick="deleteApartment(currentDetailAvitoId)" aria-label="Удалить квартиру" title="Удалить квартиру">🗑 Удалить</button>
     <div class="detail-drawer-content" id="detail-drawer-content"><!-- рендерится в JS --></div>
   </aside>
 </div>
@@ -615,6 +629,7 @@
   // ── Состояние ─────────────────────────────────────────────────────────────
   let allApartments = [];
   let selectedFiles = [];   // массив File — можно накопить несколько .html/.htm
+  let currentDetailAvitoId = null;   // avitoId квартиры, открытой в панели "Подробнее"
 
   // ── Оценка / скоринг ─────────────────────────────────────────────────────
   // Ключи должны совпадать с ScoringCriterion.getKey() на бэкенде.
@@ -1102,6 +1117,7 @@
         <div class="apt-footer">
           <span class="apt-id">ID: ${esc(avitoId)} · <button class="apt-link" style="background:none;border:none;cursor:pointer;font:inherit;padding:0;" onclick="openDetailDrawer('${esc(avitoId)}')">Подробнее</button></span>
           ${link}
+          <button class="apt-delete-btn" title="Удалить квартиру" onclick="event.stopPropagation(); deleteApartment('${esc(avitoId)}')">🗑</button>
         </div>
       </div>`;
   }
@@ -1127,6 +1143,8 @@
     const overlay = document.getElementById("detail-overlay");
     const content = document.getElementById("detail-drawer-content");
 
+    currentDetailAvitoId = avitoId;
+
     if (!apt) {
       content.innerHTML = `<div class="dd-loading">Объявление не найдено в текущей выборке</div>`;
     } else {
@@ -1143,6 +1161,36 @@
     // либо клик по фону, либо явный вызов кнопкой закрытия (evt === undefined).
     document.getElementById("detail-overlay").classList.remove("open");
     document.body.style.overflow = "";
+    currentDetailAvitoId = null;
+  }
+
+  /** Удаляет одну квартиру (карточка либо панель "Подробнее") по её avitoId. */
+  async function deleteApartment(avitoId) {
+    if (!avitoId) return;
+
+    const apt = allApartments.find(a => (a.avitoId ?? a.avito_id) === avitoId);
+    const label = apt ? (apt.title || avitoId) : avitoId;
+    const confirmed = confirm(`Удалить квартиру «${label}»? Это действие необратимо.`);
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments/${encodeURIComponent(avitoId)}`, { method: "DELETE" });
+      if (!res.ok && res.status !== 404) throw new Error(res.statusText);
+
+      allApartments = allApartments.filter(a => (a.avitoId ?? a.avito_id) !== avitoId);
+      delete apartmentScores[avitoId];
+
+      if (currentDetailAvitoId === avitoId) {
+        closeDetailDrawer();
+      }
+
+      renderCards(allApartments);
+      updateBotStatsFromApartments(allApartments);
+      await loadBotQueue();
+      setStatus("success", "✅ Квартира удалена");
+    } catch (err) {
+      setStatus("error", `❌ Не удалось удалить квартиру: ${err.message}`);
+    }
   }
 
   /** Собирает полное содержимое панели по объявлению — использует все поля детальной страницы, если они есть. */

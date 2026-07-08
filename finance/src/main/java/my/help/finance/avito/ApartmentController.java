@@ -152,6 +152,17 @@ public class ApartmentController {
     }
 
     // ------------------------------------------------------------------
+    // DELETE /api/apartments/{avitoId}
+    // ------------------------------------------------------------------
+
+    /** Удаляет одну квартиру по её avitoId (используется кнопкой 🗑 на фронтенде). */
+    @DeleteMapping("/{avitoId}")
+    public ResponseEntity<Void> deleteApartment(@PathVariable String avitoId) {
+        boolean deleted = parserService.deleteApartmentByAvitoId(avitoId);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
+
+    // ------------------------------------------------------------------
     // POST /api/apartments/bot/start · POST /bot/stop · GET /bot/status
     // ------------------------------------------------------------------
 
