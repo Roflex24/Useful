@@ -8,29 +8,34 @@ public class JavaClassesAggregator {
         Path sourceRoot = Paths.get("./food/src/main/java/my/help/food");
         Path outputFile = Paths.get("all_classes.txt");
 
-        try (BufferedWriter writer = Files.newBufferedWriter(outputFile)) {
+        try (BufferedWriter writer = Files.newBufferedWriter(outputFile);
+             var stream = Files.walk(sourceRoot)) {          // ← закрываем стрим
+
             writer.write("// Java classes from: " + sourceRoot.toAbsolutePath());
             writer.newLine();
             writer.write("// Generated: " + new java.util.Date());
             writer.newLine();
             writer.newLine();
 
-            Files.walk(sourceRoot)
-                    .filter(Files::isRegularFile)
+            stream.filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".java"))
                     .sorted()
                     .forEach(file -> {
                         try {
-                            writer.write("=== File: " + file.toString() + " ===");
+                            writer.write("=== File: " + file + " ===");
                             writer.newLine();
                             Files.lines(file).forEach(line -> {
                                 try {
                                     writer.write(line);
                                     writer.newLine();
-                                } catch (IOException e) { throw new UncheckedIOException(e); }
+                                } catch (IOException e) {
+                                    throw new UncheckedIOException(e);
+                                }
                             });
                             writer.newLine();
-                        } catch (IOException e) { throw new UncheckedIOException(e); }
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
                     });
         }
         System.out.println("Done: " + outputFile.toAbsolutePath());

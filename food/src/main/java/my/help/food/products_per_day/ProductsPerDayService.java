@@ -15,14 +15,14 @@ public class ProductsPerDayService {
     private final ProductsPerDayRepository productsPerDayRepository;
 
     @Transactional
-    public void addProductsPerDay(LocalDate date, Map<Long, Double> productQuantityMap) {
+    public void replaceProductsPerDay(LocalDate date, Map<Long, Double> productQuantityMap) {
         productsPerDayRepository.deleteById_Date(date);
-        for (Map.Entry<Long, Double> entry : productQuantityMap.entrySet()) {
-            productsPerDayRepository.save(new ProductsPerDayEntity(
-                    new ProductsPerDayKeyEntity(date, entry.getKey()),
-                    entry.getValue()
-            ));
-        }
+        productQuantityMap.forEach((productId, quantity) ->
+                productsPerDayRepository.save(new ProductsPerDayEntity(
+                        new ProductsPerDayKeyEntity(date, productId),
+                        quantity
+                ))
+        );
     }
 
     @Transactional(readOnly = true)

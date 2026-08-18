@@ -2,7 +2,6 @@ package my.help.food.nutrients;
 
 import lombok.RequiredArgsConstructor;
 import my.help.food.nutrients.dto.*;
-import my.help.food.product.ProductNotFoundException;
 import my.help.food.product.ProductService;
 import my.help.food.product.dto.ProductResponse;
 import my.help.food.products_per_day.*;
@@ -24,15 +23,33 @@ public class NutrientsService {
     private final ProductsPerDayService productsPerDayService;
     private final ProductService productService;
     private final ProductsPerDayMapper productsPerDayMapper;
-
-    @Transactional
-    public NutrientsResponse updateNutrientsPerDate(LocalDate date, NutrientsUpdateRequest request) {
-        return saveNutrientsForDate(date, request.comment(), request.productsPerDay());
-    }
+    private final NutritionCalculator nutritionCalculator;
 
     @Transactional(readOnly = true)
     public List<NutrientsResponse> getNutrientsList() {
         return nutrientsMapper.toResponseList(nutrientsRepository.findAll());
+    }
+
+    @Transactional
+    public NutrientsResponse updateNutrientsPerDate(LocalDate date, NutrientsUpdateRequest request) {
+        Map<Long, Double> quantities = toQuantityMap(request.productsPerDay());
+        Map<Long, ProductResponse> productsById = productService.getProductsByIds(quantities.keySet());
+
+        NutritionCalculator.NutritionTotals totals = nutritionCalculator.calculate(quantities, productsById);
+
+        NutrientsPerDayEntity entity = new NutrientsPerDayEntity(
+                date,
+                totals.calories(),
+                totals.protein(),
+                totals.fat(),
+                totals.carbohydrates(),
+                totals.fiber(),
+                request.comment()
+        );
+        nutrientsRepository.save(entity);
+        productsPerDayService.replaceProductsPerDay(date, quantities);
+
+        return buildResponse(entity, quantities, productsById);
     }
 
     @Transactional(readOnly = true)
@@ -40,39 +57,11 @@ public class NutrientsService {
         NutrientsPerDayEntity entity = nutrientsRepository.findById(date)
                 .orElseThrow(() -> new NutrientsNotFoundException("Данные за " + date + " не найдены"));
 
-        NutrientsResponse response = nutrientsMapper.toResponse(entity);
-
         List<ProductsPerDayEntity> ppdEntities = productsPerDayService.getProductsPerDate(date);
-        if (!ppdEntities.isEmpty()) {
-            List<Long> productIds = ppdEntities.stream()
-                    .map(ppd -> ppd.getId().getProductId())
-                    .distinct()
-                    .toList();
-            Map<Long, ProductResponse> productsById = productService.getProductsByIds(productIds);
+        Map<Long, Double> quantities = toQuantityMapFromEntities(ppdEntities);
+        Map<Long, ProductResponse> productsById = productService.getProductsByIds(quantities.keySet());
 
-            List<ProductsPerDayResponse> ppdResponses = ppdEntities.stream()
-                    .map(ppd -> {
-                        ProductResponse product = productsById.get(ppd.getId().getProductId());
-                        if (product == null) {
-                            throw new ProductNotFoundException(ppd.getId().getProductId());
-                        }
-                        return productsPerDayMapper.toResponse(product, ppd.getQuantity());
-                    })
-                    .sorted(Comparator.comparing(ProductsPerDayResponse::name))
-                    .toList();
-
-            response = new NutrientsResponse(
-                    response.date(),
-                    response.calories(),
-                    response.protein(),
-                    response.fat(),
-                    response.carbohydrates(),
-                    response.fiber(),
-                    response.comment(),
-                    ppdResponses
-            );
-        }
-        return response;
+        return buildResponse(entity, quantities, productsById);
     }
 
     @Transactional(readOnly = true)
@@ -85,109 +74,76 @@ public class NutrientsService {
                 .collect(Collectors.toMap(NutrientsPerDayEntity::getDate, Function.identity()));
 
         List<ProductsPerDayEntity> ppdEntities = productsPerDayService.getProductsBetween(start, today);
-        Map<LocalDate, List<ProductsPerDayEntity>> ppdByDate = ppdEntities.stream()
-                .collect(Collectors.groupingBy(ppd -> ppd.getId().getDate()));
+        Map<Long, Double> quantities = toQuantityMapFromEntities(ppdEntities);
+        Map<Long, ProductResponse> productsById = productService.getProductsByIds(quantities.keySet());
 
-        List<Long> productIds = ppdEntities.stream()
-                .map(ppd -> ppd.getId().getProductId())
-                .distinct()
-                .toList();
-        Map<Long, ProductResponse> productsById = productService.getProductsByIds(productIds);
+        Map<LocalDate, Map<Long, Double>> quantitiesByDate = ppdEntities.stream()
+                .collect(Collectors.groupingBy(
+                        ppd -> ppd.getId().getDate(),
+                        Collectors.toMap(
+                                ppd -> ppd.getId().getProductId(),
+                                ProductsPerDayEntity::getQuantity
+                        )
+                ));
 
         return Stream.iterate(start, d -> d.plusDays(1))
                 .limit(7)
                 .map(date -> {
                     NutrientsPerDayEntity entity = nutrientsByDate.get(date);
-                    NutrientsResponse response = entity == null
+                    NutrientsResponse base = entity == null
                             ? new NutrientsResponse(date, 0, 0, 0, 0, 0, null, List.of())
                             : nutrientsMapper.toResponse(entity);
 
-                    List<ProductsPerDayEntity> dayPpds = ppdByDate.getOrDefault(date, List.of());
-                    List<ProductsPerDayResponse> ppdResponses = dayPpds.stream()
-                            .map(ppd -> {
-                                ProductResponse product = productsById.get(ppd.getId().getProductId());
-                                if (product == null) {
-                                    throw new ProductNotFoundException(ppd.getId().getProductId());
-                                }
-                                return productsPerDayMapper.toResponse(product, ppd.getQuantity());
-                            })
-                            .sorted(Comparator.comparing(ProductsPerDayResponse::name))
-                            .toList();
-
-                    return new NutrientsResponse(
-                            response.date(),
-                            response.calories(),
-                            response.protein(),
-                            response.fat(),
-                            response.carbohydrates(),
-                            response.fiber(),
-                            response.comment(),
-                            ppdResponses
+                    Map<Long, Double> dayQuantities = quantitiesByDate.getOrDefault(date, Map.of());
+                    return buildResponse(
+                            entity != null ? entity : new NutrientsPerDayEntity(date, 0, 0, 0, 0, 0, null),
+                            dayQuantities,
+                            productsById
                     );
                 })
                 .toList();
     }
 
-    private double round(double value) {
-        return Math.round(value * 10.0) / 10.0;
+    private Map<Long, Double> toQuantityMap(List<ProductsPerDayRequest> items) {
+        if (items == null || items.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, Double> map = new HashMap<>();
+        for (ProductsPerDayRequest item : items) {
+            if (map.putIfAbsent(item.productId(), item.quantity()) != null) {
+                throw new IllegalArgumentException("Дубликат productId: " + item.productId());
+            }
+        }
+        return map;
     }
 
-    private NutrientsResponse saveNutrientsForDate(LocalDate date, String comment, List<ProductsPerDayRequest> productsPerDay) {
-        Map<Long, Double> productQuantityMap = productsPerDay == null
-                ? Map.of()
-                : productsPerDay.stream()
+    private Map<Long, Double> toQuantityMapFromEntities(List<ProductsPerDayEntity> entities) {
+        return entities.stream()
                 .collect(Collectors.toMap(
-                        ProductsPerDayRequest::productId,
-                        ProductsPerDayRequest::quantity
+                        e -> e.getId().getProductId(),
+                        ProductsPerDayEntity::getQuantity
                 ));
+    }
 
-        Map<Long, ProductResponse> productsById = productService.getProductsByIds(productQuantityMap.keySet());
-
-        double calories = 0, protein = 0, fat = 0, carbs = 0, fiber = 0;
-        for (Map.Entry<Long, Double> entry : productQuantityMap.entrySet()) {
-            ProductResponse product = productsById.get(entry.getKey());
-            if (product == null) {
-                throw new ProductNotFoundException(entry.getKey());
-            }
-            double multiplier = "100г".equals(product.unit()) ? entry.getValue() / 100 : entry.getValue();
-            calories += product.calories() * multiplier;
-            protein += product.protein() * multiplier;
-            fat += product.fat() * multiplier;
-            carbs += product.carbohydrate() * multiplier;
-            fiber += product.fiber() * multiplier;
-        }
-
-        NutrientsPerDayEntity entity = new NutrientsPerDayEntity(
-                date,
-                (int) Math.round(calories),
-                round(protein),
-                round(fat),
-                round(carbs),
-                round(fiber),
-                comment
-        );
-        nutrientsRepository.save(entity);
-
-        productsPerDayService.addProductsPerDay(date, productQuantityMap);
-
-        NutrientsResponse response = nutrientsMapper.toResponse(entity);
-        List<ProductsPerDayResponse> ppdResponses = productQuantityMap.entrySet().stream()
+    private NutrientsResponse buildResponse(NutrientsPerDayEntity entity,
+                                            Map<Long, Double> quantities,
+                                            Map<Long, ProductResponse> productsById) {
+        List<ProductsPerDayResponse> items = quantities.entrySet().stream()
                 .map(entry -> productsPerDayMapper.toResponse(
                         productsById.get(entry.getKey()),
-                        entry.getValue()
-                ))
+                        entry.getValue()))
                 .sorted(Comparator.comparing(ProductsPerDayResponse::name))
                 .toList();
 
         return new NutrientsResponse(
-                response.date(),
-                response.calories(),
-                response.protein(),
-                response.fat(),
-                response.carbohydrates(),
-                response.fiber(),
-                response.comment(),
-                ppdResponses
+                entity.getDate(),
+                entity.getCalories(),
+                entity.getProtein(),
+                entity.getFat(),
+                entity.getCarbohydrates(),
+                entity.getFiber(),
+                entity.getComment(),
+                items
         );
     }
 }
