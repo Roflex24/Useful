@@ -1,7 +1,7 @@
 package my.help.food.product.dto;
 
 import jakarta.validation.constraints.*;
-import my.help.food.product.Shop;
+import my.help.food.common.enums.Shop;
 
 public record ProductRequest(
         @NotBlank(message = "Название обязательно")

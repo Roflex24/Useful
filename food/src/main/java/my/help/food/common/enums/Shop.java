@@ -1,4 +1,4 @@
-package my.help.food.product;
+package my.help.food.common.enums;
 
 import lombok.Getter;
 

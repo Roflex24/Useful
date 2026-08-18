@@ -1,6 +1,7 @@
 package my.help.food.nutrients;
 
 import lombok.RequiredArgsConstructor;
+import my.help.food.common.exception.NutrientsNotFoundException;
 import my.help.food.nutrients.dto.*;
 import my.help.food.product.ProductService;
 import my.help.food.product.dto.ProductResponse;

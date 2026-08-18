@@ -1,4 +1,4 @@
-package my.help.food.diet;
+package my.help.food.common.exception;
 
 public class DietNotFoundException extends RuntimeException {
     public DietNotFoundException(Long id) {

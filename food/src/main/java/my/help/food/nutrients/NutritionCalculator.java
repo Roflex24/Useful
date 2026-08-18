@@ -1,6 +1,6 @@
 package my.help.food.nutrients;
 
-import my.help.food.product.ProductNotFoundException;
+import my.help.food.common.exception.ProductNotFoundException;
 import my.help.food.product.dto.ProductResponse;
 import org.springframework.stereotype.Component;
 

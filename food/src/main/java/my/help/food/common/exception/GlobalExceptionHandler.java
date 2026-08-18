@@ -1,9 +1,6 @@
-package my.help.food.exception;
+package my.help.food.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
-import my.help.food.diet.DietNotFoundException;
-import my.help.food.nutrients.NutrientsNotFoundException;
-import my.help.food.product.ProductNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

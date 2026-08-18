@@ -1,4 +1,4 @@
-package my.help.food.exception;
+package my.help.food.common.exception;
 
 import java.time.Instant;
 import java.util.List;

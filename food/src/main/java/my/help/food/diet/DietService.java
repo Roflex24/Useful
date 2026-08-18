@@ -1,6 +1,7 @@
 package my.help.food.diet;
 
 import lombok.RequiredArgsConstructor;
+import my.help.food.common.exception.DietNotFoundException;
 import my.help.food.diet.dto.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

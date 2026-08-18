@@ -2,6 +2,8 @@ package my.help.food.product;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import my.help.food.common.enums.Macronutrients;
+import my.help.food.common.enums.Shop;
 import my.help.food.product.dto.ProductRequest;
 import my.help.food.product.dto.ProductResponse;
 import org.springframework.data.domain.Page;

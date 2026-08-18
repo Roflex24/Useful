@@ -1,6 +1,6 @@
 package my.help.food.nutrients.dto;
 
-import my.help.food.product.Shop;
+import my.help.food.common.enums.Shop;
 
 public record ProductsPerDayResponse(
         Long id,
