@@ -9,15 +9,10 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface DietMapper {
 
-    @Mapping(target = "productId", source = "productId")
-    @Mapping(target = "quantity", source = "quantity")
     DietItemModel toItemModel(DietItemEntity dietItemEntity);
-
     List<DietItemModel> toItemModelList(List<DietItemEntity> dietItemEntities);
 
-    @Mapping(target = "items", source = "items")
     DietModel toModel(DietEntity dietEntity);
-
     List<DietModel> toModelList(List<DietEntity> dietEntities);
 
     @Mapping(target = "id", ignore = true)
@@ -27,4 +22,8 @@ public interface DietMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "items", ignore = true)
     void updateEntityFromModel(DietModel dietModel, @MappingTarget DietEntity dietEntity);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "diet", source = "diet")
+    DietItemEntity toItemEntity(DietItemModel dietItemModel, DietEntity diet);
 }

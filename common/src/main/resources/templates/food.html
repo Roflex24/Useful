@@ -1768,7 +1768,7 @@
 
     const ensureProductsCache = async () => {
         try {
-            const response = await fetch('http://localhost:8080/product/all');
+            const response = await fetch('http://localhost:8080/products');
             if(!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
             productsCache = {};
@@ -1852,7 +1852,7 @@
                 const diet = savedDiets.find(d => d.id === id);
                 if(diet && confirm(`Удалить рацион "${diet.name}"?`)) {
                     try {
-                        const response = await fetch(`http://localhost:8080/diet/delete/${id}`, { method: 'DELETE' });
+                        const response = await fetch(`http://localhost:8080/diet/${id}`, { method: 'DELETE' });
                         if(!response.ok) throw new Error(`HTTP ${response.status}`);
                         savedDiets = savedDiets.filter(d => d.id !== id);
                         renderDietsGrid();
@@ -1923,10 +1923,10 @@
             const diet = savedDiets.find(d => d.id === editingDietId);
             const items = diet ? diet.items : [];
             try {
-                const response = await fetch('http://localhost:8080/diet/update', {
-                    method: 'POST',
+                const response = await fetch(`http://localhost:8080/diet/${editingDietId}`, {
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: editingDietId, name, description, items })
+                    body: JSON.stringify({ name, description, items })
                 });
                 if(!response.ok) throw new Error(`HTTP ${response.status}`);
                 await fetchDiets();
@@ -2079,7 +2079,6 @@
 
             const weeklyData = await response.json();
 
-            // Формируем текст с JSON для анализа диетологом
             const analysisTextContent = `Проанализируй этот JSON как диетолог: для каждого дня напиши, что хорошо, что плохо, и дай 2-3 конкретные подсказки по улучшению. В конце — главные выводы и топ-3 совета. Рацион уже довольно чистый, но можно сделать лучше. JSON:\n\n${JSON.stringify(weeklyData, null, 2)}`;
 
             if (analysisText) {
@@ -2108,14 +2107,12 @@
         }
     };
 
-    // Закрытие модального окна анализа
     if (closeAnalysisModalBtn) {
         closeAnalysisModalBtn.addEventListener('click', () => {
             analysisModal.classList.remove('active');
         });
     }
 
-    // Клик вне модального окна для закрытия
     if (analysisModal) {
         analysisModal.addEventListener('click', (e) => {
             if (e.target === analysisModal) {
@@ -2124,12 +2121,10 @@
         });
     }
 
-    // Кнопка копирования
     if (copyAnalysisBtn) {
         copyAnalysisBtn.addEventListener('click', copyAnalysisToClipboard);
     }
 
-    // Кнопка анализа недели
     if (analyzeWeekBtn) {
         analyzeWeekBtn.addEventListener('click', analyzeWeek);
     }
@@ -2140,7 +2135,7 @@
             const shop = filterShop.value || '';
             const name = filterName.value.trim() || '';
 
-            let url = `http://localhost:8080/product/all?`;
+            let url = `http://localhost:8080/products?`;
             if (macronutrient && macronutrient !== 'NAME') {
                 url += `macronutrient=${encodeURIComponent(macronutrient)}&`;
             }
@@ -2235,10 +2230,8 @@
                 const product = allProducts.find(p => p.id === id);
                 if(product && confirm(`Удалить "${product.name}"?`)) {
                     try {
-                        await fetch('http://localhost:8080/product/delete', {
-                            method: 'DELETE',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(product)
+                        await fetch(`http://localhost:8080/products/${id}`, {
+                            method: 'DELETE'
                         });
                         showToast(`🗑️ ${product.name} удалён`);
                         await fetchProducts();
@@ -2256,7 +2249,7 @@
 
     const loadShops = async () => {
         try {
-            const response = await fetch('http://localhost:8080/product/shop');
+            const response = await fetch('http://localhost:8080/products/shops');
             if(!response.ok) throw new Error();
             const data = await response.json();
             shopsMap = data;
@@ -2281,7 +2274,7 @@
 
     const loadMacronutrients = async () => {
         try {
-            const response = await fetch('http://localhost:8080/product/macronutrients');
+            const response = await fetch('http://localhost:8080/products/macronutrients');
             if(!response.ok) throw new Error();
             const data = await response.json();
             filterMacronutrient.innerHTML = '';
@@ -2584,7 +2577,6 @@
 
     const saveProductUpdate = async () => {
         const updated = {
-            id: currentEditId,
             name: document.getElementById('editName').value.trim(),
             calories: parseFloat(document.getElementById('editCalories').value) || 0,
             protein: parseFloat(document.getElementById('editProtein').value) || 0,
@@ -2600,8 +2592,8 @@
             return;
         }
         try {
-            await fetch('http://localhost:8080/product/update', {
-                method: 'POST',
+            await fetch(`http://localhost:8080/products/${currentEditId}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updated)
             });
@@ -2635,7 +2627,7 @@
             shop: document.getElementById('prodShop').value || null
         };
         try {
-            await fetch('http://localhost:8080/product', {
+            await fetch('http://localhost:8080/products', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newProduct)

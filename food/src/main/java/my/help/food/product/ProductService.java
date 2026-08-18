@@ -1,13 +1,14 @@
 package my.help.food.product;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +17,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
 
+    @Transactional(readOnly = true)
     public List<ProductModel> getAllProducts(Macronutrients macronutrient, Shop shop, String productName) {
         List<ProductEntity> productEntityList;
 
@@ -31,35 +33,35 @@ public class ProductService {
                 .toList());
     }
 
-    public void addProduct(ProductModel productModel) {
-        productRepository.save(productMapper.toEntity(productModel));
-    }
-
-    public void updateProduct(ProductModel productModel) {
-        Optional<ProductEntity> productEntityOptional = productRepository.findById(productModel.getId());
-        if (productEntityOptional.isPresent()) {
-            ProductEntity productEntity = productEntityOptional.get();
-            productMapper.updateEntityFromModel(productModel, productEntity);
-            productRepository.save(productEntity);
-        } else {
-            throw new RuntimeException("Product not found");
-        }
+    @Transactional
+    public ProductModel addProduct(ProductModel productModel) {
+        ProductEntity entity = productMapper.toEntity(productModel);
+        ProductEntity saved = productRepository.save(entity);
+        return productMapper.toModel(saved);
     }
 
     @Transactional
-    public void deleteProduct(ProductModel productModel) {
-        productRepository.delete(productMapper.toEntity(productModel));
+    public ProductModel updateProduct(ProductModel productModel) {
+        ProductEntity productEntity = productRepository.findById(productModel.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+        productMapper.updateEntityFromModel(productModel, productEntity);
+        ProductEntity updated = productRepository.save(productEntity);
+        return productMapper.toModel(updated);
     }
 
-    public ProductModel getProductById(Long id) {
-        Optional<ProductEntity> productEntityOptional = productRepository.findById(id);
-        if (productEntityOptional.isPresent()) {
-            return productMapper.toModel(productEntityOptional.get());
+    @Transactional
+    public void deleteProduct(Long id) {
+        if (!productRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
         }
-        throw new RuntimeException("Product not found");
+        productRepository.deleteById(id);
     }
 
-
+    @Transactional(readOnly = true)
+    public ProductModel getProductById(Long id) {
+        return productMapper.toModel(productRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found")));
+    }
 
     private Comparator<ProductEntity> createComparator(Macronutrients macronutrient) {
         Comparator<ProductEntity> comparator = Comparator.comparing(ProductEntity::getName);

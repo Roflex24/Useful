@@ -26,6 +26,6 @@ public class DietEntity {
 
     private String description;
 
-    @OneToMany(mappedBy = "diet", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "diet", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DietItemEntity> items = new ArrayList<>();
 }

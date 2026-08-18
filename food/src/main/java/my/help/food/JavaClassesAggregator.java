@@ -1,11 +1,11 @@
-package my.help.finance;
+package my.help.food;
 
 import java.io.*;
 import java.nio.file.*;
 
 public class JavaClassesAggregator {
     public static void main(String[] args) throws IOException {
-        Path sourceRoot = Paths.get("./finance/src/main/java/my/help/finance/avito");
+        Path sourceRoot = Paths.get("./food/src/main/java/my/help/food");
         Path outputFile = Paths.get("all_classes.txt");
 
         try (BufferedWriter writer = Files.newBufferedWriter(outputFile)) {

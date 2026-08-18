@@ -16,13 +16,17 @@ public class ProductsPerDayService {
 
     @Transactional
     public void addProductsPerDay(LocalDate date, Map<Long, Double> productQuantityMap) {
-        productsPerDayRepository.deleteByIdDate(date);
+        productsPerDayRepository.deleteById_Date(date);
         for (Map.Entry<Long, Double> entry : productQuantityMap.entrySet()) {
-            productsPerDayRepository.save(new ProductsPerDayEntity(new ProductsPerDayKeyEntity(date, entry.getKey()), entry.getValue()));
+            productsPerDayRepository.save(new ProductsPerDayEntity(
+                    new ProductsPerDayKeyEntity(date, entry.getKey()),
+                    entry.getValue()
+            ));
         }
     }
 
+    @Transactional(readOnly = true)
     public List<ProductsPerDayEntity> getProductsPerDate(LocalDate localDate) {
-        return productsPerDayRepository.findByIdDate(localDate);
+        return productsPerDayRepository.findById_Date(localDate);
     }
 }

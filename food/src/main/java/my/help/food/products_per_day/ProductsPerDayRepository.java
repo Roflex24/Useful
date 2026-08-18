@@ -6,10 +6,9 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 
-
 @Repository
-public interface ProductsPerDayRepository extends JpaRepository<ProductsPerDayEntity, Long> {
+public interface ProductsPerDayRepository extends JpaRepository<ProductsPerDayEntity, ProductsPerDayKeyEntity> {
 
-    List<ProductsPerDayEntity> findByIdDate(LocalDate date);
-    void deleteByIdDate(LocalDate date);
+    List<ProductsPerDayEntity> findById_Date(LocalDate date);
+    void deleteById_Date(LocalDate date);
 }

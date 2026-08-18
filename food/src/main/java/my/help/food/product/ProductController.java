@@ -1,6 +1,7 @@
 package my.help.food.product;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,8 +11,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
+@RequestMapping("/products")
 @RequiredArgsConstructor
-@RequestMapping("/product")
 public class ProductController {
 
     private final ProductService productService;
@@ -20,13 +21,13 @@ public class ProductController {
     public ResponseEntity<Map<String, String>> getMacronutrients() {
         return ResponseEntity.ok(Arrays.stream(Macronutrients.values())
                 .collect(Collectors.toMap(
-                        Enum::name,           // ключ: "PROTEIN"
-                        Macronutrients::getDisplayName  // значение: "Белки"
+                        Enum::name,
+                        Macronutrients::getDisplayName
                 )));
     }
 
-    @GetMapping("/shop")
-    public ResponseEntity<Map<String, String>> getShop() {
+    @GetMapping("/shops")
+    public ResponseEntity<Map<String, String>> getShops() {
         return ResponseEntity.ok(Arrays.stream(Shop.values())
                 .collect(Collectors.toMap(
                         Enum::name,
@@ -34,7 +35,7 @@ public class ProductController {
                 )));
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<List<ProductModel>> getAllProducts(
             @RequestParam(value = "macronutrient", required = false) Macronutrients macronutrient,
             @RequestParam(value = "shop", required = false) Shop shop,
@@ -42,21 +43,20 @@ public class ProductController {
         return ResponseEntity.ok(productService.getAllProducts(macronutrient, shop, productName));
     }
 
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<ProductModel> addProduct(@RequestBody ProductModel productModel) {
-        productService.addProduct(productModel);
-        return ResponseEntity.ok(productModel);
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.addProduct(productModel));
     }
 
-    @PostMapping("/update")
-    public ResponseEntity<ProductModel> updateProduct(@RequestBody ProductModel productModel) {
-        productService.updateProduct(productModel);
-        return ResponseEntity.ok(productModel);
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductModel> updateProduct(@PathVariable Long id, @RequestBody ProductModel productModel) {
+        productModel.setId(id);
+        return ResponseEntity.ok(productService.updateProduct(productModel));
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity<ProductModel> deleteProduct(@RequestBody ProductModel productModel) {
-        productService.deleteProduct(productModel);
-        return ResponseEntity.ok(productModel);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
     }
 }

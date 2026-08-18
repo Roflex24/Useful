@@ -1,6 +1,7 @@
 package my.help.food.products_per_day;
 
 import lombok.*;
+import my.help.food.product.Shop;
 
 @Getter
 @Setter
@@ -9,7 +10,6 @@ import lombok.*;
 @Builder
 @ToString
 public class ProductsPerDayModel {
-
     private Long id;
     private String name;
     private Double calories;
@@ -19,6 +19,6 @@ public class ProductsPerDayModel {
     private Double fiber;
     private String unit;
     private String photoUrl;
-    private String shop;
+    private Shop shop;
     private Double quantity;
 }
