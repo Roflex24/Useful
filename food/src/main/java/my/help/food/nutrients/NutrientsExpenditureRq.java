@@ -1,13 +1,24 @@
 package my.help.food.nutrients;
 
-import lombok.Data;
+import jakarta.validation.constraints.*;
 
-@Data
-public class NutrientsExpenditureRq {
-    private String target;
-    private String gender;        // "male" или "female"
-    private double weightKg;      // вес в кг
-    private double heightCm;      // рост в см
-    private int ageYears;         // возраст в годах
-    private int steps;            // количество шагов за день
-}
+public record NutrientsExpenditureRq(
+        @NotBlank(message = "Цель обязательна")
+        String target,
+
+        @NotBlank(message = "Пол обязателен")
+        @Pattern(regexp = "male|female", message = "Пол должен быть male или female")
+        String gender,
+
+        @Positive(message = "Вес должен быть положительным")
+        double weightKg,
+
+        @Positive(message = "Рост должен быть положительным")
+        double heightCm,
+
+        @Positive(message = "Возраст должен быть положительным")
+        int ageYears,
+
+        @PositiveOrZero(message = "Шаги не могут быть отрицательными")
+        int steps
+) {}

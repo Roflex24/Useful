@@ -29,4 +29,9 @@ public class ProductsPerDayService {
     public List<ProductsPerDayEntity> getProductsPerDate(LocalDate localDate) {
         return productsPerDayRepository.findById_Date(localDate);
     }
+
+    @Transactional(readOnly = true)
+    public List<ProductsPerDayEntity> getProductsBetween(LocalDate start, LocalDate end) {
+        return productsPerDayRepository.findById_DateBetween(start, end);
+    }
 }

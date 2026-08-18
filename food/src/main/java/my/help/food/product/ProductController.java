@@ -1,6 +1,9 @@
 package my.help.food.product;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import my.help.food.product.dto.ProductRequest;
+import my.help.food.product.dto.ProductResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +39,7 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductModel>> getAllProducts(
+    public ResponseEntity<List<ProductResponse>> getAllProducts(
             @RequestParam(value = "macronutrient", required = false) Macronutrients macronutrient,
             @RequestParam(value = "shop", required = false) Shop shop,
             @RequestParam(value = "name", required = false) String productName) {
@@ -44,14 +47,16 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<ProductModel> addProduct(@RequestBody ProductModel productModel) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(productService.addProduct(productModel));
+    public ResponseEntity<ProductResponse> addProduct(@Valid @RequestBody ProductRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(productService.addProduct(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductModel> updateProduct(@PathVariable Long id, @RequestBody ProductModel productModel) {
-        productModel.setId(id);
-        return ResponseEntity.ok(productService.updateProduct(productModel));
+    public ResponseEntity<ProductResponse> updateProduct(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductRequest request) {
+        return ResponseEntity.ok(productService.updateProduct(id, request));
     }
 
     @DeleteMapping("/{id}")

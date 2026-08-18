@@ -1,6 +1,9 @@
 package my.help.food.diet;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import my.help.food.diet.dto.DietRequest;
+import my.help.food.diet.dto.DietResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -8,26 +11,28 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/diet")
+@RequestMapping("/diets")  // изменено на /diets
 @RequiredArgsConstructor
 public class DietController {
 
     private final DietService dietService;
 
     @GetMapping
-    public ResponseEntity<List<DietModel>> getAllDiets() {
+    public ResponseEntity<List<DietResponse>> getAllDiets() {
         return ResponseEntity.ok(dietService.getAllDiets());
     }
 
     @PostMapping
-    public ResponseEntity<DietModel> createDiet(@RequestBody DietModel dietModel) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(dietService.createDiet(dietModel));
+    public ResponseEntity<DietResponse> createDiet(@Valid @RequestBody DietRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(dietService.createDiet(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DietModel> updateDiet(@PathVariable Long id, @RequestBody DietModel dietModel) {
-        dietModel.setId(id);
-        return ResponseEntity.ok(dietService.updateDiet(dietModel));
+    public ResponseEntity<DietResponse> updateDiet(
+            @PathVariable Long id,
+            @Valid @RequestBody DietRequest request) {
+        return ResponseEntity.ok(dietService.updateDiet(id, request));
     }
 
     @DeleteMapping("/{id}")

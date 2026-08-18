@@ -1679,6 +1679,53 @@
 </div>
 
 <script>
+    // ========== Утилиты ==========
+
+    const API_BASE = ''; // все запросы относительные
+
+    async function request(url, options = {}) {
+        const response = await fetch(API_BASE + url, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...(options.headers || {})
+            },
+            ...options
+        });
+
+        if (!response.ok) {
+            let message = `HTTP ${response.status}`;
+            try {
+                const data = await response.json();
+                message = data.message || message;
+                if (data.details && data.details.length) {
+                    message += ': ' + data.details.join(', ');
+                }
+            } catch (_) {
+                // ignore
+            }
+            throw new Error(message);
+        }
+
+        return response.status === 204 ? null : response.json();
+    }
+
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value ?? '';
+        return div.innerHTML;
+    }
+
+    const showToast = (msg) => {
+        const toast = document.getElementById('toastMsg');
+        if (toast) {
+            toast.querySelector('span').innerText = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 2000);
+        }
+    };
+
+    // ========== Состояние ==========
+
     let allProducts = [];
     let selectedProducts = [];
     let shopsMap = {};
@@ -1709,14 +1756,7 @@
     const dietDescInput = document.getElementById('dietDescInput');
     const copyAnalysisBtn = document.getElementById('copyAnalysisBtn');
 
-    const showToast = (msg) => {
-        const toast = document.getElementById('toastMsg');
-        if(toast) {
-            toast.querySelector('span').innerText = msg;
-            toast.style.opacity = '1';
-            setTimeout(() => toast.style.opacity = '0', 2000);
-        }
-    };
+    // ========== Вспомогательные функции ==========
 
     const getMultiplier = (product) => {
         const qty = product.quantity || 0;
@@ -1733,10 +1773,12 @@
             carbs += (p.carbohydrate || 0) * m;
             fiber += (p.fiber || 0) * m;
         });
-        if(animate) {
+
+        if (animate) {
             totalKcalDisplay.classList.add('animate-pulse');
             setTimeout(() => totalKcalDisplay.classList.remove('animate-pulse'), 200);
         }
+
         totalKcalDisplay.innerHTML = `${Math.round(total)} <span>ккал</span>`;
         totalNutrientsDisplay.innerHTML = `
             <span>🥩 Белки: ${protein.toFixed(1)} г</span>
@@ -1747,43 +1789,41 @@
     };
 
     const saveToLocalStorage = () => {
-        try { localStorage.setItem('calorie_selected_products', JSON.stringify(selectedProducts)); } catch(e) {}
+        try {
+            localStorage.setItem('calorie_selected_products', JSON.stringify(selectedProducts));
+        } catch (e) {}
     };
 
     const loadFromLocalStorage = () => {
         const stored = localStorage.getItem('calorie_selected_products');
-        if(stored) {
+        if (stored) {
             try {
                 const parsed = JSON.parse(stored);
-                if(Array.isArray(parsed)) {
+                if (Array.isArray(parsed)) {
                     selectedProducts = parsed;
                     renderSelectedList();
                     updateTotalCalories(false);
                 }
-            } catch(e) {}
+            } catch (e) {}
         }
     };
 
-    // ===== Готовые рационы =====
+    // ========== Готовые рационы ==========
 
     const ensureProductsCache = async () => {
         try {
-            const response = await fetch('http://localhost:8080/products');
-            if(!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
+            const data = await request('/products');
             productsCache = {};
             data.forEach(p => { productsCache[p.id] = p; });
-        } catch(e) {
+        } catch (e) {
             showToast('⚠️ Не удалось загрузить базу продуктов');
         }
     };
 
     const fetchDiets = async () => {
         try {
-            const response = await fetch('http://localhost:8080/diet');
-            if(!response.ok) throw new Error(`HTTP ${response.status}`);
-            savedDiets = await response.json();
-        } catch(e) {
+            savedDiets = await request('/diets');
+        } catch (e) {
             savedDiets = [];
             showToast('⚠️ Не удалось загрузить рационы');
         }
@@ -1793,7 +1833,7 @@
 
     const buildDietTooltipHtml = (diet) => {
         const items = diet.items || [];
-        if(!items.length) return '<div class="diet-tooltip-empty">Нет продуктов</div>';
+        if (!items.length) return '<div class="diet-tooltip-empty">Нет продуктов</div>';
         return items.map(item => {
             const product = productsCache[item.productId];
             const name = product ? escapeHtml(product.name) : `Продукт #${item.productId} (не найден)`;
@@ -1804,11 +1844,12 @@
     };
 
     const renderDietsGrid = () => {
-        if(!dietsGrid) return;
-        if(!savedDiets.length) {
+        if (!dietsGrid) return;
+        if (!savedDiets.length) {
             dietsGrid.innerHTML = '<div class="diets-empty"><i class="fas fa-circle-info"></i> Пока нет сохранённых рационов. Соберите рацион справа и нажмите «Сохранить как рацион».</div>';
             return;
         }
+
         let html = '';
         savedDiets.forEach((diet) => {
             html += `
@@ -1829,53 +1870,55 @@
         });
         dietsGrid.innerHTML = html;
 
-        document.querySelectorAll('.diet-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                if(e.target.closest('.diet-card-delete') || e.target.closest('.diet-card-edit')) return;
-                const id = parseInt(card.dataset.dietId);
-                const diet = savedDiets.find(d => d.id === id);
-                if(diet) applyDiet(diet);
-            });
-        });
-        document.querySelectorAll('.diet-card-edit').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // Делегирование событий внутри dietsGrid
+        dietsGrid.addEventListener('click', async (e) => {
+            const deleteBtn = e.target.closest('.diet-card-delete');
+            if (deleteBtn) {
                 e.stopPropagation();
-                const id = parseInt(btn.dataset.editDietId);
+                const id = parseInt(deleteBtn.dataset.deleteDietId);
                 const diet = savedDiets.find(d => d.id === id);
-                if(diet) openEditDietModal(diet);
-            });
-        });
-        document.querySelectorAll('.diet-card-delete').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const id = parseInt(btn.dataset.deleteDietId);
-                const diet = savedDiets.find(d => d.id === id);
-                if(diet && confirm(`Удалить рацион "${diet.name}"?`)) {
+                if (diet && confirm(`Удалить рацион "${diet.name}"?`)) {
                     try {
-                        const response = await fetch(`http://localhost:8080/diet/${id}`, { method: 'DELETE' });
-                        if(!response.ok) throw new Error(`HTTP ${response.status}`);
+                        await request(`/diets/${id}`, { method: 'DELETE' });
                         savedDiets = savedDiets.filter(d => d.id !== id);
                         renderDietsGrid();
                         showToast('🗑️ Рацион удалён');
-                    } catch(e) {
-                        showToast('⚠️ Не удалось удалить рацион');
+                    } catch (e) {
+                        showToast(`❌ Не удалось удалить рацион: ${e.message}`);
                     }
                 }
-            });
+                return;
+            }
+
+            const editBtn = e.target.closest('.diet-card-edit');
+            if (editBtn) {
+                e.stopPropagation();
+                const id = parseInt(editBtn.dataset.editDietId);
+                const diet = savedDiets.find(d => d.id === id);
+                if (diet) openEditDietModal(diet);
+                return;
+            }
+
+            const card = e.target.closest('.diet-card');
+            if (card) {
+                const id = parseInt(card.dataset.dietId);
+                const diet = savedDiets.find(d => d.id === id);
+                if (diet) applyDiet(diet);
+            }
         });
     };
 
     const applyDiet = async (diet) => {
-        if(!diet || !Array.isArray(diet.items) || !diet.items.length) return;
+        if (!diet || !Array.isArray(diet.items) || !diet.items.length) return;
         selectedProducts = [];
 
         showToast(`⏳ Применяем "${diet.name}"...`);
 
         await ensureProductsCache();
 
-        for(const item of diet.items) {
+        for (const item of diet.items) {
             const found = productsCache[item.productId];
-            if(found) {
+            if (found) {
                 selectedProducts.push({ ...found, quantity: item.quantity });
             } else {
                 showToast(`⚠️ Продукт (id ${item.productId}) не найден в базе`);
@@ -1889,7 +1932,7 @@
     };
 
     const openSaveDietModal = () => {
-        if(!selectedProducts.length) {
+        if (!selectedProducts.length) {
             showToast('⚠️ Сначала добавьте продукты в рацион');
             return;
         }
@@ -1913,263 +1956,60 @@
     const confirmSaveDiet = async () => {
         const name = dietNameInput.value.trim();
         const description = dietDescInput.value.trim();
-        if(!name) {
+        if (!name) {
             showToast('⚠️ Введите название рациона');
             return;
         }
 
-        if(editingDietId !== null) {
-            // Режим редактирования: меняем только название/описание, состав рациона не трогаем
+        if (editingDietId !== null) {
+            // Режим редактирования: меняем только название/описание
             const diet = savedDiets.find(d => d.id === editingDietId);
             const items = diet ? diet.items : [];
             try {
-                const response = await fetch(`http://localhost:8080/diet/${editingDietId}`, {
+                await request(`/diets/${editingDietId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, description, items })
                 });
-                if(!response.ok) throw new Error(`HTTP ${response.status}`);
                 await fetchDiets();
                 saveDietModal.classList.remove('active');
                 showToast(`✅ Рацион "${name}" обновлён`);
-            } catch(e) {
-                showToast('⚠️ Не удалось обновить рацион');
+            } catch (e) {
+                showToast(`❌ Не удалось обновить рацион: ${e.message}`);
             }
             return;
         }
 
+        // Создание нового рациона
         const items = selectedProducts.map(p => ({ productId: p.id, quantity: p.quantity }));
         try {
-            const response = await fetch('http://localhost:8080/diet', {
+            await request('/diets', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, description, items })
             });
-            if(!response.ok) throw new Error(`HTTP ${response.status}`);
             await fetchDiets();
             saveDietModal.classList.remove('active');
             showToast(`✅ Рацион "${name}" сохранён`);
-        } catch(e) {
-            showToast('⚠️ Не удалось сохранить рацион');
+        } catch (e) {
+            showToast(`❌ Не удалось сохранить рацион: ${e.message}`);
         }
     };
 
-    const escapeHtml = (str) => {
-        if(!str) return '';
-        return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
-    };
+    // ========== Продукты ==========
 
     const getShopName = (shopKey) => shopKey && shopsMap[shopKey] ? shopsMap[shopKey] : null;
 
-    const renderSelectedList = () => {
-        if(!selectedList) return;
-        if(selectedProducts.length === 0) {
-            selectedList.innerHTML = '<div class="empty-message"><i class="fas fa-hand-peace"></i> Перетащите продукты сюда</div>';
-            return;
-        }
-        let html = '';
-        selectedProducts.forEach((item, idx) => {
-            const mult = getMultiplier(item);
-            const totalCal = ((item.calories || 0) * mult).toFixed(0);
-            const photoHtml = item.photoUrl ?
-                `<img src="${item.photoUrl}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\'>🍽️</div>'">` :
-                '<div class="photo-fallback">🍽️</div>';
-            html += `
-                <div class="product-item selected-item">
-                    <div class="product-photo">${photoHtml}</div>
-                    <div class="product-info">
-                        <div class="product-name">
-                            ${escapeHtml(item.name)}
-                            <span class="product-calories">🔥 ${totalCal} ккал</span>
-                        </div>
-                        <div class="nutrients-row">
-                            <span class="nutrient-badge">🥩 Б: ${((item.protein || 0) * mult).toFixed(1)}</span>
-                            <span class="nutrient-badge">🧈 Ж: ${((item.fat || 0) * mult).toFixed(1)}</span>
-                            <span class="nutrient-badge">🍚 У: ${((item.carbohydrate || 0) * mult).toFixed(1)}</span>
-                        </div>
-                        <div class="quantity-control">
-                            <button class="qty-minus" data-idx="${idx}">-${item.unit === '100г' ? 50 : 1}</button>
-                            <input type="number" class="quantity-input" data-idx="${idx}" value="${item.quantity || 0}" step="${item.unit === '100г' ? 50 : 1}" min="0">
-                            <button class="qty-plus" data-idx="${idx}">+${item.unit === '100г' ? 50 : 1}</button>
-                            <span>${item.unit === '100г' ? 'г' : (item.unit || 'шт')}</span>
-                        </div>
-                    </div>
-                    <div class="remove-icon" data-remove-idx="${idx}"><i class="fas fa-trash-alt"></i></div>
-                </div>
-            `;
-        });
-        selectedList.innerHTML = html;
-
-        document.querySelectorAll('.qty-minus').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.dataset.idx);
-                if(selectedProducts[idx]) {
-                    const step = selectedProducts[idx].unit === '100г' ? 50 : 1;
-                    selectedProducts[idx].quantity = Math.max(0, (selectedProducts[idx].quantity || 0) - step);
-                    renderSelectedList();
-                    updateTotalCalories(true);
-                    saveToLocalStorage();
-                }
-            });
-        });
-        document.querySelectorAll('.qty-plus').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.dataset.idx);
-                if(selectedProducts[idx]) {
-                    const step = selectedProducts[idx].unit === '100г' ? 50 : 1;
-                    selectedProducts[idx].quantity = (selectedProducts[idx].quantity || 0) + step;
-                    renderSelectedList();
-                    updateTotalCalories(true);
-                    saveToLocalStorage();
-                }
-            });
-        });
-        document.querySelectorAll('.quantity-input').forEach(inp => {
-            inp.addEventListener('change', (e) => {
-                const idx = parseInt(inp.dataset.idx);
-                if(selectedProducts[idx]) {
-                    let val = parseFloat(e.target.value);
-                    if(isNaN(val) || val <= 0) val = 0;
-                    selectedProducts[idx].quantity = val;
-                    renderSelectedList();
-                    updateTotalCalories(true);
-                    saveToLocalStorage();
-                }
-            });
-        });
-        document.querySelectorAll('.remove-icon').forEach(icon => {
-            icon.addEventListener('click', () => {
-                const idx = parseInt(icon.dataset.removeIdx);
-                selectedProducts.splice(idx, 1);
-                renderSelectedList();
-                updateTotalCalories(true);
-                saveToLocalStorage();
-            });
-        });
-    };
-
-    const addProductToSelected = (product) => {
-        const existing = selectedProducts.find(p => p.id === product.id);
-        if(existing) {
-            const increment = existing.unit === '100г' ? 50 : 1;
-            existing.quantity = (existing.quantity || 1) + increment;
-        } else {
-            const initialQuantity = product.unit === '100г' ? 100 : 1;
-            selectedProducts.push({ ...product, quantity: initialQuantity });
-        }
-        renderSelectedList();
-        updateTotalCalories(true);
-        saveToLocalStorage();
-        showToast(`✅ ${product.name} добавлен`);
-    };
-
-    // Функция для анализа недели
-    const analyzeWeek = async () => {
-        try {
-            showToast("📊 Загружаем данные за неделю...");
-
-            const response = await fetch('http://localhost:8080/nutrients/week', {
-                method: 'GET',
-                headers: { 'accept': '*/*' }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const weeklyData = await response.json();
-
-            const analysisTextContent = `Проанализируй этот JSON как диетолог: для каждого дня напиши, что хорошо, что плохо, и дай 2-3 конкретные подсказки по улучшению. В конце — главные выводы и топ-3 совета. Рацион уже довольно чистый, но можно сделать лучше. JSON:\n\n${JSON.stringify(weeklyData, null, 2)}`;
-
-            if (analysisText) {
-                analysisText.textContent = analysisTextContent;
-            }
-
-            if (analysisModal) {
-                analysisModal.classList.add('active');
-            }
-
-            showToast("✅ Данные загружены!");
-        } catch (error) {
-            console.error('Ошибка при получении данных за неделю:', error);
-            showToast(`❌ Ошибка: ${error.message}`);
-        }
-    };
-
-    // Копирование текста
-    const copyAnalysisToClipboard = () => {
-        if (analysisText && analysisText.textContent) {
-            navigator.clipboard.writeText(analysisText.textContent).then(() => {
-                showToast("📋 Текст скопирован в буфер обмена!");
-            }).catch(() => {
-                showToast("❌ Не удалось скопировать текст");
-            });
-        }
-    };
-
-    if (closeAnalysisModalBtn) {
-        closeAnalysisModalBtn.addEventListener('click', () => {
-            analysisModal.classList.remove('active');
-        });
-    }
-
-    if (analysisModal) {
-        analysisModal.addEventListener('click', (e) => {
-            if (e.target === analysisModal) {
-                analysisModal.classList.remove('active');
-            }
-        });
-    }
-
-    if (copyAnalysisBtn) {
-        copyAnalysisBtn.addEventListener('click', copyAnalysisToClipboard);
-    }
-
-    if (analyzeWeekBtn) {
-        analyzeWeekBtn.addEventListener('click', analyzeWeek);
-    }
-
-    const fetchProducts = async () => {
-        try {
-            const macronutrient = filterMacronutrient.value;
-            const shop = filterShop.value || '';
-            const name = filterName.value.trim() || '';
-
-            let url = `http://localhost:8080/products?`;
-            if (macronutrient && macronutrient !== 'NAME') {
-                url += `macronutrient=${encodeURIComponent(macronutrient)}&`;
-            }
-            if(shop) url += `shop=${encodeURIComponent(shop)}&`;
-            if(name) url += `name=${encodeURIComponent(name)}&`;
-            url = url.replace(/&$/, '');
-
-            const response = await fetch(url);
-            if(!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            if(Array.isArray(data)) {
-                allProducts = data;
-                renderSourceList();
-                sourceCountSpan.innerText = allProducts.length;
-            } else {
-                throw new Error('Неверный формат данных');
-            }
-        } catch(e) {
-            console.error('Ошибка загрузки продуктов:', e);
-            sourceList.innerHTML = `<div class="empty-message"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки: ${e.message}</div>`;
-        }
-    };
-
     const renderSourceList = () => {
-        if(!sourceList) return;
-        if(!allProducts.length) {
+        if (!sourceList) return;
+        if (!allProducts.length) {
             sourceList.innerHTML = '<div class="empty-message"><i class="fas fa-box-open"></i> Нет продуктов</div>';
             return;
         }
+
         let html = '';
         allProducts.forEach(product => {
-            const photoHtml = product.photoUrl ?
-                `<img src="${product.photoUrl}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\'>🍎</div>'">` :
-                '<div class="photo-fallback">🍎</div>';
+            const photoHtml = product.photoUrl
+                ? `<img src="${escapeHtml(product.photoUrl)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\'>🍎</div>'">`
+                : '<div class="photo-fallback">🍎</div>';
             const shopName = getShopName(product.shop);
             html += `
                 <div class="product-item" draggable="true" data-product-id="${product.id}">
@@ -2177,7 +2017,7 @@
                     <div class="product-info">
                         <div class="product-name">
                             ${escapeHtml(product.name)}
-                            <span class="product-calories">⚡ ${product.calories} ккал / ${product.unit || 'шт'}</span>
+                            <span class="product-calories">⚡ ${product.calories} ккал / ${escapeHtml(product.unit || 'шт')}</span>
                             ${shopName ? `<span class="product-shop"><i class="fas fa-store"></i> ${escapeHtml(shopName)}</span>` : ''}
                         </div>
                         <div class="nutrients-row">
@@ -2197,66 +2037,235 @@
         });
         sourceList.innerHTML = html;
 
-        document.querySelectorAll('#sourceList .product-item').forEach(el => {
-            el.addEventListener('dragstart', (e) => {
-                const productId = parseInt(el.dataset.productId);
-                const product = allProducts.find(p => p.id === productId);
-                if(product) {
-                    e.dataTransfer.setData('text/plain', JSON.stringify(product));
-                    e.dataTransfer.effectAllowed = 'copy';
-                }
-            });
-            el.addEventListener('click', (e) => {
-                if(!e.target.closest('.edit-icon') && !e.target.closest('.delete-icon')) {
-                    const productId = parseInt(el.dataset.productId);
-                    const product = allProducts.find(p => p.id === productId);
-                    if(product) addProductToSelected(product);
-                }
-            });
-        });
+        // Делегирование событий внутри sourceList
+        sourceList.addEventListener('click', async (e) => {
+            const editIcon = e.target.closest('.edit-icon');
+            if (editIcon) {
+                e.stopPropagation();
+                const id = parseInt(editIcon.dataset.editId);
+                const product = allProducts.find(p => p.id === id);
+                if (product) openEditModal(product);
+                return;
+            }
 
-        document.querySelectorAll('.edit-icon').forEach(icon => {
-            icon.addEventListener('click', async (e) => {
+            const deleteIcon = e.target.closest('.delete-icon');
+            if (deleteIcon) {
                 e.stopPropagation();
-                const id = parseInt(icon.dataset.editId);
+                const id = parseInt(deleteIcon.dataset.deleteId);
                 const product = allProducts.find(p => p.id === id);
-                if(product) openEditModal(product);
-            });
-        });
-        document.querySelectorAll('.delete-icon').forEach(icon => {
-            icon.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const id = parseInt(icon.dataset.deleteId);
-                const product = allProducts.find(p => p.id === id);
-                if(product && confirm(`Удалить "${product.name}"?`)) {
+                if (product && confirm(`Удалить "${product.name}"?`)) {
                     try {
-                        await fetch(`http://localhost:8080/products/${id}`, {
-                            method: 'DELETE'
-                        });
+                        await request(`/products/${id}`, { method: 'DELETE' });
                         showToast(`🗑️ ${product.name} удалён`);
                         await fetchProducts();
                         selectedProducts = selectedProducts.filter(p => p.id !== product.id);
                         renderSelectedList();
                         updateTotalCalories(true);
                         await loadHistory();
-                    } catch(e) {
-                        showToast(`❌ Ошибка удаления`);
+                    } catch (e) {
+                        showToast(`❌ Ошибка удаления: ${e.message}`);
                     }
+                }
+                return;
+            }
+
+            const item = e.target.closest('.product-item');
+            if (item) {
+                const id = parseInt(item.dataset.productId);
+                const product = allProducts.find(p => p.id === id);
+                if (product) addProductToSelected(product);
+            }
+        });
+
+        // Drag-and-drop (оставляем прямые обработчики, т.к. они нужны на элементе)
+        document.querySelectorAll('#sourceList .product-item').forEach(el => {
+            el.addEventListener('dragstart', (e) => {
+                const productId = parseInt(el.dataset.productId);
+                const product = allProducts.find(p => p.id === productId);
+                if (product) {
+                    e.dataTransfer.setData('text/plain', JSON.stringify(product));
+                    e.dataTransfer.effectAllowed = 'copy';
                 }
             });
         });
     };
 
+    const addProductToSelected = (product) => {
+        const existing = selectedProducts.find(p => p.id === product.id);
+        if (existing) {
+            const increment = existing.unit === '100г' ? 50 : 1;
+            existing.quantity = (existing.quantity || 1) + increment;
+        } else {
+            const initialQuantity = product.unit === '100г' ? 100 : 1;
+            selectedProducts.push({ ...product, quantity: initialQuantity });
+        }
+        renderSelectedList();
+        updateTotalCalories(true);
+        saveToLocalStorage();
+        showToast(`✅ ${product.name} добавлен`);
+    };
+
+    const renderSelectedList = () => {
+        if (!selectedList) return;
+        if (selectedProducts.length === 0) {
+            selectedList.innerHTML = '<div class="empty-message"><i class="fas fa-hand-peace"></i> Перетащите продукты сюда</div>';
+            return;
+        }
+
+        let html = '';
+        selectedProducts.forEach((item, idx) => {
+            const mult = getMultiplier(item);
+            const totalCal = ((item.calories || 0) * mult).toFixed(0);
+            const photoHtml = item.photoUrl
+                ? `<img src="${escapeHtml(item.photoUrl)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\'>🍽️</div>'">`
+                : '<div class="photo-fallback">🍽️</div>';
+            html += `
+                <div class="product-item selected-item">
+                    <div class="product-photo">${photoHtml}</div>
+                    <div class="product-info">
+                        <div class="product-name">
+                            ${escapeHtml(item.name)}
+                            <span class="product-calories">🔥 ${totalCal} ккал</span>
+                        </div>
+                        <div class="nutrients-row">
+                            <span class="nutrient-badge">🥩 Б: ${((item.protein || 0) * mult).toFixed(1)}</span>
+                            <span class="nutrient-badge">🧈 Ж: ${((item.fat || 0) * mult).toFixed(1)}</span>
+                            <span class="nutrient-badge">🍚 У: ${((item.carbohydrate || 0) * mult).toFixed(1)}</span>
+                        </div>
+                        <div class="quantity-control">
+                            <button class="qty-minus" data-idx="${idx}">-${item.unit === '100г' ? 50 : 1}</button>
+                            <input type="number" class="quantity-input" data-idx="${idx}" value="${item.quantity || 0}" step="${item.unit === '100г' ? 50 : 1}" min="0">
+                            <button class="qty-plus" data-idx="${idx}">+${item.unit === '100г' ? 50 : 1}</button>
+                            <span>${item.unit === '100г' ? 'г' : escapeHtml(item.unit || 'шт')}</span>
+                        </div>
+                    </div>
+                    <div class="remove-icon" data-remove-idx="${idx}"><i class="fas fa-trash-alt"></i></div>
+                </div>
+            `;
+        });
+        selectedList.innerHTML = html;
+
+        // Делегирование событий внутри selectedList
+        selectedList.addEventListener('click', (e) => {
+            const minusBtn = e.target.closest('.qty-minus');
+            if (minusBtn) {
+                const idx = parseInt(minusBtn.dataset.idx);
+                if (selectedProducts[idx]) {
+                    const step = selectedProducts[idx].unit === '100г' ? 50 : 1;
+                    selectedProducts[idx].quantity = Math.max(0, (selectedProducts[idx].quantity || 0) - step);
+                    renderSelectedList();
+                    updateTotalCalories(true);
+                    saveToLocalStorage();
+                }
+                return;
+            }
+
+            const plusBtn = e.target.closest('.qty-plus');
+            if (plusBtn) {
+                const idx = parseInt(plusBtn.dataset.idx);
+                if (selectedProducts[idx]) {
+                    const step = selectedProducts[idx].unit === '100г' ? 50 : 1;
+                    selectedProducts[idx].quantity = (selectedProducts[idx].quantity || 0) + step;
+                    renderSelectedList();
+                    updateTotalCalories(true);
+                    saveToLocalStorage();
+                }
+                return;
+            }
+
+            const removeIcon = e.target.closest('.remove-icon');
+            if (removeIcon) {
+                const idx = parseInt(removeIcon.dataset.removeIdx);
+                selectedProducts.splice(idx, 1);
+                renderSelectedList();
+                updateTotalCalories(true);
+                saveToLocalStorage();
+                return;
+            }
+        });
+
+        // Обработчики для input (change) отдельно
+        document.querySelectorAll('.quantity-input').forEach(inp => {
+            inp.addEventListener('change', (e) => {
+                const idx = parseInt(inp.dataset.idx);
+                if (selectedProducts[idx]) {
+                    let val = parseFloat(e.target.value);
+                    if (isNaN(val) || val <= 0) val = 0;
+                    selectedProducts[idx].quantity = val;
+                    renderSelectedList();
+                    updateTotalCalories(true);
+                    saveToLocalStorage();
+                }
+            });
+        });
+    };
+
+    // ========== Анализ недели ==========
+
+    const analyzeWeek = async () => {
+        try {
+            showToast("📊 Загружаем данные за неделю...");
+            const weeklyData = await request('/nutrients/week');
+            const analysisTextContent = `Проанализируй этот JSON как диетолог: для каждого дня напиши, что хорошо, что плохо, и дай 2-3 конкретные подсказки по улучшению. В конце — главные выводы и топ-3 совета. Рацион уже довольно чистый, но можно сделать лучше. JSON:\n\n${JSON.stringify(weeklyData, null, 2)}`;
+            if (analysisText) {
+                analysisText.textContent = analysisTextContent;
+            }
+            if (analysisModal) {
+                analysisModal.classList.add('active');
+            }
+            showToast("✅ Данные загружены!");
+        } catch (error) {
+            console.error('Ошибка при получении данных за неделю:', error);
+            showToast(`❌ Ошибка: ${error.message}`);
+        }
+    };
+
+    const copyAnalysisToClipboard = () => {
+        if (analysisText && analysisText.textContent) {
+            navigator.clipboard.writeText(analysisText.textContent).then(() => {
+                showToast("📋 Текст скопирован в буфер обмена!");
+            }).catch(() => {
+                showToast("❌ Не удалось скопировать текст");
+            });
+        }
+    };
+
+    // ========== Загрузка данных ==========
+
+    const fetchProducts = async () => {
+        try {
+            const params = new URLSearchParams();
+            const macronutrient = filterMacronutrient.value;
+            const shop = filterShop.value;
+            const name = filterName.value.trim();
+
+            if (macronutrient && macronutrient !== 'NAME') params.append('macronutrient', macronutrient);
+            if (shop) params.append('shop', shop);
+            if (name) params.append('name', name);
+
+            const url = `/products${params.toString() ? `?${params.toString()}` : ''}`;
+            const data = await request(url);
+            if (Array.isArray(data)) {
+                allProducts = data;
+                renderSourceList();
+                sourceCountSpan.innerText = allProducts.length;
+            } else {
+                throw new Error('Неверный формат данных');
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки продуктов:', e);
+            sourceList.innerHTML = `<div class="empty-message"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки: ${escapeHtml(e.message)}</div>`;
+        }
+    };
+
     const loadShops = async () => {
         try {
-            const response = await fetch('http://localhost:8080/products/shops');
-            if(!response.ok) throw new Error();
-            const data = await response.json();
+            const data = await request('/products/shops');
             shopsMap = data;
             const fillSelect = (select) => {
-                if(select) {
+                if (select) {
                     select.innerHTML = '<option value="">🏪 Все магазины</option>';
-                    for(const [key, value] of Object.entries(shopsMap)) {
+                    for (const [key, value] of Object.entries(shopsMap)) {
                         const option = document.createElement('option');
                         option.value = key;
                         option.textContent = `🏪 ${value}`;
@@ -2267,16 +2276,14 @@
             fillSelect(filterShop);
             fillSelect(prodShopSelect);
             fillSelect(editShopSelect);
-        } catch(e) {
+        } catch (e) {
             console.error('Ошибка загрузки магазинов:', e);
         }
     };
 
     const loadMacronutrients = async () => {
         try {
-            const response = await fetch('http://localhost:8080/products/macronutrients');
-            if(!response.ok) throw new Error();
-            const data = await response.json();
+            const data = await request('/products/macronutrients');
             filterMacronutrient.innerHTML = '';
 
             const nameOption = document.createElement('option');
@@ -2285,35 +2292,31 @@
             filterMacronutrient.appendChild(nameOption);
 
             const iconMap = { 'PROTEIN': '🥩', 'FAT': '🧈', 'CARBOHYDRATE': '🍚', 'FIBER': '🌾', 'CALORIES': '🔥' };
-            for(const [key, value] of Object.entries(data)) {
+            for (const [key, value] of Object.entries(data)) {
                 const option = document.createElement('option');
                 option.value = key;
                 option.textContent = `${iconMap[key] || '📊'} ${value}`;
                 filterMacronutrient.appendChild(option);
             }
-        } catch(e) {
+        } catch (e) {
             console.error('Ошибка загрузки макронутриентов:', e);
         }
     };
 
     const loadDayProducts = async (date, container) => {
         try {
-            const response = await fetch(`http://localhost:8080/nutrients/${date}`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-            const dayData = await response.json();
-
+            const dayData = await request(`/nutrients/${date}`);
             const commentHtml = dayData.comment
                 ? `<div class="day-comment-block" style="padding: 12px 16px; margin-bottom: 14px; background: #fff7ed; border: 1px solid #ffe7cc; border-radius: 14px; font-size: 0.88rem; color: #57534e;">
                        <i class="fas fa-comment-dots" style="color:#f97316; margin-right: 8px;"></i>${escapeHtml(dayData.comment)}
                    </div>`
                 : '';
 
-            if (dayData.productsPerDay && Array.isArray(dayData.productsPerDay) && dayData.productsPerDay.length > 0) {
+            if (dayData.productsPerDay && dayData.productsPerDay.length > 0) {
                 const productsHtml = dayData.productsPerDay.map(product => {
-                    const photoHtml = product.photoUrl ?
-                        `<img src="${product.photoUrl}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\' style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;\'>🍽️</div>'">` :
-                        '<div class="photo-fallback" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🍽️</div>';
+                    const photoHtml = product.photoUrl
+                        ? `<img src="${escapeHtml(product.photoUrl)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\' style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;\'>🍽️</div>'">`
+                        : '<div class="photo-fallback" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🍽️</div>';
                     return `
                         <div class="inline-product-item">
                             <div class="inline-product-photo">${photoHtml}</div>
@@ -2328,7 +2331,7 @@
                                 </div>
                             </div>
                             <div class="inline-product-quantity">
-                                ${product.quantity} ${product.unit === '100г' ? 'г' : (product.unit || 'шт')}
+                                ${product.quantity} ${product.unit === '100г' ? 'г' : escapeHtml(product.unit || 'шт')}
                             </div>
                         </div>
                     `;
@@ -2346,11 +2349,9 @@
     const loadDayToSelected = async (date) => {
         try {
             showToast(`📦 Загружаем рацион за ${date}...`);
-            const response = await fetch(`http://localhost:8080/nutrients/${date}`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const dayData = await response.json();
+            const dayData = await request(`/nutrients/${date}`);
             if (dayData.productsPerDay && Array.isArray(dayData.productsPerDay)) {
-                const newSelectedProducts = dayData.productsPerDay.map(product => ({
+                selectedProducts = dayData.productsPerDay.map(product => ({
                     id: product.id,
                     name: product.name,
                     calories: product.calories,
@@ -2363,7 +2364,6 @@
                     shop: product.shop || null,
                     quantity: product.quantity
                 }));
-                selectedProducts = newSelectedProducts;
                 renderSelectedList();
                 updateTotalCalories(true);
                 saveToLocalStorage();
@@ -2382,52 +2382,60 @@
 
     const loadHistory = async () => {
         try {
-            const response = await fetch('http://localhost:8080/nutrients');
-            if (!response.ok) throw new Error();
-            const data = await response.json();
+            const data = await request('/nutrients');
             if (historyTableBody) {
                 if (!data.length) {
                     historyTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Нет сохранённых рационов</td></tr>';
                     return;
                 }
+
                 const sorted = [...data].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
                 historyTableBody.innerHTML = sorted.map(rec => `
-                <tr class="history-row" data-date="${rec.date}" style="cursor: pointer;">
-                    <td style="text-align: left; position: relative;">
-                        <i class="fas fa-chevron-down expand-icon" style="margin-right: 12px; color: #f97316; transition: transform 0.3s ease;"></i>
-                        <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #f97316;"></i>
-                        ${rec.date || '—'}
-                        ${rec.comment ? '<i class="fas fa-comment-dots" title="Есть комментарий" style="margin-left: 10px; color: #f97316; opacity: 0.7;"></i>' : ''}
-                       </td>
-                    <td style="text-align: center;">🔥 ${Math.round(rec.calories || 0)} ккал</td>
-                    <td style="text-align: center;">🥩 ${(rec.protein || 0).toFixed(1)} г</td>
-                    <td style="text-align: center;">🧈 ${(rec.fat || 0).toFixed(1)} г</td>
-                    <td style="text-align: center;">🍚 ${(rec.carbohydrates || 0).toFixed(1)} г</td>
-                    <td style="text-align: center;">🌾 ${(rec.fiber || 0).toFixed(1)} г</td>
-                </tr>
-                <tr class="details-row" data-date="${rec.date}" style="display: none;">
-                    <td colspan="6" style="padding: 0;">
-                        <div class="details-content">
-                            <div class="products-list-inline" id="products-${rec.date.replace(/-/g, '')}">
-                                <div style="text-align: center; padding: 20px;">
-                                    <i class="fas fa-spinner fa-pulse"></i> Загрузка продуктов...
+                    <tr class="history-row" data-date="${rec.date}" style="cursor: pointer;">
+                        <td style="text-align: left; position: relative;">
+                            <i class="fas fa-chevron-down expand-icon" style="margin-right: 12px; color: #f97316; transition: transform 0.3s ease;"></i>
+                            <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #f97316;"></i>
+                            ${escapeHtml(rec.date || '—')}
+                            ${rec.comment ? '<i class="fas fa-comment-dots" title="Есть комментарий" style="margin-left: 10px; color: #f97316; opacity: 0.7;"></i>' : ''}
+                        </td>
+                        <td style="text-align: center;">🔥 ${Math.round(rec.calories || 0)} ккал</td>
+                        <td style="text-align: center;">🥩 ${(rec.protein || 0).toFixed(1)} г</td>
+                        <td style="text-align: center;">🧈 ${(rec.fat || 0).toFixed(1)} г</td>
+                        <td style="text-align: center;">🍚 ${(rec.carbohydrates || 0).toFixed(1)} г</td>
+                        <td style="text-align: center;">🌾 ${(rec.fiber || 0).toFixed(1)} г</td>
+                    </tr>
+                    <tr class="details-row" data-date="${rec.date}" style="display: none;">
+                        <td colspan="6" style="padding: 0;">
+                            <div class="details-content">
+                                <div class="products-list-inline" id="products-${rec.date.replace(/-/g, '')}">
+                                    <div style="text-align: center; padding: 20px;">
+                                        <i class="fas fa-spinner fa-pulse"></i> Загрузка продуктов...
+                                    </div>
                                 </div>
+                                <button class="load-day-btn" data-date="${rec.date}">
+                                    <i class="fas fa-download"></i> Загрузить этот рацион в "Мой рацион"
+                                </button>
                             </div>
-                            <button class="load-day-btn" data-date="${rec.date}">
-                                <i class="fas fa-download"></i> Загрузить этот рацион в "Мой рацион"
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+                        </td>
+                    </tr>
+                `).join('');
 
-                document.querySelectorAll('.history-row').forEach(row => {
-                    const date = row.dataset.date;
-                    const detailsRow = document.querySelector(`.details-row[data-date="${date}"]`);
-                    const expandIcon = row.querySelector('.expand-icon');
-                    row.addEventListener('click', async (e) => {
-                        if (e.target.closest('.load-day-btn')) return;
+                // Делегирование событий для таблицы истории
+                historyTableBody.addEventListener('click', async (e) => {
+                    const loadBtn = e.target.closest('.load-day-btn');
+                    if (loadBtn) {
                         e.stopPropagation();
+                        const date = loadBtn.dataset.date;
+                        await loadDayToSelected(date);
+                        return;
+                    }
+
+                    const row = e.target.closest('.history-row');
+                    if (row) {
+                        const date = row.dataset.date;
+                        const detailsRow = document.querySelector(`.details-row[data-date="${date}"]`);
+                        const expandIcon = row.querySelector('.expand-icon');
+
                         if (currentOpenDate && currentOpenDate !== date) {
                             const prevDetailsRow = document.querySelector(`.details-row[data-date="${currentOpenDate}"]`);
                             const prevExpandIcon = document.querySelector(`.history-row[data-date="${currentOpenDate}"] .expand-icon`);
@@ -2436,6 +2444,7 @@
                                 if (prevExpandIcon) prevExpandIcon.classList.remove('expanded');
                             }
                         }
+
                         if (detailsRow.style.display === 'none') {
                             const productsContainer = document.getElementById(`products-${date.replace(/-/g, '')}`);
                             if (productsContainer && productsContainer.innerHTML.includes('Загрузка продуктов')) {
@@ -2449,15 +2458,7 @@
                             if (expandIcon) expandIcon.classList.remove('expanded');
                             currentOpenDate = null;
                         }
-                    });
-                });
-
-                document.querySelectorAll('.load-day-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        e.stopPropagation();
-                        const date = btn.dataset.date;
-                        await loadDayToSelected(date);
-                    });
+                    }
                 });
             }
         } catch (e) {
@@ -2468,55 +2469,33 @@
         }
     };
 
+    // ========== Сохранение дневного рациона (обновлено) ==========
+
     const saveDietForDate = async (date, dateLabel) => {
         if (!selectedProducts.length) {
             showToast('⚠️ Рацион пуст');
             return false;
         }
-        let total = 0, protein = 0, fat = 0, carbs = 0, fiber = 0;
-        selectedProducts.forEach(p => {
-            const m = getMultiplier(p);
-            total += (p.calories || 0) * m;
-            protein += (p.protein || 0) * m;
-            fat += (p.fat || 0) * m;
-            carbs += (p.carbohydrate || 0) * m;
-            fiber += (p.fiber || 0) * m;
-        });
+
         const productsPerDay = selectedProducts.map(p => ({
-            id: p.id,
-            name: p.name,
-            calories: p.calories || 0,
-            protein: p.protein || 0,
-            fat: p.fat || 0,
-            carbohydrate: p.carbohydrate || 0,
-            fiber: p.fiber || 0,
-            unit: p.unit || 'г',
-            photoUrl: p.photoUrl || '',
-            shop: p.shop || null,
+            productId: p.id,
             quantity: p.quantity || 1
         }));
+
         const commentInput = document.getElementById('dietDayComment');
         const comment = commentInput ? commentInput.value.trim() : '';
+
         const payload = {
             date: date,
-            calories: total,
-            protein: protein,
-            fat: fat,
-            carbohydrates: carbs,
-            fiber: fiber,
             comment: comment,
             productsPerDay: productsPerDay
         };
+
         try {
-            const response = await fetch('http://localhost:8080/nutrients', {
+            await request('/nutrients', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}: ${errorText}`);
-            }
             showToast(`✅ Рацион сохранён на ${dateLabel}`);
             await loadHistory();
             return true;
@@ -2533,12 +2512,14 @@
         saveDietForDate(today, `сегодня (${todayFormatted})`);
     };
 
+    // ========== Модальные окна ==========
+
     const planDateModal = document.getElementById('planDateModal');
     const planDateInput = document.getElementById('planDateInput');
 
     const openPlanDateModal = () => {
-        if(!planDateModal || !planDateInput) return;
-        if(!planDateInput.value) {
+        if (!planDateModal || !planDateInput) return;
+        if (!planDateInput.value) {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             planDateInput.value = tomorrow.toISOString().split('T')[0];
@@ -2548,14 +2529,14 @@
 
     const confirmPlanDate = async () => {
         const dateValue = planDateInput?.value;
-        if(!dateValue) {
+        if (!dateValue) {
             showToast('❌ Выберите дату');
             return;
         }
         const parsedDate = new Date(dateValue + 'T00:00:00');
         const dateFormatted = parsedDate.toLocaleDateString('ru-RU');
         const success = await saveDietForDate(dateValue, dateFormatted);
-        if(success) {
+        if (success) {
             planDateModal.classList.remove('active');
         }
     };
@@ -2587,14 +2568,13 @@
             photoUrl: document.getElementById('editPhotoUrl').value.trim() || '',
             shop: document.getElementById('editShop').value || null
         };
-        if(!updated.name) {
+        if (!updated.name) {
             showToast('Название не может быть пустым');
             return;
         }
         try {
-            await fetch(`http://localhost:8080/products/${currentEditId}`, {
+            await request(`/products/${currentEditId}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updated)
             });
             document.getElementById('editModal').classList.remove('active');
@@ -2603,15 +2583,15 @@
             selectedProducts = selectedProducts.map(p => p.id === currentEditId ? { ...p, ...updated, quantity: p.quantity } : p);
             renderSelectedList();
             updateTotalCalories(true);
-        } catch(e) {
-            showToast('Ошибка обновления');
+        } catch (e) {
+            showToast(`❌ Ошибка обновления: ${e.message}`);
         }
     };
 
     const addNewProduct = async () => {
         const name = document.getElementById('prodName').value.trim();
         const calories = parseFloat(document.getElementById('prodCalories').value);
-        if(!name || isNaN(calories)) {
+        if (!name || isNaN(calories)) {
             showToast('Заполните название и калории');
             return;
         }
@@ -2627,9 +2607,8 @@
             shop: document.getElementById('prodShop').value || null
         };
         try {
-            await fetch('http://localhost:8080/products', {
+            await request('/products', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newProduct)
             });
             const msgDiv = document.getElementById('addProductMessage');
@@ -2643,8 +2622,8 @@
             document.getElementById('prodFiber').value = '0';
             document.getElementById('prodPhotoUrl').value = '';
             await fetchProducts();
-        } catch(e) {
-            showToast('Ошибка добавления');
+        } catch (e) {
+            showToast(`❌ Ошибка добавления: ${e.message}`);
         }
     };
 
@@ -2660,20 +2639,19 @@
     };
 
     const setupDropTarget = () => {
-        const rightColumn = document.getElementById('selectedList');
-        if(rightColumn) {
-            rightColumn.addEventListener('dragover', (e) => {
+        if (selectedList) {
+            selectedList.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'copy';
             });
-            rightColumn.addEventListener('drop', (e) => {
+            selectedList.addEventListener('drop', (e) => {
                 e.preventDefault();
                 const raw = e.dataTransfer.getData('text/plain');
-                if(raw) {
+                if (raw) {
                     try {
                         const product = JSON.parse(raw);
-                        if(product && product.name) addProductToSelected(product);
-                    } catch(err) {}
+                        if (product && product.name) addProductToSelected(product);
+                    } catch (err) {}
                 }
             });
         }
@@ -2683,14 +2661,15 @@
         const drawerPanel = document.getElementById('drawerPanel');
         const toggleBtn = document.getElementById('drawerToggleBtn');
         const closeBtn = document.getElementById('drawerCloseBtn');
-        if(toggleBtn) {
+        if (toggleBtn) {
             toggleBtn.addEventListener('click', () => drawerPanel.classList.toggle('open'));
         }
-        if(closeBtn) {
+        if (closeBtn) {
             closeBtn.addEventListener('click', () => drawerPanel.classList.remove('open'));
         }
+
         const calcBtn = document.getElementById('drawerCalculateBtn');
-        if(calcBtn) {
+        if (calcBtn) {
             calcBtn.addEventListener('click', async () => {
                 const gender = document.getElementById('drawerGender').value;
                 const weight = parseFloat(document.getElementById('drawerWeight').value);
@@ -2701,7 +2680,8 @@
                 const errorDiv = document.getElementById('drawerError');
                 const resultDiv = document.getElementById('drawerResultArea');
 
-                if(isNaN(weight) || isNaN(height) || isNaN(age) || isNaN(steps) || weight <= 0 || height <= 0 || age <= 0 || steps < 0) {
+                if (isNaN(weight) || isNaN(height) || isNaN(age) || isNaN(steps) ||
+                    weight <= 0 || height <= 0 || age <= 0 || steps < 0) {
                     errorDiv.innerText = '❌ Заполните все поля корректно';
                     resultDiv.style.display = 'none';
                     return;
@@ -2711,20 +2691,17 @@
                 resultDiv.style.display = 'block';
 
                 try {
-                    const res = await fetch('http://localhost:8080/nutrients/calculate', {
+                    const data = await request('/nutrients/calculate', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             gender,
                             weightKg: weight,
                             heightCm: height,
                             ageYears: age,
                             steps,
-                            target: target
+                            target
                         })
                     });
-                    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-                    const data = await res.json();
                     resultDiv.innerHTML = `
                         <div class="drawer-result">
                             <div class="result-card">
@@ -2764,14 +2741,16 @@
                         </div>
                     `;
                     showToast('✅ Нормы рассчитаны!');
-                } catch(e) {
+                } catch (e) {
                     console.error('Ошибка:', e);
-                    errorDiv.innerText = '⚠️ Ошибка расчета. Проверьте соединение с сервером.';
+                    errorDiv.innerText = `⚠️ Ошибка расчета: ${e.message}`;
                     resultDiv.style.display = 'none';
                 }
             });
         }
     };
+
+    // ========== Инициализация ==========
 
     const init = async () => {
         await Promise.all([loadShops(), loadMacronutrients()]);
@@ -2782,6 +2761,7 @@
         setupDropTarget();
         setupDrawer();
 
+        // Обработчики кнопок
         document.getElementById('refreshProductsBtn')?.addEventListener('click', fetchProducts);
         document.getElementById('refreshHistoryBtn')?.addEventListener('click', loadHistory);
         document.getElementById('resetSelectionBtn')?.addEventListener('click', () => {
@@ -2815,7 +2795,7 @@
             planDateModal?.classList.remove('active');
         });
         planDateModal?.addEventListener('click', (e) => {
-            if(e.target === planDateModal) planDateModal.classList.remove('active');
+            if (e.target === planDateModal) planDateModal.classList.remove('active');
         });
         document.getElementById('saveAsDietBtn')?.addEventListener('click', openSaveDietModal);
         document.getElementById('confirmSaveDietBtn')?.addEventListener('click', confirmSaveDiet);
@@ -2826,15 +2806,24 @@
             saveDietModal.classList.remove('active');
         });
         saveDietModal?.addEventListener('click', (e) => {
-            if(e.target === saveDietModal) saveDietModal.classList.remove('active');
+            if (e.target === saveDietModal) saveDietModal.classList.remove('active');
         });
         filterMacronutrient?.addEventListener('change', () => fetchProducts());
         filterShop?.addEventListener('change', () => fetchProducts());
         let debounceTimer;
         filterName?.addEventListener('input', () => {
-            if(debounceTimer) clearTimeout(debounceTimer);
+            if (debounceTimer) clearTimeout(debounceTimer);
             debounceTimer = setTimeout(fetchProducts, 500);
         });
+        // Кнопки модалок анализа
+        closeAnalysisModalBtn?.addEventListener('click', () => {
+            analysisModal.classList.remove('active');
+        });
+        analysisModal?.addEventListener('click', (e) => {
+            if (e.target === analysisModal) analysisModal.classList.remove('active');
+        });
+        copyAnalysisBtn?.addEventListener('click', copyAnalysisToClipboard);
+        analyzeWeekBtn?.addEventListener('click', analyzeWeek);
     };
 
     init();

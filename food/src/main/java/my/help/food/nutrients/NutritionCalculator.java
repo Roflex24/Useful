@@ -7,10 +7,10 @@ public class NutritionCalculator {
 
     public NutrientsExpenditureRs calculateDailyNutrients(NutrientsExpenditureRq request) {
         double bmr = calculateBMR(request);
-        double stepCalories = request.getSteps() * (request.getWeightKg() * 0.0005);
+        double stepCalories = request.steps() * (request.weightKg() * 0.0005);
         double totalCalories = bmr + stepCalories;
-        double targetCalories = calculateTargetCalories(totalCalories, request.getTarget());
-        NutritionValues nutrition = calculateNutrition(targetCalories, request.getWeightKg(), request.getTarget());
+        double targetCalories = calculateTargetCalories(totalCalories, request.target());
+        NutritionValues nutrition = calculateNutrition(targetCalories, request.weightKg(), request.target());
 
         return NutrientsExpenditureRs.builder()
                 .bmr(round(bmr))
@@ -25,12 +25,12 @@ public class NutritionCalculator {
     }
 
     private double calculateBMR(NutrientsExpenditureRq request) {
-        boolean isMale = "male".equalsIgnoreCase(request.getGender());
+        boolean isMale = "male".equalsIgnoreCase(request.gender());
         double bmr;
         if (isMale) {
-            bmr = (10 * request.getWeightKg()) + (6.25 * request.getHeightCm()) - (5 * request.getAgeYears()) + 5;
+            bmr = (10 * request.weightKg()) + (6.25 * request.heightCm()) - (5 * request.ageYears()) + 5;
         } else {
-            bmr = (10 * request.getWeightKg()) + (6.25 * request.getHeightCm()) - (5 * request.getAgeYears()) - 161;
+            bmr = (10 * request.weightKg()) + (6.25 * request.heightCm()) - (5 * request.ageYears()) - 161;
         }
         return bmr;
     }

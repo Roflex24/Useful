@@ -1,14 +1,17 @@
 package my.help.food.nutrients;
 
+import my.help.food.nutrients.dto.NutrientsRequest;
+import my.help.food.nutrients.dto.NutrientsResponse;
 import org.mapstruct.Mapper;
+
 import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface NutrientsMapper {
 
-    NutrientsModel toModel(NutrientsPerDayEntity nutrientsPerDayEntity);
-    NutrientsPerDayEntity toEntity(NutrientsModel nutrientsModel);
+    NutrientsResponse toResponse(NutrientsPerDayEntity entity);
 
-    List<NutrientsModel> toModelList(List<NutrientsPerDayEntity> nutrientsPerDayEntityList);
+    List<NutrientsResponse> toResponseList(List<NutrientsPerDayEntity> entities);
 
+    NutrientsPerDayEntity toEntity(NutrientsRequest request);
 }

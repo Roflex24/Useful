@@ -1,5 +1,6 @@
 package my.help.food.diet;
 
+import my.help.food.diet.dto.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -9,21 +10,21 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface DietMapper {
 
-    DietItemModel toItemModel(DietItemEntity dietItemEntity);
-    List<DietItemModel> toItemModelList(List<DietItemEntity> dietItemEntities);
-
-    DietModel toModel(DietEntity dietEntity);
-    List<DietModel> toModelList(List<DietEntity> dietEntities);
+    DietResponse toResponse(DietEntity entity);
+    List<DietResponse> toResponseList(List<DietEntity> entities);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "items", ignore = true)
-    DietEntity toEntity(DietModel dietModel);
+    DietEntity toEntity(DietRequest request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "items", ignore = true)
-    void updateEntityFromModel(DietModel dietModel, @MappingTarget DietEntity dietEntity);
+    void updateEntityFromRequest(DietRequest request, @MappingTarget DietEntity entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "diet", source = "diet")
-    DietItemEntity toItemEntity(DietItemModel dietItemModel, DietEntity diet);
+    DietItemEntity toItemEntity(DietItemRequest request, DietEntity diet);
+
+    DietItemResponse toItemResponse(DietItemEntity entity);
+    List<DietItemResponse> toItemResponseList(List<DietItemEntity> entities);
 }

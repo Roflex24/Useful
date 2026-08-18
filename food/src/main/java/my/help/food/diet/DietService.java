@@ -1,10 +1,9 @@
 package my.help.food.diet;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import my.help.food.diet.dto.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -16,41 +15,43 @@ public class DietService {
     private final DietMapper dietMapper;
 
     @Transactional(readOnly = true)
-    public List<DietModel> getAllDiets() {
-        return dietMapper.toModelList(dietRepository.findAll());
+    public List<DietResponse> getAllDiets() {
+        return dietMapper.toResponseList(dietRepository.findAll());
     }
 
     @Transactional
-    public DietModel createDiet(DietModel dietModel) {
-        DietEntity dietEntity = dietMapper.toEntity(dietModel);
-        if (dietModel.getItems() != null) {
-            List<DietItemEntity> items = dietModel.getItems().stream()
-                    .map(item -> dietMapper.toItemEntity(item, dietEntity))
+    public DietResponse createDiet(DietRequest request) {
+        DietEntity entity = dietMapper.toEntity(request);
+        if (request.items() != null) {
+            List<DietItemEntity> items = request.items().stream()
+                    .map(item -> dietMapper.toItemEntity(item, entity))
                     .toList();
-            dietEntity.setItems(items);
+            entity.setItems(items);
         }
-        return dietMapper.toModel(dietRepository.save(dietEntity));
+        return dietMapper.toResponse(dietRepository.save(entity));
     }
 
     @Transactional
-    public DietModel updateDiet(DietModel dietModel) {
-        DietEntity dietEntity = dietRepository.findById(dietModel.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Diet not found"));
-        dietMapper.updateEntityFromModel(dietModel, dietEntity);
-        dietEntity.getItems().clear();
-        if (dietModel.getItems() != null) {
-            List<DietItemEntity> items = dietModel.getItems().stream()
-                    .map(item -> dietMapper.toItemEntity(item, dietEntity))
+    public DietResponse updateDiet(Long id, DietRequest request) {
+        DietEntity entity = dietRepository.findById(id)
+                .orElseThrow(() -> new DietNotFoundException(id));
+        dietMapper.updateEntityFromRequest(request, entity);
+
+        // Полная замена списка items
+        entity.getItems().clear();
+        if (request.items() != null) {
+            List<DietItemEntity> items = request.items().stream()
+                    .map(item -> dietMapper.toItemEntity(item, entity))
                     .toList();
-            dietEntity.getItems().addAll(items);
+            entity.getItems().addAll(items);
         }
-        return dietMapper.toModel(dietRepository.save(dietEntity));
+        return dietMapper.toResponse(dietRepository.save(entity));
     }
 
     @Transactional
     public void deleteDiet(Long id) {
         if (!dietRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Diet not found");
+            throw new DietNotFoundException(id);
         }
         dietRepository.deleteById(id);
     }

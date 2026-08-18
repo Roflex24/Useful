@@ -11,4 +11,5 @@ public interface ProductsPerDayRepository extends JpaRepository<ProductsPerDayEn
 
     List<ProductsPerDayEntity> findById_Date(LocalDate date);
     void deleteById_Date(LocalDate date);
+    List<ProductsPerDayEntity> findById_DateBetween(LocalDate start, LocalDate end);
 }
