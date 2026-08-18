@@ -1,7 +1,7 @@
 package my.help.food.product;
 
-import my.help.food.product.dto.ProductRequest;
-import my.help.food.product.dto.ProductResponse;
+import my.help.food.product.dto.ProductRq;
+import my.help.food.product.dto.ProductRs;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -9,11 +9,11 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
 
-    ProductResponse toResponse(ProductEntity entity);
+    ProductRs toResponse(ProductEntity entity);
 
     @Mapping(target = "id", ignore = true)
-    ProductEntity toEntity(ProductRequest request);
+    ProductEntity toEntity(ProductRq request);
 
     @Mapping(target = "id", ignore = true)
-    void updateEntityFromRequest(ProductRequest request, @MappingTarget ProductEntity entity);
+    void updateEntityFromRequest(ProductRq request, @MappingTarget ProductEntity entity);
 }

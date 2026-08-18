@@ -6,5 +6,5 @@ public record DietResponse(
         Long id,
         String name,
         String description,
-        List<DietItemResponse> items
+        List<DietItemRs> items
 ) {}

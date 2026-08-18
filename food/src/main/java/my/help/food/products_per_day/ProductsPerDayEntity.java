@@ -20,3 +20,5 @@ public class ProductsPerDayEntity {
     @Column(nullable = false)
     private Double quantity;
 }
+
+//todo добавить защиту чтобы нельзя было удалять продукты если они где-то используются

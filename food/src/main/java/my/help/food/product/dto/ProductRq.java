@@ -3,7 +3,7 @@ package my.help.food.product.dto;
 import jakarta.validation.constraints.*;
 import my.help.food.common.enums.Shop;
 
-public record ProductRequest(
+public record ProductRq(
         @NotBlank(message = "Название обязательно")
         @Size(max = 150, message = "Название не длиннее 150 символов")
         String name,

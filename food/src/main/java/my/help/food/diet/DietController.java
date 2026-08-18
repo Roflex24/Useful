@@ -1,8 +1,9 @@
 package my.help.food.diet;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import my.help.food.diet.dto.DietRequest;
+import my.help.food.diet.dto.DietRq;
 import my.help.food.diet.dto.DietResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,8 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/diets")  // изменено на /diets
+@RequestMapping("/api/diets")
 @RequiredArgsConstructor
+@Tag(name = "Food API", description = "Продукты и питание")
 public class DietController {
 
     private final DietService dietService;
@@ -23,7 +25,7 @@ public class DietController {
     }
 
     @PostMapping
-    public ResponseEntity<DietResponse> createDiet(@Valid @RequestBody DietRequest request) {
+    public ResponseEntity<DietResponse> createDiet(@Valid @RequestBody DietRq request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(dietService.createDiet(request));
     }
@@ -31,7 +33,7 @@ public class DietController {
     @PutMapping("/{id}")
     public ResponseEntity<DietResponse> updateDiet(
             @PathVariable Long id,
-            @Valid @RequestBody DietRequest request) {
+            @Valid @RequestBody DietRq request) {
         return ResponseEntity.ok(dietService.updateDiet(id, request));
     }
 

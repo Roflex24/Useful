@@ -21,7 +21,7 @@ public class DietService {
     }
 
     @Transactional
-    public DietResponse createDiet(DietRequest request) {
+    public DietResponse createDiet(DietRq request) {
         DietEntity entity = dietMapper.toEntity(request);
         if (request.items() != null) {
             List<DietItemEntity> items = request.items().stream()
@@ -33,7 +33,7 @@ public class DietService {
     }
 
     @Transactional
-    public DietResponse updateDiet(Long id, DietRequest request) {
+    public DietResponse updateDiet(Long id, DietRq request) {
         DietEntity entity = dietRepository.findById(id)
                 .orElseThrow(() -> new DietNotFoundException(id));
         dietMapper.updateEntityFromRequest(request, entity);

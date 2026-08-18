@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record NutrientsUpdateRequest(
+public record NutrientsUpdateRq(
         @Size(max = 2000) String comment,
-        @Valid List<ProductsPerDayRequest> productsPerDay
+        @Valid List<ProductsPerDayRq> productsPerDay
 ) {}

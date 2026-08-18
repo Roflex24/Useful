@@ -3,7 +3,7 @@ package my.help.food.diet.dto;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-public record DietItemRequest(
+public record DietItemRq(
         @NotNull(message = "productId обязателен")
         Long productId,
 

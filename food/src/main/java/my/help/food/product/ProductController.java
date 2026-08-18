@@ -1,11 +1,12 @@
 package my.help.food.product;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import my.help.food.common.enums.Macronutrients;
 import my.help.food.common.enums.Shop;
-import my.help.food.product.dto.ProductRequest;
-import my.help.food.product.dto.ProductResponse;
+import my.help.food.product.dto.ProductRq;
+import my.help.food.product.dto.ProductRs;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -18,8 +19,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/api/products")
 @RequiredArgsConstructor
+@Tag(name = "Food API", description = "Продукты и питание")
 public class ProductController {
 
     private final ProductService productService;
@@ -43,7 +45,7 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<ProductResponse>> getAllProducts(
+    public ResponseEntity<Page<ProductRs>> getAllProducts(
             @RequestParam(value = "macronutrient", required = false) Macronutrients macronutrient,
             @RequestParam(value = "shop", required = false) Shop shop,
             @RequestParam(value = "name", required = false) String productName,
@@ -52,15 +54,15 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<ProductResponse> addProduct(@Valid @RequestBody ProductRequest request) {
+    public ResponseEntity<ProductRs> addProduct(@Valid @RequestBody ProductRq request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(productService.addProduct(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductResponse> updateProduct(
+    public ResponseEntity<ProductRs> updateProduct(
             @PathVariable Long id,
-            @Valid @RequestBody ProductRequest request) {
+            @Valid @RequestBody ProductRq request) {
         return ResponseEntity.ok(productService.updateProduct(id, request));
     }
 

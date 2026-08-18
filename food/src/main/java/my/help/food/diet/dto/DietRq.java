@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
-public record DietRequest(
+public record DietRq(
         @NotBlank(message = "Название рациона обязательно")
         @Size(max = 150)
         String name,
@@ -15,5 +15,5 @@ public record DietRequest(
         String description,
 
         @Valid
-        List<DietItemRequest> items
+        List<DietItemRq> items
 ) {}

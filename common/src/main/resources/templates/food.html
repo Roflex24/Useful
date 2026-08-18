@@ -1491,7 +1491,7 @@
 <script>
     // ========== Утилиты ==========
 
-    const API_BASE = ''; // все запросы относительные
+    const API_BASE = '/api'; // <-- ДОБАВЛЕН ПРЕФИКС /api/
 
     async function request(url, options = {}) {
         const response = await fetch(API_BASE + url, {

@@ -3,7 +3,7 @@ package my.help.food.nutrients.dto;
 import java.time.LocalDate;
 import java.util.List;
 
-public record NutrientsResponse(
+public record NutrientsRs(
         LocalDate date,
         int calories,
         double protein,
@@ -11,5 +11,5 @@ public record NutrientsResponse(
         double carbohydrates,
         double fiber,
         String comment,
-        List<ProductsPerDayResponse> productsPerDay
+        List<ProductsPerDayRs> productsPerDay
 ) {}

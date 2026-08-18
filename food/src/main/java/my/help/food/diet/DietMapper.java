@@ -15,16 +15,16 @@ public interface DietMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "items", ignore = true)
-    DietEntity toEntity(DietRequest request);
+    DietEntity toEntity(DietRq request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "items", ignore = true)
-    void updateEntityFromRequest(DietRequest request, @MappingTarget DietEntity entity);
+    void updateEntityFromRequest(DietRq request, @MappingTarget DietEntity entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "diet", source = "diet")
-    DietItemEntity toItemEntity(DietItemRequest request, DietEntity diet);
+    DietItemEntity toItemEntity(DietItemRq request, DietEntity diet);
 
-    DietItemResponse toItemResponse(DietItemEntity entity);
-    List<DietItemResponse> toItemResponseList(List<DietItemEntity> entities);
+    DietItemRs toItemResponse(DietItemEntity entity);
+    List<DietItemRs> toItemResponseList(List<DietItemEntity> entities);
 }

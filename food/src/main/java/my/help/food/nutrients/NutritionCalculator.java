@@ -1,7 +1,7 @@
 package my.help.food.nutrients;
 
 import my.help.food.common.exception.ProductNotFoundException;
-import my.help.food.product.dto.ProductResponse;
+import my.help.food.product.dto.ProductRs;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -14,14 +14,14 @@ public class NutritionCalculator {
     }
 
     public NutritionTotals calculate(Map<Long, Double> quantityByProductId,
-                                     Map<Long, ProductResponse> productsById) {
+                                     Map<Long, ProductRs> productsById) {
         double calories = 0, protein = 0, fat = 0, carbs = 0, fiber = 0;
 
         for (Map.Entry<Long, Double> entry : quantityByProductId.entrySet()) {
             Long productId = entry.getKey();
             double quantity = entry.getValue();
 
-            ProductResponse product = productsById.get(productId);
+            ProductRs product = productsById.get(productId);
             if (product == null) {
                 throw new ProductNotFoundException(productId);
             }

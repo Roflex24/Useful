@@ -2,7 +2,7 @@ package my.help.food.product.dto;
 
 import my.help.food.common.enums.Shop;
 
-public record ProductResponse(
+public record ProductRs(
         Long id,
         String name,
         double calories,

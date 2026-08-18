@@ -1,7 +1,7 @@
 package my.help.food.products_per_day;
 
-import my.help.food.nutrients.dto.ProductsPerDayResponse;
-import my.help.food.product.dto.ProductResponse;
+import my.help.food.nutrients.dto.ProductsPerDayRs;
+import my.help.food.product.dto.ProductRs;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -19,5 +19,5 @@ public interface ProductsPerDayMapper {
     @Mapping(target = "photoUrl", source = "product.photoUrl")
     @Mapping(target = "shop", source = "product.shop")
     @Mapping(target = "quantity", source = "quantity")
-    ProductsPerDayResponse toResponse(ProductResponse product, Double quantity);
+    ProductsPerDayRs toResponse(ProductRs product, Double quantity);
 }

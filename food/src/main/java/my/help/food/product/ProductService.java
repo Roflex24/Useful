@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import my.help.food.common.enums.Macronutrients;
 import my.help.food.common.enums.Shop;
 import my.help.food.common.exception.ProductNotFoundException;
-import my.help.food.product.dto.ProductRequest;
-import my.help.food.product.dto.ProductResponse;
+import my.help.food.product.dto.ProductRq;
+import my.help.food.product.dto.ProductRs;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +27,7 @@ public class ProductService {
     private final ProductMapper productMapper;
 
     @Transactional(readOnly = true)
-    public Page<ProductResponse> getAllProducts(Macronutrients sortBy, Shop shop, String productName, Pageable pageable) {
+    public Page<ProductRs> getAllProducts(Macronutrients sortBy, Shop shop, String productName, Pageable pageable) {
         Specification<ProductEntity> spec = buildSpecification(shop, productName);
         Pageable sortedPageable = applySort(pageable, sortBy);
 
@@ -36,14 +36,14 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse addProduct(ProductRequest request) {
+    public ProductRs addProduct(ProductRq request) {
         ProductEntity entity = productMapper.toEntity(request);
         ProductEntity saved = productRepository.save(entity);
         return productMapper.toResponse(saved);
     }
 
     @Transactional
-    public ProductResponse updateProduct(Long id, ProductRequest request) {
+    public ProductRs updateProduct(Long id, ProductRq request) {
         ProductEntity productEntity = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
         productMapper.updateEntityFromRequest(request, productEntity);
@@ -60,10 +60,10 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Map<Long, ProductResponse> getProductsByIds(Collection<Long> ids) {
+    public Map<Long, ProductRs> getProductsByIds(Collection<Long> ids) {
         return productRepository.findAllById(ids).stream()
                 .map(productMapper::toResponse)
-                .collect(Collectors.toMap(ProductResponse::id, Function.identity()));
+                .collect(Collectors.toMap(ProductRs::id, Function.identity()));
     }
 
     private Specification<ProductEntity> buildSpecification(Shop shop, String productName) {
