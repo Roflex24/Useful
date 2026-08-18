@@ -2,10 +2,9 @@ package my.help.food.nutrients;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import my.help.food.nutrients.dto.NutrientsRequest;
 import my.help.food.nutrients.dto.NutrientsResponse;
+import my.help.food.nutrients.dto.NutrientsUpdateRequest;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,16 +34,10 @@ public class NutrientsController {
         return ResponseEntity.ok(nutrientsService.getNutrientsPerDate(date));
     }
 
-    @PostMapping
-    public ResponseEntity<NutrientsResponse> addNutrientsPerDay(
-            @Valid @RequestBody NutrientsRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(nutrientsService.addNutrientsPerDay(request));
-    }
-
-    @PostMapping("/calculate")
-    public ResponseEntity<NutrientsExpenditureRs> calculateDailyNutrients(
-            @Valid @RequestBody NutrientsExpenditureRq request) {
-        return ResponseEntity.ok(nutrientsService.calculateDailyNutrients(request));
+    @PutMapping("/{date}")
+    public ResponseEntity<NutrientsResponse> updateNutrientsPerDate(
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Valid @RequestBody NutrientsUpdateRequest request) {
+        return ResponseEntity.ok(nutrientsService.updateNutrientsPerDate(date, request));
     }
 }

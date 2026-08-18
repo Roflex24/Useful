@@ -16,7 +16,7 @@ public class DietService {
 
     @Transactional(readOnly = true)
     public List<DietResponse> getAllDiets() {
-        return dietMapper.toResponseList(dietRepository.findAll());
+        return dietMapper.toResponseList(dietRepository.findAllWithItems());
     }
 
     @Transactional

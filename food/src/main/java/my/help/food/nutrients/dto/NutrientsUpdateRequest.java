@@ -1,15 +1,13 @@
 package my.help.food.nutrients.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
 import java.util.List;
 
-public record NutrientsRequest(
-        @NotNull @PastOrPresent LocalDate date,
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record NutrientsUpdateRequest(
         @Size(max = 2000) String comment,
         @Valid List<ProductsPerDayRequest> productsPerDay
 ) {}

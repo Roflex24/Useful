@@ -4,12 +4,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import my.help.food.product.dto.ProductRequest;
 import my.help.food.product.dto.ProductResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -39,11 +41,12 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponse>> getAllProducts(
+    public ResponseEntity<Page<ProductResponse>> getAllProducts(
             @RequestParam(value = "macronutrient", required = false) Macronutrients macronutrient,
             @RequestParam(value = "shop", required = false) Shop shop,
-            @RequestParam(value = "name", required = false) String productName) {
-        return ResponseEntity.ok(productService.getAllProducts(macronutrient, shop, productName));
+            @RequestParam(value = "name", required = false) String productName,
+            @PageableDefault(size = 50, sort = "name") Pageable pageable) {
+        return ResponseEntity.ok(productService.getAllProducts(macronutrient, shop, productName, pageable));
     }
 
     @PostMapping

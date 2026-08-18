@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>🍏 Калькулятор калорий | Расчёт КБЖУ на бэкенде</title>
+    <title>🍏 Калькулятор калорий | Анализ рациона на бэкенде</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -986,166 +986,6 @@
             background: linear-gradient(95deg, #2563eb, #1d4ed8);
         }
 
-        .drawer-panel {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            width: 420px;
-            max-width: calc(100vw - 40px);
-            background: white;
-            border-radius: 32px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
-            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-            opacity: 0;
-            pointer-events: none;
-            z-index: 1000;
-        }
-        .drawer-panel.open {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0);
-        }
-        .drawer-header {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            padding: 18px 22px;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-radius: 32px 32px 0 0;
-        }
-        .drawer-header h3 {
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .drawer-close {
-            background: rgba(255,255,255,0.15);
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            color: white;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .drawer-close:hover {
-            background: #ef4444;
-            transform: rotate(90deg);
-        }
-        .drawer-content {
-            padding: 22px;
-            background: #fefefe;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-        .drawer-field {
-            margin-bottom: 16px;
-        }
-        .drawer-field label {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 800;
-            color: #b45309;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .drawer-field input, .drawer-field select {
-            width: 100%;
-            padding: 12px 18px;
-            border: 2px solid #ffe0c4;
-            border-radius: 60px;
-            font-size: 0.9rem;
-            background: white;
-            transition: 0.3s ease;
-        }
-        .drawer-field input:focus, .drawer-field select:focus {
-            border-color: #f97316;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
-        }
-        .drawer-btn {
-            background: linear-gradient(95deg, #f97316, #f59e0b);
-            width: 100%;
-            border: none;
-            padding: 14px;
-            border-radius: 60px;
-            color: white;
-            font-weight: 800;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 8px;
-        }
-        .drawer-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(249,115,22,0.3);
-        }
-        .drawer-result {
-            margin-top: 20px;
-            background: linear-gradient(135deg, #fff7ed, #ffedd5);
-            border-radius: 28px;
-            padding: 18px;
-            border: 1px solid #fed7aa;
-        }
-        .result-card {
-            text-align: center;
-        }
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px dashed #fed7aa;
-        }
-        .result-item:last-child {
-            border-bottom: none;
-        }
-        .result-label {
-            font-weight: 600;
-            color: #7c2d12;
-            font-size: 0.9rem;
-        }
-        .result-value {
-            font-weight: 800;
-            font-size: 1.1rem;
-            color: #c2410c;
-        }
-        .result-highlight .result-value {
-            font-size: 1.3rem;
-            color: #ea580c;
-        }
-        .error-text {
-            color: #dc2626;
-            font-size: 0.8rem;
-            margin-top: 12px;
-            text-align: center;
-        }
-        .drawer-toggle {
-            background: linear-gradient(135deg, #f97316, #f59e0b);
-            width: 56px;
-            height: 56px;
-            border-radius: 60px;
-            border: none;
-            font-size: 1.6rem;
-            cursor: pointer;
-            box-shadow: 0 8px 20px rgba(249,115,22,0.4);
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1001;
-            transition: 0.2s;
-            color: white;
-        }
-        .drawer-toggle:hover {
-            transform: scale(1.08);
-        }
         .toast-notify {
             position: fixed;
             bottom: 30px;
@@ -1399,6 +1239,15 @@
             background: #ef4444;
             transform: translateY(-2px);
         }
+
+        .loading-indicator {
+            background: #fefcf5;
+            border-top: 1px solid #ffe7cc;
+            color: #f97316;
+            font-weight: 600;
+            text-align: center;
+            padding: 12px;
+        }
     </style>
 </head>
 <body>
@@ -1406,7 +1255,7 @@
     <div class="header">
         <div class="title-section">
             <h1><i class="fas fa-leaf"></i> CalculateCalories</h1>
-            <p><i class="fas fa-chart-line"></i> Анализ рациона + расчёт норм в панели</p>
+            <p><i class="fas fa-chart-line"></i> Анализ рациона по дням</p>
         </div>
         <div class="header-actions">
             <button id="analyzeWeekBtn" class="analyze-week-btn"><i class="fas fa-chart-line"></i> 📊 Анализ недели</button>
@@ -1448,7 +1297,12 @@
                     <input type="text" id="filterName" placeholder="🔍 Найти продукт...">
                 </div>
             </div>
-            <div class="product-list" id="sourceList"><div style="text-align:center; padding:30px;"><i class="fas fa-spinner fa-pulse"></i> Загрузка...</div></div>
+            <div class="product-list" id="sourceList">
+                <div id="productItemsContainer"></div>
+                <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+                    <i class="fas fa-spinner fa-pulse"></i> Загружаем ещё...
+                </div>
+            </div>
 
             <div class="add-product-form">
                 <div class="form-header">
@@ -1632,51 +1486,7 @@
     </div>
 </div>
 
-
 <div id="toastMsg" class="toast-notify"><i class="fas fa-check-circle"></i> <span>Готово</span></div>
-
-<!-- Правое окошко калькулятора -->
-<div class="drawer-wrapper">
-    <button class="drawer-toggle" id="drawerToggleBtn"><i class="fas fa-calculator"></i></button>
-    <div class="drawer-panel" id="drawerPanel">
-        <div class="drawer-header">
-            <h3><i class="fas fa-bolt"></i> Расчёт норм КБЖУ</h3>
-            <button class="drawer-close" id="drawerCloseBtn"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="drawer-content">
-            <div class="drawer-field">
-                <label><i class="fas fa-venus-mars"></i> Пол</label>
-                <div class="custom-select">
-                    <select id="drawerGender">
-                        <option value="male">👨 Мужчина</option>
-                        <option value="female">👩 Женщина</option>
-                    </select>
-                </div>
-            </div>
-            <div class="drawer-field"><label><i class="fas fa-weight-scale"></i> Вес (кг)</label><input type="number" id="drawerWeight" value="70" step="0.1"></div>
-            <div class="drawer-field"><label><i class="fas fa-ruler"></i> Рост (см)</label><input type="number" id="drawerHeight" value="170" step="0.5"></div>
-            <div class="drawer-field"><label><i class="fas fa-calendar"></i> Возраст (лет)</label><input type="number" id="drawerAge" value="25"></div>
-            <div class="drawer-field"><label><i class="fas fa-shoe-prints"></i> Шаги за день</label><input type="number" id="drawerSteps" value="15000"></div>
-            <div class="drawer-field">
-                <label><i class="fas fa-bullseye"></i> Цель</label>
-                <div class="custom-select">
-                    <select id="drawerTarget">
-                        <option value="Похудение (агрессивное)">🔥 Агрессивное похудение (-500 ккал)</option>
-                        <option value="Похудение (мягкое)">🍃 Мягкое похудение (-250 ккал)</option>
-                        <option value="Рекомпозиция (похудение + рост мышц)" selected>💪 Рекомпозиция (-200 ккал)</option>
-                        <option value="Поддержание мышц (активный человек, похудение)">⚡ Поддержание мышц (-200 ккал)</option>
-                        <option value="Поддержание веса">⚖️ Поддержание веса</option>
-                        <option value="Набор мышечной массы (мягкий)">🏋️ Мягкий набор массы (+200 ккал)</option>
-                        <option value="Набор мышечной массы (агрессивный)">🚀 Агрессивный набор массы (+400 ккал)</option>
-                    </select>
-                </div>
-            </div>
-            <button id="drawerCalculateBtn" class="drawer-btn"><i class="fas fa-calculator"></i> Рассчитать нормы</button>
-            <div id="drawerResultArea" style="display: none;"></div>
-            <div id="drawerError" class="error-text"></div>
-        </div>
-    </div>
-</div>
 
 <script>
     // ========== Утилиты ==========
@@ -1710,9 +1520,12 @@
     }
 
     function escapeHtml(value) {
-        const div = document.createElement('div');
-        div.textContent = value ?? '';
-        return div.innerHTML;
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     const showToast = (msg) => {
@@ -1726,7 +1539,7 @@
 
     // ========== Состояние ==========
 
-    let allProducts = [];
+    let allProducts = [];          // продукты текущей страницы (актуальный список после подгрузок)
     let selectedProducts = [];
     let shopsMap = {};
     let currentOpenDate = null;
@@ -1734,7 +1547,16 @@
     let productsCache = {};
     let editingDietId = null;
 
+    // Пагинация
+    let currentPage = 0;
+    let totalPages = 0;
+    let totalElements = 0;
+    const PAGE_SIZE = 12; // элементов на странице
+    let isLoadingMore = false;
+
     const sourceList = document.getElementById('sourceList');
+    const productItemsContainer = document.getElementById('productItemsContainer');
+    const loadingIndicator = document.getElementById('loadingIndicator');
     const selectedList = document.getElementById('selectedList');
     const totalKcalDisplay = document.getElementById('totalKcalDisplay');
     const totalNutrientsDisplay = document.getElementById('totalNutrientsDisplay');
@@ -1812,9 +1634,10 @@
 
     const ensureProductsCache = async () => {
         try {
-            const data = await request('/products');
+            // Загружаем все продукты для кэша (можно использовать отдельный endpoint или большой размер)
+            const data = await request('/products?size=1000');
             productsCache = {};
-            data.forEach(p => { productsCache[p.id] = p; });
+            data.content.forEach(p => { productsCache[p.id] = p; });
         } catch (e) {
             showToast('⚠️ Не удалось загрузить базу продуктов');
         }
@@ -1855,8 +1678,8 @@
             html += `
                 <div class="diet-card" data-diet-id="${diet.id}">
                     <div class="diet-card-actions">
-                        <div class="diet-card-edit" data-edit-diet-id="${diet.id}"><i class="fas fa-pen"></i></div>
-                        <div class="diet-card-delete" data-delete-diet-id="${diet.id}"><i class="fas fa-times"></i></div>
+                        <div class="diet-card-edit" data-action="edit-diet" data-id="${diet.id}"><i class="fas fa-pen"></i></div>
+                        <div class="diet-card-delete" data-action="delete-diet" data-id="${diet.id}"><i class="fas fa-times"></i></div>
                     </div>
                     <div class="diet-card-title"><i class="fas fa-utensils"></i> <span>${escapeHtml(diet.name)}</span></div>
                     ${diet.description ? `<div class="diet-card-desc">${escapeHtml(diet.description)}</div>` : ''}
@@ -1869,43 +1692,6 @@
             `;
         });
         dietsGrid.innerHTML = html;
-
-        // Делегирование событий внутри dietsGrid
-        dietsGrid.addEventListener('click', async (e) => {
-            const deleteBtn = e.target.closest('.diet-card-delete');
-            if (deleteBtn) {
-                e.stopPropagation();
-                const id = parseInt(deleteBtn.dataset.deleteDietId);
-                const diet = savedDiets.find(d => d.id === id);
-                if (diet && confirm(`Удалить рацион "${diet.name}"?`)) {
-                    try {
-                        await request(`/diets/${id}`, { method: 'DELETE' });
-                        savedDiets = savedDiets.filter(d => d.id !== id);
-                        renderDietsGrid();
-                        showToast('🗑️ Рацион удалён');
-                    } catch (e) {
-                        showToast(`❌ Не удалось удалить рацион: ${e.message}`);
-                    }
-                }
-                return;
-            }
-
-            const editBtn = e.target.closest('.diet-card-edit');
-            if (editBtn) {
-                e.stopPropagation();
-                const id = parseInt(editBtn.dataset.editDietId);
-                const diet = savedDiets.find(d => d.id === id);
-                if (diet) openEditDietModal(diet);
-                return;
-            }
-
-            const card = e.target.closest('.diet-card');
-            if (card) {
-                const id = parseInt(card.dataset.dietId);
-                const diet = savedDiets.find(d => d.id === id);
-                if (diet) applyDiet(diet);
-            }
-        });
     };
 
     const applyDiet = async (diet) => {
@@ -1962,7 +1748,6 @@
         }
 
         if (editingDietId !== null) {
-            // Режим редактирования: меняем только название/описание
             const diet = savedDiets.find(d => d.id === editingDietId);
             const items = diet ? diet.items : [];
             try {
@@ -1979,7 +1764,6 @@
             return;
         }
 
-        // Создание нового рациона
         const items = selectedProducts.map(p => ({ productId: p.id, quantity: p.quantity }));
         try {
             await request('/diets', {
@@ -1999,20 +1783,20 @@
     const getShopName = (shopKey) => shopKey && shopsMap[shopKey] ? shopsMap[shopKey] : null;
 
     const renderSourceList = () => {
-        if (!sourceList) return;
+        if (!productItemsContainer) return;
         if (!allProducts.length) {
-            sourceList.innerHTML = '<div class="empty-message"><i class="fas fa-box-open"></i> Нет продуктов</div>';
+            productItemsContainer.innerHTML = '<div class="empty-message"><i class="fas fa-box-open"></i> Нет продуктов</div>';
             return;
         }
 
         let html = '';
         allProducts.forEach(product => {
             const photoHtml = product.photoUrl
-                ? `<img src="${escapeHtml(product.photoUrl)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\'>🍎</div>'">`
+                ? `<img src="${escapeHtml(product.photoUrl)}" alt="${escapeHtml(product.name)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\'>🍎</div>'">`
                 : '<div class="photo-fallback">🍎</div>';
             const shopName = getShopName(product.shop);
             html += `
-                <div class="product-item" draggable="true" data-product-id="${product.id}">
+                <div class="product-item" draggable="true" data-action="add-product" data-id="${product.id}">
                     <div class="product-photo">${photoHtml}</div>
                     <div class="product-info">
                         <div class="product-name">
@@ -2028,59 +1812,19 @@
                         </div>
                     </div>
                     <div class="action-buttons">
-                        <div class="edit-icon" data-edit-id="${product.id}"><i class="fas fa-edit"></i></div>
-                        <div class="delete-icon" data-delete-id="${product.id}"><i class="fas fa-trash-alt"></i></div>
+                        <div class="edit-icon" data-action="edit-product" data-id="${product.id}"><i class="fas fa-edit"></i></div>
+                        <div class="delete-icon" data-action="delete-product" data-id="${product.id}"><i class="fas fa-trash-alt"></i></div>
                         <div class="drag-icon"><i class="fas fa-grip-vertical"></i></div>
                     </div>
                 </div>
             `;
         });
-        sourceList.innerHTML = html;
+        productItemsContainer.innerHTML = html;
 
-        // Делегирование событий внутри sourceList
-        sourceList.addEventListener('click', async (e) => {
-            const editIcon = e.target.closest('.edit-icon');
-            if (editIcon) {
-                e.stopPropagation();
-                const id = parseInt(editIcon.dataset.editId);
-                const product = allProducts.find(p => p.id === id);
-                if (product) openEditModal(product);
-                return;
-            }
-
-            const deleteIcon = e.target.closest('.delete-icon');
-            if (deleteIcon) {
-                e.stopPropagation();
-                const id = parseInt(deleteIcon.dataset.deleteId);
-                const product = allProducts.find(p => p.id === id);
-                if (product && confirm(`Удалить "${product.name}"?`)) {
-                    try {
-                        await request(`/products/${id}`, { method: 'DELETE' });
-                        showToast(`🗑️ ${product.name} удалён`);
-                        await fetchProducts();
-                        selectedProducts = selectedProducts.filter(p => p.id !== product.id);
-                        renderSelectedList();
-                        updateTotalCalories(true);
-                        await loadHistory();
-                    } catch (e) {
-                        showToast(`❌ Ошибка удаления: ${e.message}`);
-                    }
-                }
-                return;
-            }
-
-            const item = e.target.closest('.product-item');
-            if (item) {
-                const id = parseInt(item.dataset.productId);
-                const product = allProducts.find(p => p.id === id);
-                if (product) addProductToSelected(product);
-            }
-        });
-
-        // Drag-and-drop (оставляем прямые обработчики, т.к. они нужны на элементе)
-        document.querySelectorAll('#sourceList .product-item').forEach(el => {
+        // Drag-and-drop: вешаем обработчики на элементы (после вставки в DOM)
+        document.querySelectorAll('#productItemsContainer .product-item').forEach(el => {
             el.addEventListener('dragstart', (e) => {
-                const productId = parseInt(el.dataset.productId);
+                const productId = parseInt(el.dataset.id);
                 const product = allProducts.find(p => p.id === productId);
                 if (product) {
                     e.dataTransfer.setData('text/plain', JSON.stringify(product));
@@ -2117,7 +1861,7 @@
             const mult = getMultiplier(item);
             const totalCal = ((item.calories || 0) * mult).toFixed(0);
             const photoHtml = item.photoUrl
-                ? `<img src="${escapeHtml(item.photoUrl)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\'>🍽️</div>'">`
+                ? `<img src="${escapeHtml(item.photoUrl)}" alt="${escapeHtml(item.name)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\'>🍽️</div>'">`
                 : '<div class="photo-fallback">🍽️</div>';
             html += `
                 <div class="product-item selected-item">
@@ -2133,71 +1877,17 @@
                             <span class="nutrient-badge">🍚 У: ${((item.carbohydrate || 0) * mult).toFixed(1)}</span>
                         </div>
                         <div class="quantity-control">
-                            <button class="qty-minus" data-idx="${idx}">-${item.unit === '100г' ? 50 : 1}</button>
+                            <button class="qty-minus" data-action="dec-qty" data-idx="${idx}">-${item.unit === '100г' ? 50 : 1}</button>
                             <input type="number" class="quantity-input" data-idx="${idx}" value="${item.quantity || 0}" step="${item.unit === '100г' ? 50 : 1}" min="0">
-                            <button class="qty-plus" data-idx="${idx}">+${item.unit === '100г' ? 50 : 1}</button>
+                            <button class="qty-plus" data-action="inc-qty" data-idx="${idx}">+${item.unit === '100г' ? 50 : 1}</button>
                             <span>${item.unit === '100г' ? 'г' : escapeHtml(item.unit || 'шт')}</span>
                         </div>
                     </div>
-                    <div class="remove-icon" data-remove-idx="${idx}"><i class="fas fa-trash-alt"></i></div>
+                    <div class="remove-icon" data-action="remove-selected" data-idx="${idx}"><i class="fas fa-trash-alt"></i></div>
                 </div>
             `;
         });
         selectedList.innerHTML = html;
-
-        // Делегирование событий внутри selectedList
-        selectedList.addEventListener('click', (e) => {
-            const minusBtn = e.target.closest('.qty-minus');
-            if (minusBtn) {
-                const idx = parseInt(minusBtn.dataset.idx);
-                if (selectedProducts[idx]) {
-                    const step = selectedProducts[idx].unit === '100г' ? 50 : 1;
-                    selectedProducts[idx].quantity = Math.max(0, (selectedProducts[idx].quantity || 0) - step);
-                    renderSelectedList();
-                    updateTotalCalories(true);
-                    saveToLocalStorage();
-                }
-                return;
-            }
-
-            const plusBtn = e.target.closest('.qty-plus');
-            if (plusBtn) {
-                const idx = parseInt(plusBtn.dataset.idx);
-                if (selectedProducts[idx]) {
-                    const step = selectedProducts[idx].unit === '100г' ? 50 : 1;
-                    selectedProducts[idx].quantity = (selectedProducts[idx].quantity || 0) + step;
-                    renderSelectedList();
-                    updateTotalCalories(true);
-                    saveToLocalStorage();
-                }
-                return;
-            }
-
-            const removeIcon = e.target.closest('.remove-icon');
-            if (removeIcon) {
-                const idx = parseInt(removeIcon.dataset.removeIdx);
-                selectedProducts.splice(idx, 1);
-                renderSelectedList();
-                updateTotalCalories(true);
-                saveToLocalStorage();
-                return;
-            }
-        });
-
-        // Обработчики для input (change) отдельно
-        document.querySelectorAll('.quantity-input').forEach(inp => {
-            inp.addEventListener('change', (e) => {
-                const idx = parseInt(inp.dataset.idx);
-                if (selectedProducts[idx]) {
-                    let val = parseFloat(e.target.value);
-                    if (isNaN(val) || val <= 0) val = 0;
-                    selectedProducts[idx].quantity = val;
-                    renderSelectedList();
-                    updateTotalCalories(true);
-                    saveToLocalStorage();
-                }
-            });
-        });
     };
 
     // ========== Анализ недели ==========
@@ -2230,9 +1920,16 @@
         }
     };
 
-    // ========== Загрузка данных ==========
+    // ========== Загрузка данных с автоподгрузкой (infinite scroll) ==========
 
-    const fetchProducts = async () => {
+    const fetchProducts = async (page = 0, append = false) => {
+        if (append && isLoadingMore) return;
+
+        if (append) {
+            isLoadingMore = true;
+            loadingIndicator.style.display = 'block';
+        }
+
         try {
             const params = new URLSearchParams();
             const macronutrient = filterMacronutrient.value;
@@ -2243,19 +1940,60 @@
             if (shop) params.append('shop', shop);
             if (name) params.append('name', name);
 
-            const url = `/products${params.toString() ? `?${params.toString()}` : ''}`;
+            params.append('page', page);
+            params.append('size', PAGE_SIZE);
+
+            const url = `/products?${params.toString()}`;
             const data = await request(url);
-            if (Array.isArray(data)) {
-                allProducts = data;
+
+            if (data && Array.isArray(data.content)) {
+                if (append) {
+                    // Добавляем новые продукты к текущему списку
+                    allProducts = [...allProducts, ...data.content];
+                } else {
+                    // Заменяем список
+                    allProducts = data.content;
+                }
+
+                currentPage = data.number !== undefined ? data.number : page;
+                totalPages = data.totalPages || 0;
+                totalElements = data.totalElements || 0;
+
                 renderSourceList();
-                sourceCountSpan.innerText = allProducts.length;
+                if (sourceCountSpan) sourceCountSpan.innerText = totalElements;
+
+                // Сбрасываем прокрутку, если это первая страница и не append
+                if (!append && page === 0) {
+                    sourceList.scrollTop = 0;
+                }
             } else {
                 throw new Error('Неверный формат данных');
             }
         } catch (e) {
             console.error('Ошибка загрузки продуктов:', e);
-            sourceList.innerHTML = `<div class="empty-message"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки: ${escapeHtml(e.message)}</div>`;
+            if (!append) {
+                productItemsContainer.innerHTML = `<div class="empty-message"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки: ${escapeHtml(e.message)}</div>`;
+            } else {
+                showToast(`❌ Ошибка подгрузки: ${e.message}`);
+            }
+        } finally {
+            if (append) {
+                isLoadingMore = false;
+                loadingIndicator.style.display = 'none';
+            }
         }
+    };
+
+    const setupInfiniteScroll = () => {
+        sourceList.addEventListener('scroll', () => {
+            const { scrollTop, scrollHeight, clientHeight } = sourceList;
+            // Порог 150px до конца списка
+            if (scrollTop + clientHeight >= scrollHeight - 150) {
+                if (!isLoadingMore && currentPage < totalPages - 1) {
+                    fetchProducts(currentPage + 1, true);
+                }
+            }
+        });
     };
 
     const loadShops = async () => {
@@ -2315,7 +2053,7 @@
             if (dayData.productsPerDay && dayData.productsPerDay.length > 0) {
                 const productsHtml = dayData.productsPerDay.map(product => {
                     const photoHtml = product.photoUrl
-                        ? `<img src="${escapeHtml(product.photoUrl)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\' style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;\'>🍽️</div>'">`
+                        ? `<img src="${escapeHtml(product.photoUrl)}" alt="${escapeHtml(product.name)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\' style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;\'>🍽️</div>'">`
                         : '<div class="photo-fallback" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🍽️</div>';
                     return `
                         <div class="inline-product-item">
@@ -2412,54 +2150,13 @@
                                         <i class="fas fa-spinner fa-pulse"></i> Загрузка продуктов...
                                     </div>
                                 </div>
-                                <button class="load-day-btn" data-date="${rec.date}">
+                                <button class="load-day-btn" data-action="load-day" data-date="${rec.date}">
                                     <i class="fas fa-download"></i> Загрузить этот рацион в "Мой рацион"
                                 </button>
                             </div>
                         </td>
                     </tr>
                 `).join('');
-
-                // Делегирование событий для таблицы истории
-                historyTableBody.addEventListener('click', async (e) => {
-                    const loadBtn = e.target.closest('.load-day-btn');
-                    if (loadBtn) {
-                        e.stopPropagation();
-                        const date = loadBtn.dataset.date;
-                        await loadDayToSelected(date);
-                        return;
-                    }
-
-                    const row = e.target.closest('.history-row');
-                    if (row) {
-                        const date = row.dataset.date;
-                        const detailsRow = document.querySelector(`.details-row[data-date="${date}"]`);
-                        const expandIcon = row.querySelector('.expand-icon');
-
-                        if (currentOpenDate && currentOpenDate !== date) {
-                            const prevDetailsRow = document.querySelector(`.details-row[data-date="${currentOpenDate}"]`);
-                            const prevExpandIcon = document.querySelector(`.history-row[data-date="${currentOpenDate}"] .expand-icon`);
-                            if (prevDetailsRow) {
-                                prevDetailsRow.style.display = 'none';
-                                if (prevExpandIcon) prevExpandIcon.classList.remove('expanded');
-                            }
-                        }
-
-                        if (detailsRow.style.display === 'none') {
-                            const productsContainer = document.getElementById(`products-${date.replace(/-/g, '')}`);
-                            if (productsContainer && productsContainer.innerHTML.includes('Загрузка продуктов')) {
-                                await loadDayProducts(date, productsContainer);
-                            }
-                            detailsRow.style.display = 'table-row';
-                            if (expandIcon) expandIcon.classList.add('expanded');
-                            currentOpenDate = date;
-                        } else {
-                            detailsRow.style.display = 'none';
-                            if (expandIcon) expandIcon.classList.remove('expanded');
-                            currentOpenDate = null;
-                        }
-                    }
-                });
             }
         } catch (e) {
             console.error('Ошибка загрузки истории:', e);
@@ -2469,7 +2166,7 @@
         }
     };
 
-    // ========== Сохранение дневного рациона (обновлено) ==========
+    // ========== Сохранение дневного рациона (PUT) ==========
 
     const saveDietForDate = async (date, dateLabel) => {
         if (!selectedProducts.length) {
@@ -2492,8 +2189,8 @@
         };
 
         try {
-            await request('/nutrients', {
-                method: 'POST',
+            await request(`/nutrients/${date}`, {
+                method: 'PUT',
                 body: JSON.stringify(payload)
             });
             showToast(`✅ Рацион сохранён на ${dateLabel}`);
@@ -2579,7 +2276,9 @@
             });
             document.getElementById('editModal').classList.remove('active');
             showToast('✅ Продукт обновлён');
-            await fetchProducts();
+            // Перезагружаем текущую страницу (или сбрасываем на первую)
+            currentPage = 0;
+            await fetchProducts(0, false);
             selectedProducts = selectedProducts.map(p => p.id === currentEditId ? { ...p, ...updated, quantity: p.quantity } : p);
             renderSelectedList();
             updateTotalCalories(true);
@@ -2614,6 +2313,7 @@
             const msgDiv = document.getElementById('addProductMessage');
             msgDiv.innerHTML = '<div class="msg-success"><i class="fas fa-check-circle"></i> Продукт добавлен!</div>';
             setTimeout(() => msgDiv.innerHTML = '', 2000);
+            // Очистить форму
             document.getElementById('prodName').value = '';
             document.getElementById('prodCalories').value = '';
             document.getElementById('prodProtein').value = '0';
@@ -2621,7 +2321,9 @@
             document.getElementById('prodCarbs').value = '0';
             document.getElementById('prodFiber').value = '0';
             document.getElementById('prodPhotoUrl').value = '';
-            await fetchProducts();
+            // Перезагружаем первую страницу
+            currentPage = 0;
+            await fetchProducts(0, false);
         } catch (e) {
             showToast(`❌ Ошибка добавления: ${e.message}`);
         }
@@ -2657,112 +2359,195 @@
         }
     };
 
-    const setupDrawer = () => {
-        const drawerPanel = document.getElementById('drawerPanel');
-        const toggleBtn = document.getElementById('drawerToggleBtn');
-        const closeBtn = document.getElementById('drawerCloseBtn');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => drawerPanel.classList.toggle('open'));
-        }
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => drawerPanel.classList.remove('open'));
-        }
+    // ========== Делегирование событий (один раз) ==========
 
-        const calcBtn = document.getElementById('drawerCalculateBtn');
-        if (calcBtn) {
-            calcBtn.addEventListener('click', async () => {
-                const gender = document.getElementById('drawerGender').value;
-                const weight = parseFloat(document.getElementById('drawerWeight').value);
-                const height = parseFloat(document.getElementById('drawerHeight').value);
-                const age = parseInt(document.getElementById('drawerAge').value);
-                const steps = parseInt(document.getElementById('drawerSteps').value);
-                const target = document.getElementById('drawerTarget').value;
-                const errorDiv = document.getElementById('drawerError');
-                const resultDiv = document.getElementById('drawerResultArea');
+    function setupEventDelegation() {
+        // Клики в списке продуктов
+        sourceList.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('[data-action="edit-product"]');
+            if (editBtn) {
+                const id = Number(editBtn.dataset.id);
+                const product = allProducts.find(p => p.id === id);
+                if (product) openEditModal(product);
+                return;
+            }
 
-                if (isNaN(weight) || isNaN(height) || isNaN(age) || isNaN(steps) ||
-                    weight <= 0 || height <= 0 || age <= 0 || steps < 0) {
-                    errorDiv.innerText = '❌ Заполните все поля корректно';
-                    resultDiv.style.display = 'none';
-                    return;
-                }
-                errorDiv.innerText = '';
-                resultDiv.innerHTML = '<div class="drawer-result" style="text-align:center;"><i class="fas fa-spinner fa-pulse"></i> Расчет...</div>';
-                resultDiv.style.display = 'block';
-
-                try {
-                    const data = await request('/nutrients/calculate', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            gender,
-                            weightKg: weight,
-                            heightCm: height,
-                            ageYears: age,
-                            steps,
-                            target
+            const deleteBtn = e.target.closest('[data-action="delete-product"]');
+            if (deleteBtn) {
+                const id = Number(deleteBtn.dataset.id);
+                const product = allProducts.find(p => p.id === id);
+                if (product && confirm(`Удалить "${product.name}"?`)) {
+                    request(`/products/${id}`, { method: 'DELETE' })
+                        .then(async () => {
+                            showToast(`🗑️ ${product.name} удалён`);
+                            // Если удалили последний продукт на странице, переходим на предыдущую
+                            if (allProducts.length === 1 && currentPage > 0) {
+                                currentPage--;
+                            }
+                            await fetchProducts(currentPage, false);
+                            selectedProducts = selectedProducts.filter(p => p.id !== id);
+                            renderSelectedList();
+                            updateTotalCalories(true);
+                            await loadHistory();
                         })
-                    });
-                    resultDiv.innerHTML = `
-                        <div class="drawer-result">
-                            <div class="result-card">
-                                <div class="result-item">
-                                    <span class="result-label"><i class="fas fa-bed"></i> Базовый обмен (BMR)</span>
-                                    <span class="result-value">${Math.round(data.bmr)} ккал</span>
-                                </div>
-                                <div class="result-item">
-                                    <span class="result-label"><i class="fas fa-shoe-prints"></i> Калории от шагов</span>
-                                    <span class="result-value">+${Math.round(data.stepCalories)} ккал</span>
-                                </div>
-                                <div class="result-item">
-                                    <span class="result-label"><i class="fas fa-chart-line"></i> Общий расход (TDEE)</span>
-                                    <span class="result-value">${Math.round(data.totalCalories)} ккал</span>
-                                </div>
-                                <div class="result-item result-highlight">
-                                    <span class="result-label"><i class="fas fa-bullseye"></i> 🎯 Целевые калории</span>
-                                    <span class="result-value"><strong>${Math.round(data.recommendedCalories)} ккал</strong></span>
-                                </div>
-                                <div class="result-item">
-                                    <span class="result-label"><i class="fas fa-dumbbell"></i> 🥩 Белки</span>
-                                    <span class="result-value">${(data.recommendedProtein || 0).toFixed(1)} г</span>
-                                </div>
-                                <div class="result-item">
-                                    <span class="result-label"><i class="fas fa-oil-can"></i> 🧈 Жиры</span>
-                                    <span class="result-value">${(data.recommendedFat || 0).toFixed(1)} г</span>
-                                </div>
-                                <div class="result-item">
-                                    <span class="result-label"><i class="fas fa-bread-slice"></i> 🍚 Углеводы</span>
-                                    <span class="result-value">${(data.recommendedCarbohydrate || 0).toFixed(1)} г</span>
-                                </div>
-                                <div class="result-item">
-                                    <span class="result-label"><i class="fas fa-seedling"></i> 🌾 Клетчатка</span>
-                                    <span class="result-value">${(data.recommendedFiber || 0)} г</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    showToast('✅ Нормы рассчитаны!');
-                } catch (e) {
-                    console.error('Ошибка:', e);
-                    errorDiv.innerText = `⚠️ Ошибка расчета: ${e.message}`;
-                    resultDiv.style.display = 'none';
+                        .catch(e => showToast(`❌ Ошибка удаления: ${e.message}`));
                 }
-            });
-        }
-    };
+                return;
+            }
+
+            const addItem = e.target.closest('[data-action="add-product"]');
+            if (addItem) {
+                const id = Number(addItem.dataset.id);
+                const product = allProducts.find(p => p.id === id);
+                if (product) addProductToSelected(product);
+            }
+        });
+
+        // Клики в выбранных продуктах
+        selectedList.addEventListener('click', (e) => {
+            const decBtn = e.target.closest('[data-action="dec-qty"]');
+            if (decBtn) {
+                const idx = Number(decBtn.dataset.idx);
+                if (selectedProducts[idx]) {
+                    const step = selectedProducts[idx].unit === '100г' ? 50 : 1;
+                    selectedProducts[idx].quantity = Math.max(0, (selectedProducts[idx].quantity || 0) - step);
+                    renderSelectedList();
+                    updateTotalCalories(true);
+                    saveToLocalStorage();
+                }
+                return;
+            }
+
+            const incBtn = e.target.closest('[data-action="inc-qty"]');
+            if (incBtn) {
+                const idx = Number(incBtn.dataset.idx);
+                if (selectedProducts[idx]) {
+                    const step = selectedProducts[idx].unit === '100г' ? 50 : 1;
+                    selectedProducts[idx].quantity = (selectedProducts[idx].quantity || 0) + step;
+                    renderSelectedList();
+                    updateTotalCalories(true);
+                    saveToLocalStorage();
+                }
+                return;
+            }
+
+            const removeBtn = e.target.closest('[data-action="remove-selected"]');
+            if (removeBtn) {
+                const idx = Number(removeBtn.dataset.idx);
+                selectedProducts.splice(idx, 1);
+                renderSelectedList();
+                updateTotalCalories(true);
+                saveToLocalStorage();
+            }
+        });
+
+        // Изменение количества через input
+        selectedList.addEventListener('change', (e) => {
+            if (e.target.classList.contains('quantity-input')) {
+                const idx = Number(e.target.dataset.idx);
+                if (selectedProducts[idx]) {
+                    let val = parseFloat(e.target.value);
+                    if (isNaN(val) || val <= 0) val = 0;
+                    selectedProducts[idx].quantity = val;
+                    renderSelectedList();
+                    updateTotalCalories(true);
+                    saveToLocalStorage();
+                }
+            }
+        });
+
+        // Клики в истории
+        historyTableBody.addEventListener('click', async (e) => {
+            const loadBtn = e.target.closest('[data-action="load-day"]');
+            if (loadBtn) {
+                const date = loadBtn.dataset.date;
+                await loadDayToSelected(date);
+                return;
+            }
+
+            const row = e.target.closest('.history-row');
+            if (row) {
+                const date = row.dataset.date;
+                const detailsRow = document.querySelector(`.details-row[data-date="${date}"]`);
+                const expandIcon = row.querySelector('.expand-icon');
+
+                if (currentOpenDate && currentOpenDate !== date) {
+                    const prevDetailsRow = document.querySelector(`.details-row[data-date="${currentOpenDate}"]`);
+                    const prevExpandIcon = document.querySelector(`.history-row[data-date="${currentOpenDate}"] .expand-icon`);
+                    if (prevDetailsRow) {
+                        prevDetailsRow.style.display = 'none';
+                        if (prevExpandIcon) prevExpandIcon.classList.remove('expanded');
+                    }
+                }
+
+                if (detailsRow.style.display === 'none') {
+                    const productsContainer = document.getElementById(`products-${date.replace(/-/g, '')}`);
+                    if (productsContainer && productsContainer.innerHTML.includes('Загрузка продуктов')) {
+                        await loadDayProducts(date, productsContainer);
+                    }
+                    detailsRow.style.display = 'table-row';
+                    if (expandIcon) expandIcon.classList.add('expanded');
+                    currentOpenDate = date;
+                } else {
+                    detailsRow.style.display = 'none';
+                    if (expandIcon) expandIcon.classList.remove('expanded');
+                    currentOpenDate = null;
+                }
+            }
+        });
+
+        // Клики в сетке рационов
+        dietsGrid.addEventListener('click', async (e) => {
+            const deleteBtn = e.target.closest('[data-action="delete-diet"]');
+            if (deleteBtn) {
+                const id = Number(deleteBtn.dataset.id);
+                const diet = savedDiets.find(d => d.id === id);
+                if (diet && confirm(`Удалить рацион "${diet.name}"?`)) {
+                    try {
+                        await request(`/diets/${id}`, { method: 'DELETE' });
+                        savedDiets = savedDiets.filter(d => d.id !== id);
+                        renderDietsGrid();
+                        showToast('🗑️ Рацион удалён');
+                    } catch (e) {
+                        showToast(`❌ Не удалось удалить рацион: ${e.message}`);
+                    }
+                }
+                return;
+            }
+
+            const editBtn = e.target.closest('[data-action="edit-diet"]');
+            if (editBtn) {
+                const id = Number(editBtn.dataset.id);
+                const diet = savedDiets.find(d => d.id === id);
+                if (diet) openEditDietModal(diet);
+                return;
+            }
+
+            const card = e.target.closest('.diet-card');
+            if (card) {
+                const id = Number(card.dataset.dietId);
+                const diet = savedDiets.find(d => d.id === id);
+                if (diet) applyDiet(diet);
+            }
+        });
+    }
 
     // ========== Инициализация ==========
 
     const init = async () => {
+        // Делегирование событий и автоподгрузка
+        setupEventDelegation();
+        setupInfiniteScroll();
+
         await Promise.all([loadShops(), loadMacronutrients()]);
-        await fetchProducts();
+        await fetchProducts(0, false);
         loadFromLocalStorage();
         await fetchDiets();
         await loadHistory();
         setupDropTarget();
-        setupDrawer();
 
         // Обработчики кнопок
-        document.getElementById('refreshProductsBtn')?.addEventListener('click', fetchProducts);
+        document.getElementById('refreshProductsBtn')?.addEventListener('click', () => fetchProducts(0, false));
         document.getElementById('refreshHistoryBtn')?.addEventListener('click', loadHistory);
         document.getElementById('resetSelectionBtn')?.addEventListener('click', () => {
             selectedProducts = [];
@@ -2808,13 +2593,25 @@
         saveDietModal?.addEventListener('click', (e) => {
             if (e.target === saveDietModal) saveDietModal.classList.remove('active');
         });
-        filterMacronutrient?.addEventListener('change', () => fetchProducts());
-        filterShop?.addEventListener('change', () => fetchProducts());
+
+        // Фильтры — сброс пагинации
+        filterMacronutrient?.addEventListener('change', () => {
+            currentPage = 0;
+            fetchProducts(0, false);
+        });
+        filterShop?.addEventListener('change', () => {
+            currentPage = 0;
+            fetchProducts(0, false);
+        });
         let debounceTimer;
         filterName?.addEventListener('input', () => {
             if (debounceTimer) clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(fetchProducts, 500);
+            debounceTimer = setTimeout(() => {
+                currentPage = 0;
+                fetchProducts(0, false);
+            }, 500);
         });
+
         // Кнопки модалок анализа
         closeAnalysisModalBtn?.addEventListener('click', () => {
             analysisModal.classList.remove('active');

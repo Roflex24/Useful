@@ -16,3 +16,25 @@ public enum Shop {
         this.displayName = displayName;
     }
 }
+
+/*
+BEGIN;
+
+ALTER TABLE products ADD COLUMN shop_str VARCHAR(255);
+
+UPDATE products
+SET shop_str = CASE shop
+WHEN 0 THEN 'CHISHIK'
+WHEN 1 THEN 'SMART'
+WHEN 2 THEN 'PIATIOROCHKA'
+WHEN 3 THEN 'MAGNIT'
+WHEN 4 THEN 'SVETOFOR'
+ELSE NULL
+END;
+
+ALTER TABLE products DROP COLUMN shop;
+
+ALTER TABLE products RENAME COLUMN shop_str TO shop;
+
+COMMIT;
+*/

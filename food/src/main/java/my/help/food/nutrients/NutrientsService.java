@@ -24,67 +24,10 @@ public class NutrientsService {
     private final ProductsPerDayService productsPerDayService;
     private final ProductService productService;
     private final ProductsPerDayMapper productsPerDayMapper;
-    private final NutritionCalculator nutritionCalculator;
 
     @Transactional
-    public NutrientsResponse addNutrientsPerDay(NutrientsRequest request) {
-        // Проверяем существование продуктов и считаем КБЖУ на сервере
-        Map<Long, Double> productQuantityMap = request.productsPerDay().stream()
-                .collect(Collectors.toMap(
-                        ProductsPerDayRequest::productId,
-                        ProductsPerDayRequest::quantity
-                ));
-
-        Map<Long, ProductResponse> productsById = productService.getProductsByIds(productQuantityMap.keySet());
-
-        // Вычисление суммарных КБЖУ
-        double calories = 0, protein = 0, fat = 0, carbs = 0, fiber = 0;
-        for (Map.Entry<Long, Double> entry : productQuantityMap.entrySet()) {
-            ProductResponse product = productsById.get(entry.getKey());
-            if (product == null) {
-                throw new ProductNotFoundException(entry.getKey());
-            }
-            double multiplier = "100г".equals(product.unit()) ? entry.getValue() / 100 : entry.getValue();
-            calories += product.calories() * multiplier;
-            protein += product.protein() * multiplier;
-            fat += product.fat() * multiplier;
-            carbs += product.carbohydrate() * multiplier;
-            fiber += product.fiber() * multiplier;
-        }
-
-        NutrientsPerDayEntity entity = new NutrientsPerDayEntity(
-                request.date(),
-                (int) Math.round(calories),
-                round(protein),
-                round(fat),
-                round(carbs),
-                round(fiber),
-                request.comment()
-        );
-        nutrientsRepository.save(entity);
-
-        productsPerDayService.addProductsPerDay(request.date(), productQuantityMap);
-
-        // Формируем ответ
-        NutrientsResponse response = nutrientsMapper.toResponse(entity);
-        List<ProductsPerDayResponse> ppdResponses = productQuantityMap.entrySet().stream()
-                .map(entry -> productsPerDayMapper.toResponse(
-                        productsById.get(entry.getKey()),
-                        entry.getValue()
-                ))
-                .sorted(Comparator.comparing(ProductsPerDayResponse::name))
-                .toList();
-        response = new NutrientsResponse(
-                response.date(),
-                response.calories(),
-                response.protein(),
-                response.fat(),
-                response.carbohydrates(),
-                response.fiber(),
-                response.comment(),
-                ppdResponses
-        );
-        return response;
+    public NutrientsResponse updateNutrientsPerDate(LocalDate date, NutrientsUpdateRequest request) {
+        return saveNutrientsForDate(date, request.comment(), request.productsPerDay());
     }
 
     @Transactional(readOnly = true)
@@ -185,11 +128,66 @@ public class NutrientsService {
                 .toList();
     }
 
-    public NutrientsExpenditureRs calculateDailyNutrients(NutrientsExpenditureRq request) {
-        return nutritionCalculator.calculateDailyNutrients(request);
-    }
-
     private double round(double value) {
         return Math.round(value * 10.0) / 10.0;
+    }
+
+    private NutrientsResponse saveNutrientsForDate(LocalDate date, String comment, List<ProductsPerDayRequest> productsPerDay) {
+        Map<Long, Double> productQuantityMap = productsPerDay == null
+                ? Map.of()
+                : productsPerDay.stream()
+                .collect(Collectors.toMap(
+                        ProductsPerDayRequest::productId,
+                        ProductsPerDayRequest::quantity
+                ));
+
+        Map<Long, ProductResponse> productsById = productService.getProductsByIds(productQuantityMap.keySet());
+
+        double calories = 0, protein = 0, fat = 0, carbs = 0, fiber = 0;
+        for (Map.Entry<Long, Double> entry : productQuantityMap.entrySet()) {
+            ProductResponse product = productsById.get(entry.getKey());
+            if (product == null) {
+                throw new ProductNotFoundException(entry.getKey());
+            }
+            double multiplier = "100г".equals(product.unit()) ? entry.getValue() / 100 : entry.getValue();
+            calories += product.calories() * multiplier;
+            protein += product.protein() * multiplier;
+            fat += product.fat() * multiplier;
+            carbs += product.carbohydrate() * multiplier;
+            fiber += product.fiber() * multiplier;
+        }
+
+        NutrientsPerDayEntity entity = new NutrientsPerDayEntity(
+                date,
+                (int) Math.round(calories),
+                round(protein),
+                round(fat),
+                round(carbs),
+                round(fiber),
+                comment
+        );
+        nutrientsRepository.save(entity);
+
+        productsPerDayService.addProductsPerDay(date, productQuantityMap);
+
+        NutrientsResponse response = nutrientsMapper.toResponse(entity);
+        List<ProductsPerDayResponse> ppdResponses = productQuantityMap.entrySet().stream()
+                .map(entry -> productsPerDayMapper.toResponse(
+                        productsById.get(entry.getKey()),
+                        entry.getValue()
+                ))
+                .sorted(Comparator.comparing(ProductsPerDayResponse::name))
+                .toList();
+
+        return new NutrientsResponse(
+                response.date(),
+                response.calories(),
+                response.protein(),
+                response.fat(),
+                response.carbohydrates(),
+                response.fiber(),
+                response.comment(),
+                ppdResponses
+        );
     }
 }

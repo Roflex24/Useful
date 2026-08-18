@@ -26,5 +26,8 @@ public class ProductEntity {
     private double fiber;
     private String unit;
     private String photoUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "shop")
     private Shop shop;
 }
