@@ -5,6 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import my.help.food.common.exception.NutrientsNotFoundException;
 import my.help.food.nutrients.dto.*;
 import my.help.food.products_per_day.ProductsPerDayService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,11 +26,13 @@ public class NutrientsService {
     private final ProductsPerDayService productsPerDayService;
 
     @Transactional(readOnly = true)
-    public List<NutrientsRs> getList() {
+    public Page<NutrientsRs> getPage(Pageable pageable) {
         log.debug("Получение всех записей питания");
-        List<NutrientsRs> result = nutrientsMapper.toResponseList(nutrientsRepository.findAll());
-        log.info("Возвращено записей: {}", result.size());
-        return result;
+        Page<NutrientsPerDayEntity> page = nutrientsRepository.findAll(
+                PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort())
+        );
+        log.info("Найдено записей: {} (всего: {})", page.getNumberOfElements(), page.getTotalElements());
+        return page.map(nutrientsMapper::toResponse);
     }
 
     @Transactional

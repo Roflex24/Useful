@@ -1248,6 +1248,34 @@
             text-align: center;
             padding: 12px;
         }
+
+        /* Стили для кнопки "Показать ещё" */
+        .load-more-container {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .load-more-btn {
+            background: #f97316;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+        .load-more-btn:hover {
+            background: #ea580c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(249,115,22,0.3);
+        }
+        .load-more-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
     </style>
 </head>
 <body>
@@ -1397,6 +1425,12 @@
                 <tbody id="historyTableBody"><tr><td colspan="6" style="text-align:center;">Загрузка...</td></tr>
                 </tbody>
             </table>
+            <!-- Кнопка "Показать ещё" для подгрузки истории -->
+            <div class="load-more-container" id="loadMoreContainer" style="display: none;">
+                <button id="loadMoreHistoryBtn" class="load-more-btn">
+                    <i class="fas fa-chevron-down"></i> Показать ещё
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -1491,7 +1525,7 @@
 <script>
     // ========== Утилиты ==========
 
-    const API_BASE = '/api'; // <-- ДОБАВЛЕН ПРЕФИКС /api/
+    const API_BASE = '/api';
 
     async function request(url, options = {}) {
         const response = await fetch(API_BASE + url, {
@@ -1539,19 +1573,27 @@
 
     // ========== Состояние ==========
 
-    let allProducts = [];          // продукты текущей страницы (актуальный список после подгрузок)
+    let allProducts = [];
     let selectedProducts = [];
     let shopsMap = {};
     let currentOpenDate = null;
     let savedDiets = [];
     let editingDietId = null;
 
-    // Пагинация
+    // Пагинация продуктов
     let currentPage = 0;
     let totalPages = 0;
     let totalElements = 0;
-    const PAGE_SIZE = 12; // элементов на странице
+    const PAGE_SIZE = 30; // <-- ИЗМЕНЕНО НА 30
     let isLoadingMore = false;
+
+    // Пагинация истории
+    let historyPage = 0;
+    let historyTotalPages = 0;
+    let historyTotalElements = 0;
+    const HISTORY_PAGE_SIZE = 30; // <-- ИЗМЕНЕНО НА 30
+    let historyRecords = [];
+    let historyLoading = false;
 
     const sourceList = document.getElementById('sourceList');
     const productItemsContainer = document.getElementById('productItemsContainer');
@@ -1566,6 +1608,8 @@
     const prodShopSelect = document.getElementById('prodShop');
     const editShopSelect = document.getElementById('editShop');
     const historyTableBody = document.getElementById('historyTableBody');
+    const loadMoreContainer = document.getElementById('loadMoreContainer');
+    const loadMoreHistoryBtn = document.getElementById('loadMoreHistoryBtn');
     const analyzeWeekBtn = document.getElementById('analyzeWeekBtn');
     const analysisModal = document.getElementById('analysisModal');
     const analysisText = document.getElementById('analysisText');
@@ -1645,7 +1689,6 @@
         const items = diet.items || [];
         if (!items.length) return '<div class="diet-tooltip-empty">Нет продуктов</div>';
         return items.map(item => {
-            // Используем вложенный объект product, который теперь приходит с бэкенда
             const product = item.product;
             const name = product ? escapeHtml(product.name) : `Продукт #${item.productId} (не найден)`;
             const unit = product ? product.unit : '';
@@ -1688,7 +1731,6 @@
 
         showToast(`⏳ Применяем "${diet.name}"...`);
 
-        // Теперь продукт уже встроен в item.product, отдельный запрос не нужен
         for (const item of diet.items) {
             if (item.product) {
                 selectedProducts.push({ ...item.product, quantity: item.quantity });
@@ -1807,7 +1849,6 @@
         });
         productItemsContainer.innerHTML = html;
 
-        // Drag-and-drop: вешаем обработчики на элементы (после вставки в DOM)
         document.querySelectorAll('#productItemsContainer .product-item').forEach(el => {
             el.addEventListener('dragstart', (e) => {
                 const productId = parseInt(el.dataset.id);
@@ -1906,7 +1947,7 @@
         }
     };
 
-    // ========== Загрузка данных с автоподгрузкой (infinite scroll) ==========
+    // ========== Загрузка продуктов с пагинацией ==========
 
     const fetchProducts = async (page = 0, append = false) => {
         if (append && isLoadingMore) return;
@@ -1927,7 +1968,7 @@
             if (name) params.append('name', name);
 
             params.append('page', page);
-            params.append('size', PAGE_SIZE);
+            params.append('size', PAGE_SIZE); // 30
 
             const url = `/products?${params.toString()}`;
             const data = await request(url);
@@ -2023,6 +2064,109 @@
         }
     };
 
+    // ========== Загрузка истории с пагинацией ==========
+
+    const renderHistoryTable = () => {
+        if (!historyTableBody) return;
+        if (historyRecords.length === 0) {
+            historyTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Нет сохранённых рационов</td></tr>';
+            return;
+        }
+
+        // Локальная сортировка удалена для оптимизации, т.к. бэкенд возвращает данные уже отсортированными по дате DESC
+        historyTableBody.innerHTML = historyRecords.map(rec => `
+            <tr class="history-row" data-date="${rec.date}" style="cursor: pointer;">
+                <td style="text-align: left; position: relative;">
+                    <i class="fas fa-chevron-down expand-icon" style="margin-right: 12px; color: #f97316; transition: transform 0.3s ease;"></i>
+                    <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #f97316;"></i>
+                    ${escapeHtml(rec.date || '—')}
+                    ${rec.comment ? '<i class="fas fa-comment-dots" title="Есть комментарий" style="margin-left: 10px; color: #f97316; opacity: 0.7;"></i>' : ''}
+                </td>
+                <td style="text-align: center;">🔥 ${Math.round(rec.calories || 0)} ккал</td>
+                <td style="text-align: center;">🥩 ${(rec.protein || 0).toFixed(1)} г</td>
+                <td style="text-align: center;">🧈 ${(rec.fat || 0).toFixed(1)} г</td>
+                <td style="text-align: center;">🍚 ${(rec.carbohydrates || 0).toFixed(1)} г</td>
+                <td style="text-align: center;">🌾 ${(rec.fiber || 0).toFixed(1)} г</td>
+            </tr>
+            <tr class="details-row" data-date="${rec.date}" style="display: none;">
+                <td colspan="6" style="padding: 0;">
+                    <div class="details-content">
+                        <div class="products-list-inline" id="products-${rec.date.replace(/-/g, '')}">
+                            <div style="text-align: center; padding: 20px;">
+                                <i class="fas fa-spinner fa-pulse"></i> Загрузка продуктов...
+                            </div>
+                        </div>
+                        <button class="load-day-btn" data-action="load-day" data-date="${rec.date}">
+                            <i class="fas fa-download"></i> Загрузить этот рацион в "Мой рацион"
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    };
+
+    const updateLoadMoreButton = () => {
+        if (!loadMoreContainer || !loadMoreHistoryBtn) return;
+        if (historyPage < historyTotalPages - 1) {
+            loadMoreContainer.style.display = 'block';
+            loadMoreHistoryBtn.disabled = historyLoading;
+            loadMoreHistoryBtn.innerHTML = historyLoading
+                ? '<i class="fas fa-spinner fa-pulse"></i> Загрузка...'
+                : '<i class="fas fa-chevron-down"></i> Показать ещё';
+        } else {
+            loadMoreContainer.style.display = 'none';
+        }
+    };
+
+    const loadHistory = async (page = 0, append = false) => {
+        if (append && historyLoading) return;
+
+        if (append) {
+            historyLoading = true;
+            updateLoadMoreButton();
+        }
+
+        try {
+            const params = new URLSearchParams();
+            params.append('page', page);
+            params.append('size', HISTORY_PAGE_SIZE); // 30
+            const url = `/nutrients?${params.toString()}`;
+            const data = await request(url);
+
+            if (data && Array.isArray(data.content)) {
+                if (append) {
+                    historyRecords = [...historyRecords, ...data.content];
+                } else {
+                    historyRecords = data.content;
+                }
+
+                historyPage = data.page?.number ?? page;
+                historyTotalPages = data.page?.totalPages ?? 0;
+                historyTotalElements = data.page?.totalElements ?? 0;
+
+                renderHistoryTable();
+                updateLoadMoreButton();
+            } else {
+                throw new Error('Неверный формат данных');
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки истории:', e);
+            if (!append) {
+                historyTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#ef4444;">Ошибка загрузки истории: ${escapeHtml(e.message)}</td></tr>`;
+                loadMoreContainer.style.display = 'none';
+            } else {
+                showToast(`❌ Ошибка подгрузки: ${e.message}`);
+            }
+        } finally {
+            if (append) {
+                historyLoading = false;
+                updateLoadMoreButton();
+            }
+        }
+    };
+
+    // ========== Загрузка продуктов конкретного дня ==========
+
     const loadDayProducts = async (date, container) => {
         try {
             const dayData = await request(`/nutrients/${date}`);
@@ -2100,54 +2244,6 @@
         }
     };
 
-    const loadHistory = async () => {
-        try {
-            const data = await request('/nutrients');
-            if (historyTableBody) {
-                if (!data.length) {
-                    historyTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Нет сохранённых рационов</td></tr>';
-                    return;
-                }
-
-                const sorted = [...data].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-                historyTableBody.innerHTML = sorted.map(rec => `
-                    <tr class="history-row" data-date="${rec.date}" style="cursor: pointer;">
-                        <td style="text-align: left; position: relative;">
-                            <i class="fas fa-chevron-down expand-icon" style="margin-right: 12px; color: #f97316; transition: transform 0.3s ease;"></i>
-                            <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #f97316;"></i>
-                            ${escapeHtml(rec.date || '—')}
-                            ${rec.comment ? '<i class="fas fa-comment-dots" title="Есть комментарий" style="margin-left: 10px; color: #f97316; opacity: 0.7;"></i>' : ''}
-                        </td>
-                        <td style="text-align: center;">🔥 ${Math.round(rec.calories || 0)} ккал</td>
-                        <td style="text-align: center;">🥩 ${(rec.protein || 0).toFixed(1)} г</td>
-                        <td style="text-align: center;">🧈 ${(rec.fat || 0).toFixed(1)} г</td>
-                        <td style="text-align: center;">🍚 ${(rec.carbohydrates || 0).toFixed(1)} г</td>
-                        <td style="text-align: center;">🌾 ${(rec.fiber || 0).toFixed(1)} г</td>
-                    </tr>
-                    <tr class="details-row" data-date="${rec.date}" style="display: none;">
-                        <td colspan="6" style="padding: 0;">
-                            <div class="details-content">
-                                <div class="products-list-inline" id="products-${rec.date.replace(/-/g, '')}">
-                                    <div style="text-align: center; padding: 20px;">
-                                        <i class="fas fa-spinner fa-pulse"></i> Загрузка продуктов...
-                                    </div>
-                                </div>
-                                <button class="load-day-btn" data-action="load-day" data-date="${rec.date}">
-                                    <i class="fas fa-download"></i> Загрузить этот рацион в "Мой рацион"
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `).join('');
-            }
-        } catch (e) {
-            console.error('Ошибка загрузки истории:', e);
-            if (historyTableBody) {
-                historyTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#ef4444;">Ошибка загрузки истории</td></tr>';
-            }
-        }
-    };
-
     // ========== Сохранение дневного рациона (PUT) ==========
 
     const saveDietForDate = async (date, dateLabel) => {
@@ -2201,7 +2297,8 @@
                 body: JSON.stringify(payload)
             });
             showToast(`✅ Рацион сохранён на ${dateLabel}`);
-            await loadHistory();
+            // Перезагружаем историю с первой страницы
+            await loadHistory(0, false);
             return true;
         } catch (e) {
             console.error('Ошибка сохранения:', e);
@@ -2363,10 +2460,9 @@
         }
     };
 
-    // ========== Делегирование событий (один раз) ==========
+    // ========== Делегирование событий ==========
 
     function setupEventDelegation() {
-        // Клики в списке продуктов
         sourceList.addEventListener('click', (e) => {
             const editBtn = e.target.closest('[data-action="edit-product"]');
             if (editBtn) {
@@ -2391,7 +2487,7 @@
                             selectedProducts = selectedProducts.filter(p => p.id !== id);
                             renderSelectedList();
                             updateTotalCalories(true);
-                            await loadHistory();
+                            await loadHistory(0, false);
                         })
                         .catch(e => showToast(`❌ Ошибка удаления: ${e.message}`));
                 }
@@ -2406,7 +2502,6 @@
             }
         });
 
-        // Клики в выбранных продуктах
         selectedList.addEventListener('click', (e) => {
             const decBtn = e.target.closest('[data-action="dec-qty"]');
             if (decBtn) {
@@ -2444,7 +2539,6 @@
             }
         });
 
-        // Изменение количества через input
         selectedList.addEventListener('change', (e) => {
             if (e.target.classList.contains('quantity-input')) {
                 const idx = Number(e.target.dataset.idx);
@@ -2459,7 +2553,6 @@
             }
         });
 
-        // Клики в истории
         historyTableBody.addEventListener('click', async (e) => {
             const loadBtn = e.target.closest('[data-action="load-day"]');
             if (loadBtn) {
@@ -2499,7 +2592,6 @@
             }
         });
 
-        // Клики в сетке рационов
         dietsGrid.addEventListener('click', async (e) => {
             const deleteBtn = e.target.closest('[data-action="delete-diet"]');
             if (deleteBtn) {
@@ -2538,7 +2630,6 @@
     // ========== Инициализация ==========
 
     const init = async () => {
-        // Делегирование событий и автоподгрузка
         setupEventDelegation();
         setupInfiniteScroll();
 
@@ -2546,12 +2637,11 @@
         await fetchProducts(0, false);
         loadFromLocalStorage();
         await fetchDiets();
-        await loadHistory();
+        await loadHistory(0, false);
         setupDropTarget();
 
-        // Обработчики кнопок
         document.getElementById('refreshProductsBtn')?.addEventListener('click', () => fetchProducts(0, false));
-        document.getElementById('refreshHistoryBtn')?.addEventListener('click', loadHistory);
+        document.getElementById('refreshHistoryBtn')?.addEventListener('click', () => loadHistory(0, false));
         document.getElementById('resetSelectionBtn')?.addEventListener('click', () => {
             selectedProducts = [];
             renderSelectedList();
@@ -2597,7 +2687,6 @@
             if (e.target === saveDietModal) saveDietModal.classList.remove('active');
         });
 
-        // Фильтры — сброс пагинации
         filterMacronutrient?.addEventListener('change', () => {
             currentPage = 0;
             fetchProducts(0, false);
@@ -2615,7 +2704,6 @@
             }, 500);
         });
 
-        // Кнопки модалок анализа
         closeAnalysisModalBtn?.addEventListener('click', () => {
             analysisModal.classList.remove('active');
         });
@@ -2624,6 +2712,10 @@
         });
         copyAnalysisBtn?.addEventListener('click', copyAnalysisToClipboard);
         analyzeWeekBtn?.addEventListener('click', analyzeWeek);
+
+        loadMoreHistoryBtn?.addEventListener('click', () => {
+            loadHistory(historyPage + 1, true);
+        });
     };
 
     init();

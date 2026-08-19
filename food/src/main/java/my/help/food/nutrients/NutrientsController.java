@@ -6,6 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.help.food.nutrients.dto.NutrientsRs;
 import my.help.food.nutrients.dto.NutrientsUpdateRq;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,9 +26,10 @@ public class NutrientsController {
     private final NutrientsService nutrientsService;
 
     @GetMapping
-    public List<NutrientsRs> getList() {
+    public Page<NutrientsRs> getPage(
+            @PageableDefault(size = 30, sort = "date", direction = Sort.Direction.DESC) Pageable pageable) {
         log.info("Запрос на получение списка всех дней питания");
-        return nutrientsService.getList();
+        return nutrientsService.getPage(pageable);
     }
 
     @GetMapping("/week")

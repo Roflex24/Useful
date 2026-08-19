@@ -5,12 +5,12 @@ import my.help.food.nutrients.dto.ProductsPerDayRs;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface NutrientsMapper {
 
-    List<NutrientsRs> toResponseList(List<NutrientsPerDayEntity> entities);
+    @Mapping(target = "productsPerDay", ignore = true)
+    NutrientsRs toResponse(NutrientsPerDayEntity entity);
 
     @Mapping(target = "id", source = "productId")
     @Mapping(target = "name", source = "productName")
