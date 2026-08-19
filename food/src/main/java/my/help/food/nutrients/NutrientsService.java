@@ -1,6 +1,7 @@
 package my.help.food.nutrients;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import my.help.food.common.exception.NutrientsNotFoundException;
 import my.help.food.nutrients.dto.*;
 import my.help.food.products_per_day.ProductsPerDayService;
@@ -12,6 +13,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NutrientsService {
@@ -22,11 +24,15 @@ public class NutrientsService {
 
     @Transactional(readOnly = true)
     public List<NutrientsRs> getList() {
-        return nutrientsMapper.toResponseList(nutrientsRepository.findAll());
+        log.debug("Получение всех записей питания");
+        List<NutrientsRs> result = nutrientsMapper.toResponseList(nutrientsRepository.findAll());
+        log.info("Возвращено записей: {}", result.size());
+        return result;
     }
 
     @Transactional
     public NutrientsRs updatePerDate(LocalDate date, NutrientsUpdateRq rq) {
+        log.info("Обновление данных за дату {}", date);
         Map<Long, Double> quantities = toQuantityMap(rq.productsPerDay());
 
         NutrientsPerDayEntity entity = new NutrientsPerDayEntity(
@@ -39,17 +45,21 @@ public class NutrientsService {
                 rq.comment()
         );
         nutrientsRepository.save(entity);
+        log.debug("Сохранена сводка за дату {}", date);
         productsPerDayService.replacePerDate(date, quantities);
+        log.info("Данные за дату {} успешно обновлены", date);
 
         return getPerDate(date);
     }
 
     @Transactional(readOnly = true)
     public NutrientsRs getPerDate(LocalDate date) {
+        log.debug("Запрос данных за дату {}", date);
         List<NutrientsWithProductsRowProjection> rows =
                 nutrientsRepository.findWithProductsByDate(date);
 
         if (rows.isEmpty()) {
+            log.warn("Данные за {} не найдены", date);
             throw new NutrientsNotFoundException("Данные за " + date + " не найдены");
         }
 
@@ -60,6 +70,7 @@ public class NutrientsService {
                 .sorted(Comparator.comparing(ProductsPerDayRs::name))
                 .toList();
 
+        log.info("За дату {} получено продуктов: {}", date, products.size());
         return new NutrientsRs(
                 first.date(),
                 first.calories(),
@@ -76,6 +87,7 @@ public class NutrientsService {
     public List<NutrientsRs> getForWeek() {
         LocalDate today = LocalDate.now();
         LocalDate start = today.minusDays(6);
+        log.info("Получение данных за неделю с {} по {}", start, today);
 
         List<NutrientsWithProductsRowProjection> rows =
                 nutrientsRepository.findWithProductsByDateBetween(start, today);
@@ -83,13 +95,14 @@ public class NutrientsService {
         Map<LocalDate, List<NutrientsWithProductsRowProjection>> rowsByDate = rows.stream()
                 .collect(Collectors.groupingBy(NutrientsWithProductsRowProjection::date));
 
-        return Stream.iterate(start, d -> d.plusDays(1))
+        List<NutrientsRs> result = Stream.iterate(start, d -> d.plusDays(1))
                 .limit(7)
                 .map(date -> {
                     List<NutrientsWithProductsRowProjection> dayRows =
                             rowsByDate.getOrDefault(date, List.of());
 
                     if (dayRows.isEmpty()) {
+                        log.debug("День {} отсутствует в БД, возвращаем пустой рацион", date);
                         return new NutrientsRs(
                                 date, 0, 0, 0, 0, 0, null, List.of()
                         );
@@ -114,18 +127,23 @@ public class NutrientsService {
                     );
                 })
                 .toList();
+        log.info("Сформирована недельная выборка, дней: {}", result.size());
+        return result;
     }
 
     private Map<Long, Double> toQuantityMap(List<ProductsPerDayRq> items) {
         if (items == null || items.isEmpty()) {
+            log.debug("Список продуктов пуст");
             return Map.of();
         }
         Map<Long, Double> map = new HashMap<>();
         for (ProductsPerDayRq item : items) {
             if (map.putIfAbsent(item.productId(), item.quantity()) != null) {
+                log.warn("Обнаружен дубликат productId: {}", item.productId());
                 throw new IllegalArgumentException("Дубликат productId: " + item.productId());
             }
         }
+        log.debug("Построена карта продуктов: {}", map.size());
         return map;
     }
 }

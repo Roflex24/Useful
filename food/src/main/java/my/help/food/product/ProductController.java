@@ -3,6 +3,7 @@ package my.help.food.product;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import my.help.food.common.enums.Macronutrients;
 import my.help.food.common.enums.Shop;
 import my.help.food.product.dto.ProductRq;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
@@ -27,6 +29,7 @@ public class ProductController {
 
     @GetMapping("/macronutrients")
     public Map<String, String> getMacronutrients() {
+        log.info("Запрос справочника макронутриентов");
         return Arrays.stream(Macronutrients.values())
                 .collect(Collectors.toMap(
                         Enum::name,
@@ -36,6 +39,7 @@ public class ProductController {
 
     @GetMapping("/shops")
     public Map<String, String> getShops() {
+        log.info("Запрос справочника магазинов");
         return Arrays.stream(Shop.values())
                 .collect(Collectors.toMap(
                         Enum::name,
@@ -49,12 +53,15 @@ public class ProductController {
             @RequestParam(value = "shop", required = false) Shop shop,
             @RequestParam(value = "name", required = false) String name,
             @PageableDefault(size = 50, sort = "name") Pageable pageable) {
+        log.info("Поиск продуктов: macronutrient={}, shop={}, name={}, page={}, size={}",
+                macronutrient, shop, name, pageable.getPageNumber(), pageable.getPageSize());
         return productService.search(macronutrient, shop, name, pageable);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ProductRs create(@Valid @RequestBody ProductRq rq) {
+        log.info("Создание продукта: name={}, shop={}", rq.name(), rq.shop());
         return productService.create(rq);
     }
 
@@ -62,12 +69,14 @@ public class ProductController {
     public ProductRs update(
             @PathVariable Long id,
             @Valid @RequestBody ProductRq rq) {
+        log.info("Обновление продукта id={}, name={}", id, rq.name());
         return productService.update(id, rq);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
+        log.info("Удаление продукта id={}", id);
         productService.delete(id);
     }
 }

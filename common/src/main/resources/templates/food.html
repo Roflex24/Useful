@@ -1948,21 +1948,19 @@
 
             if (data && Array.isArray(data.content)) {
                 if (append) {
-                    // Добавляем новые продукты к текущему списку
                     allProducts = [...allProducts, ...data.content];
                 } else {
-                    // Заменяем список
                     allProducts = data.content;
                 }
 
-                currentPage = data.number !== undefined ? data.number : page;
-                totalPages = data.totalPages || 0;
-                totalElements = data.totalElements || 0;
+                // 👇 Вот это изменилось
+                currentPage = data.page?.number ?? page;
+                totalPages = data.page?.totalPages ?? 0;
+                totalElements = data.page?.totalElements ?? 0;
 
                 renderSourceList();
                 if (sourceCountSpan) sourceCountSpan.innerText = totalElements;
 
-                // Сбрасываем прокрутку, если это первая страница и не append
                 if (!append && page === 0) {
                     sourceList.scrollTop = 0;
                 }
