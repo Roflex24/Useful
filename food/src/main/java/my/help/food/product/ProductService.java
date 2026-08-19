@@ -27,8 +27,8 @@ public class ProductService {
     private final ProductMapper productMapper;
 
     @Transactional(readOnly = true)
-    public Page<ProductRs> getAllProducts(Macronutrients sortBy, Shop shop, String productName, Pageable pageable) {
-        Specification<ProductEntity> spec = buildSpecification(shop, productName);
+    public Page<ProductRs> search(Macronutrients sortBy, Shop shop, String name, Pageable pageable) {
+        Specification<ProductEntity> spec = buildSpecification(shop, name);
         Pageable sortedPageable = applySort(pageable, sortBy);
 
         Page<ProductEntity> page = productRepository.findAll(spec, sortedPageable);
@@ -36,23 +36,23 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductRs addProduct(ProductRq request) {
-        ProductEntity entity = productMapper.toEntity(request);
+    public ProductRs create(ProductRq rq) {
+        ProductEntity entity = productMapper.toEntity(rq);
         ProductEntity saved = productRepository.save(entity);
         return productMapper.toResponse(saved);
     }
 
     @Transactional
-    public ProductRs updateProduct(Long id, ProductRq request) {
+    public ProductRs update(Long id, ProductRq rq) {
         ProductEntity productEntity = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
-        productMapper.updateEntityFromRequest(request, productEntity);
+        productMapper.updateEntityFromRequest(rq, productEntity);
         ProductEntity updated = productRepository.save(productEntity);
         return productMapper.toResponse(updated);
     }
 
     @Transactional
-    public void deleteProduct(Long id) {
+    public void delete(Long id) {
         if (!productRepository.existsById(id)) {
             throw new ProductNotFoundException(id);
         }
@@ -66,15 +66,15 @@ public class ProductService {
                 .collect(Collectors.toMap(ProductRs::id, Function.identity()));
     }
 
-    private Specification<ProductEntity> buildSpecification(Shop shop, String productName) {
+    private Specification<ProductEntity> buildSpecification(Shop shop, String name) {
         Specification<ProductEntity> spec = (root, query, cb) -> cb.conjunction();
 
         if (shop != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("shop"), shop));
         }
 
-        if (productName != null && !productName.isBlank()) {
-            String pattern = productName.trim().toLowerCase() + "%";
+        if (name != null && !name.isBlank()) {
+            String pattern = name.trim().toLowerCase() + "%";
             spec = spec.and((root, query, cb) ->
                     cb.like(cb.lower(root.get("name")), pattern));
         }

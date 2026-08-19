@@ -16,15 +16,15 @@ public class DietService {
     private final DietMapper dietMapper;
 
     @Transactional(readOnly = true)
-    public List<DietResponse> getAllDiets() {
+    public List<DietRs> getList() {
         return dietMapper.toResponseList(dietRepository.findAllWithItems());
     }
 
     @Transactional
-    public DietResponse createDiet(DietRq request) {
-        DietEntity entity = dietMapper.toEntity(request);
-        if (request.items() != null) {
-            List<DietItemEntity> items = request.items().stream()
+    public DietRs create(DietRq rq) {
+        DietEntity entity = dietMapper.toEntity(rq);
+        if (rq.items() != null) {
+            List<DietItemEntity> items = rq.items().stream()
                     .map(item -> dietMapper.toItemEntity(item, entity))
                     .toList();
             entity.setItems(items);
@@ -33,15 +33,14 @@ public class DietService {
     }
 
     @Transactional
-    public DietResponse updateDiet(Long id, DietRq request) {
+    public DietRs update(Long id, DietRq rq) {
         DietEntity entity = dietRepository.findById(id)
                 .orElseThrow(() -> new DietNotFoundException(id));
-        dietMapper.updateEntityFromRequest(request, entity);
+        dietMapper.updateEntityFromRequest(rq, entity);
 
-        // Полная замена списка items
         entity.getItems().clear();
-        if (request.items() != null) {
-            List<DietItemEntity> items = request.items().stream()
+        if (rq.items() != null) {
+            List<DietItemEntity> items = rq.items().stream()
                     .map(item -> dietMapper.toItemEntity(item, entity))
                     .toList();
             entity.getItems().addAll(items);
@@ -50,7 +49,7 @@ public class DietService {
     }
 
     @Transactional
-    public void deleteDiet(Long id) {
+    public void delete(Long id) {
         if (!dietRepository.existsById(id)) {
             throw new DietNotFoundException(id);
         }

@@ -15,7 +15,7 @@ public class ProductsPerDayService {
     private final ProductsPerDayRepository productsPerDayRepository;
 
     @Transactional
-    public void replaceProductsPerDay(LocalDate date, Map<Long, Double> productQuantityMap) {
+    public void replacePerDay(LocalDate date, Map<Long, Double> productQuantityMap) {
         productsPerDayRepository.deleteById_Date(date);
         productQuantityMap.forEach((productId, quantity) ->
                 productsPerDayRepository.save(new ProductsPerDayEntity(
@@ -26,12 +26,12 @@ public class ProductsPerDayService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductsPerDayEntity> getProductsPerDate(LocalDate localDate) {
+    public List<ProductsPerDayEntity> getPerDate(LocalDate localDate) {
         return productsPerDayRepository.findById_Date(localDate);
     }
 
     @Transactional(readOnly = true)
-    public List<ProductsPerDayEntity> getProductsBetween(LocalDate start, LocalDate end) {
+    public List<ProductsPerDayEntity> getBetween(LocalDate start, LocalDate end) {
         return productsPerDayRepository.findById_DateBetween(start, end);
     }
 }

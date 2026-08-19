@@ -8,6 +8,5 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface NutrientsMapper {
 
-
     List<NutrientsRs> toResponseList(List<NutrientsPerDayEntity> entities);
 }

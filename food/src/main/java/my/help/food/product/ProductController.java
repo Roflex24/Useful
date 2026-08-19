@@ -45,30 +45,30 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<ProductRs>> getAllProducts(
+    public ResponseEntity<Page<ProductRs>> search(
             @RequestParam(value = "macronutrient", required = false) Macronutrients macronutrient,
             @RequestParam(value = "shop", required = false) Shop shop,
-            @RequestParam(value = "name", required = false) String productName,
+            @RequestParam(value = "name", required = false) String name,
             @PageableDefault(size = 50, sort = "name") Pageable pageable) {
-        return ResponseEntity.ok(productService.getAllProducts(macronutrient, shop, productName, pageable));
+        return ResponseEntity.ok(productService.search(macronutrient, shop, name, pageable));
     }
 
     @PostMapping
-    public ResponseEntity<ProductRs> addProduct(@Valid @RequestBody ProductRq request) {
+    public ResponseEntity<ProductRs> create(@Valid @RequestBody ProductRq rq) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(productService.addProduct(request));
+                .body(productService.create(rq));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductRs> updateProduct(
+    public ResponseEntity<ProductRs> update(
             @PathVariable Long id,
-            @Valid @RequestBody ProductRq request) {
-        return ResponseEntity.ok(productService.updateProduct(id, request));
+            @Valid @RequestBody ProductRq rq) {
+        return ResponseEntity.ok(productService.update(id, rq));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        productService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -10,7 +10,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Getter
 @Setter
-@EqualsAndHashCode
 public class ProductsPerDayKeyEntity {
 
     private LocalDate date;

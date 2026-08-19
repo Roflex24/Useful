@@ -21,25 +21,25 @@ public class NutrientsController {
     private final NutrientsService nutrientsService;
 
     @GetMapping
-    public ResponseEntity<List<NutrientsRs>> getNutrientsList() {
-        return ResponseEntity.ok(nutrientsService.getNutrientsList());
+    public ResponseEntity<List<NutrientsRs>> getList() {
+        return ResponseEntity.ok(nutrientsService.getList());
     }
 
     @GetMapping("/week")
-    public ResponseEntity<List<NutrientsRs>> getNutrientsPerDateForWeek() {
-        return ResponseEntity.ok(nutrientsService.getNutrientsPerDateForWeek());
+    public ResponseEntity<List<NutrientsRs>> getForWeek() {
+        return ResponseEntity.ok(nutrientsService.getForWeek());
     }
 
     @GetMapping("/{date}")
-    public ResponseEntity<NutrientsRs> getNutrientsPerDate(
+    public ResponseEntity<NutrientsRs> getPerDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ResponseEntity.ok(nutrientsService.getNutrientsPerDate(date));
+        return ResponseEntity.ok(nutrientsService.getPerDate(date));
     }
 
     @PutMapping("/{date}")
-    public ResponseEntity<NutrientsRs> updateNutrientsPerDate(
+    public ResponseEntity<NutrientsRs> updatePerDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @Valid @RequestBody NutrientsUpdateRq request) {
-        return ResponseEntity.ok(nutrientsService.updateNutrientsPerDate(date, request));
+            @Valid @RequestBody NutrientsUpdateRq rq) {
+        return ResponseEntity.ok(nutrientsService.updatePerDate(date, rq));
     }
 }

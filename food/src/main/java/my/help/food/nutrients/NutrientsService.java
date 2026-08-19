@@ -27,13 +27,13 @@ public class NutrientsService {
     private final NutritionCalculator nutritionCalculator;
 
     @Transactional(readOnly = true)
-    public List<NutrientsRs> getNutrientsList() {
+    public List<NutrientsRs> getList() {
         return nutrientsMapper.toResponseList(nutrientsRepository.findAll());
     }
 
     @Transactional
-    public NutrientsRs updateNutrientsPerDate(LocalDate date, NutrientsUpdateRq request) {
-        Map<Long, Double> quantities = toQuantityMap(request.productsPerDay());
+    public NutrientsRs updatePerDate(LocalDate date, NutrientsUpdateRq rq) {
+        Map<Long, Double> quantities = toQuantityMap(rq.productsPerDay());
         Map<Long, ProductRs> productsById = productService.getProductsByIds(quantities.keySet());
 
         NutritionCalculator.NutritionTotals totals = nutritionCalculator.calculate(quantities, productsById);
@@ -45,20 +45,20 @@ public class NutrientsService {
                 totals.fat(),
                 totals.carbohydrates(),
                 totals.fiber(),
-                request.comment()
+                rq.comment()
         );
         nutrientsRepository.save(entity);
-        productsPerDayService.replaceProductsPerDay(date, quantities);
+        productsPerDayService.replacePerDay(date, quantities);
 
         return buildResponse(entity, quantities, productsById);
     }
 
     @Transactional(readOnly = true)
-    public NutrientsRs getNutrientsPerDate(LocalDate date) {
+    public NutrientsRs getPerDate(LocalDate date) {
         NutrientsPerDayEntity entity = nutrientsRepository.findById(date)
                 .orElseThrow(() -> new NutrientsNotFoundException("Данные за " + date + " не найдены"));
 
-        List<ProductsPerDayEntity> ppdEntities = productsPerDayService.getProductsPerDate(date);
+        List<ProductsPerDayEntity> ppdEntities = productsPerDayService.getPerDate(date);
         Map<Long, Double> quantities = toQuantityMapFromEntities(ppdEntities);
         Map<Long, ProductRs> productsById = productService.getProductsByIds(quantities.keySet());
 
@@ -66,7 +66,7 @@ public class NutrientsService {
     }
 
     @Transactional(readOnly = true)
-    public List<NutrientsRs> getNutrientsPerDateForWeek() {
+    public List<NutrientsRs> getForWeek() {
         LocalDate today = LocalDate.now();
         LocalDate start = today.minusDays(6);
 
@@ -80,7 +80,7 @@ public class NutrientsService {
                 ));
 
         List<ProductsPerDayEntity> ppdEntities =
-                productsPerDayService.getProductsBetween(start, today);
+                productsPerDayService.getBetween(start, today);
 
         // Уникальные ID продуктов за неделю
         Set<Long> productIds = ppdEntities.stream()

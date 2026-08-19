@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import my.help.food.diet.dto.DietRq;
-import my.help.food.diet.dto.DietResponse;
+import my.help.food.diet.dto.DietRs;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,26 +20,26 @@ public class DietController {
     private final DietService dietService;
 
     @GetMapping
-    public ResponseEntity<List<DietResponse>> getAllDiets() {
-        return ResponseEntity.ok(dietService.getAllDiets());
+    public ResponseEntity<List<DietRs>> getList() {
+        return ResponseEntity.ok(dietService.getList());
     }
 
     @PostMapping
-    public ResponseEntity<DietResponse> createDiet(@Valid @RequestBody DietRq request) {
+    public ResponseEntity<DietRs> create(@Valid @RequestBody DietRq rq) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(dietService.createDiet(request));
+                .body(dietService.create(rq));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DietResponse> updateDiet(
+    public ResponseEntity<DietRs> update(
             @PathVariable Long id,
-            @Valid @RequestBody DietRq request) {
-        return ResponseEntity.ok(dietService.updateDiet(id, request));
+            @Valid @RequestBody DietRq rq) {
+        return ResponseEntity.ok(dietService.update(id, rq));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDiet(@PathVariable Long id) {
-        dietService.deleteDiet(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        dietService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

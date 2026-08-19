@@ -10,8 +10,8 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface DietMapper {
 
-    DietResponse toResponse(DietEntity entity);
-    List<DietResponse> toResponseList(List<DietEntity> entities);
+    DietRs toResponse(DietEntity entity);
+    List<DietRs> toResponseList(List<DietEntity> entities);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "items", ignore = true)

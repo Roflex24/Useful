@@ -2,7 +2,7 @@ package my.help.food.diet.dto;
 
 import java.util.List;
 
-public record DietResponse(
+public record DietRs(
         Long id,
         String name,
         String description,
