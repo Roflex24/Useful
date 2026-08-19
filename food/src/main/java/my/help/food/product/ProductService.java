@@ -14,11 +14,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 public class ProductService {
@@ -57,13 +52,6 @@ public class ProductService {
             throw new ProductNotFoundException(id);
         }
         productRepository.deleteById(id);
-    }
-
-    @Transactional(readOnly = true)
-    public Map<Long, ProductRs> getProductsByIds(Collection<Long> ids) {
-        return productRepository.findAllById(ids).stream()
-                .map(productMapper::toResponse)
-                .collect(Collectors.toMap(ProductRs::id, Function.identity()));
     }
 
     private Specification<ProductEntity> buildSpecification(Shop shop, String name) {
