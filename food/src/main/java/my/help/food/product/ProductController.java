@@ -11,7 +11,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -27,48 +26,48 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping("/macronutrients")
-    public ResponseEntity<Map<String, String>> getMacronutrients() {
-        return ResponseEntity.ok(Arrays.stream(Macronutrients.values())
+    public Map<String, String> getMacronutrients() {
+        return Arrays.stream(Macronutrients.values())
                 .collect(Collectors.toMap(
                         Enum::name,
                         Macronutrients::getDisplayName
-                )));
+                ));
     }
 
     @GetMapping("/shops")
-    public ResponseEntity<Map<String, String>> getShops() {
-        return ResponseEntity.ok(Arrays.stream(Shop.values())
+    public Map<String, String> getShops() {
+        return Arrays.stream(Shop.values())
                 .collect(Collectors.toMap(
                         Enum::name,
                         Shop::getDisplayName
-                )));
+                ));
     }
 
     @GetMapping
-    public ResponseEntity<Page<ProductRs>> search(
+    public Page<ProductRs> search(
             @RequestParam(value = "macronutrient", required = false) Macronutrients macronutrient,
             @RequestParam(value = "shop", required = false) Shop shop,
             @RequestParam(value = "name", required = false) String name,
             @PageableDefault(size = 50, sort = "name") Pageable pageable) {
-        return ResponseEntity.ok(productService.search(macronutrient, shop, name, pageable));
+        return productService.search(macronutrient, shop, name, pageable);
     }
 
     @PostMapping
-    public ResponseEntity<ProductRs> create(@Valid @RequestBody ProductRq rq) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(productService.create(rq));
+    @ResponseStatus(HttpStatus.CREATED)
+    public ProductRs create(@Valid @RequestBody ProductRq rq) {
+        return productService.create(rq);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductRs> update(
+    public ProductRs update(
             @PathVariable Long id,
             @Valid @RequestBody ProductRq rq) {
-        return ResponseEntity.ok(productService.update(id, rq));
+        return productService.update(id, rq);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
         productService.delete(id);
-        return ResponseEntity.noContent().build();
     }
 }
