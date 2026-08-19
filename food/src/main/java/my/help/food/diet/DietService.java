@@ -4,10 +4,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.help.food.common.exception.DietNotFoundException;
 import my.help.food.diet.dto.*;
+import my.help.food.product.ProductMapper;
+import my.help.food.product.ProductRepository;
+import my.help.food.product.dto.ProductRs;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -16,11 +22,16 @@ public class DietService {
 
     private final DietRepository dietRepository;
     private final DietMapper dietMapper;
+    private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
 
     @Transactional(readOnly = true)
     public List<DietRs> getList() {
         log.debug("Получение всех рационов из БД");
-        List<DietRs> result = dietMapper.toResponseList(dietRepository.findAllWithItems());
+        List<DietRs> result = dietRepository.findAllWithItems().stream()
+                .map(this::toDietRsWithProducts)
+                .toList();
+
         log.info("Возвращено рационов: {}", result.size());
         return result;
     }
@@ -73,5 +84,31 @@ public class DietService {
         }
         dietRepository.deleteById(id);
         log.info("Рацион id={} удалён", id);
+    }
+
+    private DietRs toDietRsWithProducts(DietEntity entity) {
+        Set<Long> productIds = entity.getItems().stream()
+                .map(DietItemEntity::getProductId)
+                .collect(Collectors.toSet());
+
+        Map<Long, ProductRs> productMap = productRepository.findAllById(productIds).stream()
+                .map(productMapper::toResponse)
+                .collect(Collectors.toMap(ProductRs::id, p -> p));
+
+        List<DietItemRs> itemRsList = entity.getItems().stream()
+                .map(item -> new DietItemRs(
+                        item.getId(),
+                        item.getProductId(),
+                        item.getQuantity(),
+                        productMap.get(item.getProductId())
+                ))
+                .toList();
+
+        return new DietRs(
+                entity.getId(),
+                entity.getName(),
+                entity.getDescription(),
+                itemRsList
+        );
     }
 }

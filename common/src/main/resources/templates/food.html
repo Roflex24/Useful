@@ -1544,7 +1544,6 @@
     let shopsMap = {};
     let currentOpenDate = null;
     let savedDiets = [];
-    let productsCache = {};
     let editingDietId = null;
 
     // Пагинация
@@ -1632,17 +1631,6 @@
 
     // ========== Готовые рационы ==========
 
-    const ensureProductsCache = async () => {
-        try {
-            // Загружаем все продукты для кэша (можно использовать отдельный endpoint или большой размер)
-            const data = await request('/products?size=1000');
-            productsCache = {};
-            data.content.forEach(p => { productsCache[p.id] = p; });
-        } catch (e) {
-            showToast('⚠️ Не удалось загрузить базу продуктов');
-        }
-    };
-
     const fetchDiets = async () => {
         try {
             savedDiets = await request('/diets');
@@ -1650,7 +1638,6 @@
             savedDiets = [];
             showToast('⚠️ Не удалось загрузить рационы');
         }
-        await ensureProductsCache();
         renderDietsGrid();
     };
 
@@ -1658,7 +1645,8 @@
         const items = diet.items || [];
         if (!items.length) return '<div class="diet-tooltip-empty">Нет продуктов</div>';
         return items.map(item => {
-            const product = productsCache[item.productId];
+            // Используем вложенный объект product, который теперь приходит с бэкенда
+            const product = item.product;
             const name = product ? escapeHtml(product.name) : `Продукт #${item.productId} (не найден)`;
             const unit = product ? product.unit : '';
             const qtyLabel = unit === '100г' ? `${item.quantity} г` : `${item.quantity} шт`;
@@ -1700,14 +1688,12 @@
 
         showToast(`⏳ Применяем "${diet.name}"...`);
 
-        await ensureProductsCache();
-
+        // Теперь продукт уже встроен в item.product, отдельный запрос не нужен
         for (const item of diet.items) {
-            const found = productsCache[item.productId];
-            if (found) {
-                selectedProducts.push({ ...found, quantity: item.quantity });
+            if (item.product) {
+                selectedProducts.push({ ...item.product, quantity: item.quantity });
             } else {
-                showToast(`⚠️ Продукт (id ${item.productId}) не найден в базе`);
+                showToast(`⚠️ Продукт (id ${item.productId}) не найден`);
             }
         }
 
@@ -1953,7 +1939,6 @@
                     allProducts = data.content;
                 }
 
-                // 👇 Вот это изменилось
                 currentPage = data.page?.number ?? page;
                 totalPages = data.page?.totalPages ?? 0;
                 totalElements = data.page?.totalElements ?? 0;
@@ -1985,7 +1970,6 @@
     const setupInfiniteScroll = () => {
         sourceList.addEventListener('scroll', () => {
             const { scrollTop, scrollHeight, clientHeight } = sourceList;
-            // Порог 150px до конца списка
             if (scrollTop + clientHeight >= scrollHeight - 150) {
                 if (!isLoadingMore && currentPage < totalPages - 1) {
                     fetchProducts(currentPage + 1, true);
@@ -2177,7 +2161,6 @@
             quantity: p.quantity || 1
         }));
 
-        // Вычисляем суммарные значения с учётом единиц измерения
         let totalCalories = 0,
             totalProtein = 0,
             totalFat = 0,
@@ -2193,7 +2176,6 @@
             totalFiber += (p.fiber || 0) * multiplier;
         });
 
-        // Округляем: калории до целого, остальные до 1 знака после запятой
         totalCalories = Math.round(totalCalories);
         totalProtein = Math.round(totalProtein * 10) / 10;
         totalFat = Math.round(totalFat * 10) / 10;
@@ -2301,7 +2283,6 @@
             });
             document.getElementById('editModal').classList.remove('active');
             showToast('✅ Продукт обновлён');
-            // Перезагружаем текущую страницу (или сбрасываем на первую)
             currentPage = 0;
             await fetchProducts(0, false);
             selectedProducts = selectedProducts.map(p => p.id === currentEditId ? { ...p, ...updated, quantity: p.quantity } : p);
@@ -2338,7 +2319,6 @@
             const msgDiv = document.getElementById('addProductMessage');
             msgDiv.innerHTML = '<div class="msg-success"><i class="fas fa-check-circle"></i> Продукт добавлен!</div>';
             setTimeout(() => msgDiv.innerHTML = '', 2000);
-            // Очистить форму
             document.getElementById('prodName').value = '';
             document.getElementById('prodCalories').value = '';
             document.getElementById('prodProtein').value = '0';
@@ -2346,7 +2326,6 @@
             document.getElementById('prodCarbs').value = '0';
             document.getElementById('prodFiber').value = '0';
             document.getElementById('prodPhotoUrl').value = '';
-            // Перезагружаем первую страницу
             currentPage = 0;
             await fetchProducts(0, false);
         } catch (e) {
@@ -2405,7 +2384,6 @@
                     request(`/products/${id}`, { method: 'DELETE' })
                         .then(async () => {
                             showToast(`🗑️ ${product.name} удалён`);
-                            // Если удалили последний продукт на странице, переходим на предыдущую
                             if (allProducts.length === 1 && currentPage > 0) {
                                 currentPage--;
                             }
