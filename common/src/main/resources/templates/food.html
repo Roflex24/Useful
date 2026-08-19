@@ -2179,12 +2179,39 @@
             quantity: p.quantity || 1
         }));
 
+        // Вычисляем суммарные значения с учётом единиц измерения
+        let totalCalories = 0,
+            totalProtein = 0,
+            totalFat = 0,
+            totalCarbs = 0,
+            totalFiber = 0;
+
+        selectedProducts.forEach(p => {
+            const multiplier = getMultiplier(p);
+            totalCalories += (p.calories || 0) * multiplier;
+            totalProtein += (p.protein || 0) * multiplier;
+            totalFat += (p.fat || 0) * multiplier;
+            totalCarbs += (p.carbohydrate || 0) * multiplier;
+            totalFiber += (p.fiber || 0) * multiplier;
+        });
+
+        // Округляем: калории до целого, остальные до 1 знака после запятой
+        totalCalories = Math.round(totalCalories);
+        totalProtein = Math.round(totalProtein * 10) / 10;
+        totalFat = Math.round(totalFat * 10) / 10;
+        totalCarbs = Math.round(totalCarbs * 10) / 10;
+        totalFiber = Math.round(totalFiber * 10) / 10;
+
         const commentInput = document.getElementById('dietDayComment');
         const comment = commentInput ? commentInput.value.trim() : '';
 
         const payload = {
-            date: date,
             comment: comment,
+            calories: totalCalories,
+            protein: totalProtein,
+            fat: totalFat,
+            carbohydrates: totalCarbs,
+            fiber: totalFiber,
             productsPerDay: productsPerDay
         };
 
