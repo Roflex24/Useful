@@ -9,7 +9,7 @@ public enum Macronutrients {
     PROTEIN("Белки"),
     FAT("Жиры"),
     CARBOHYDRATE("Углеводы"),
-    FIBER("Клечатка");
+    FIBER("Клетчатка");
 
     private final String displayName;
 

@@ -22,12 +22,13 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final ProductValidator productValidator;
 
     @Transactional(readOnly = true)
-    public Page<ProductRs> search(Macronutrients sortBy, Shop shop, String name, Pageable pageable) {
+    public Page<ProductRs> search(Macronutrients sortByMacronutrient, Shop shop, String name, Pageable pageable) {
         log.debug("Построение спецификации для поиска продуктов");
         Specification<ProductEntity> spec = buildSpecification(shop, name);
-        Pageable sortedPageable = applySort(pageable, sortBy);
+        Pageable sortedPageable = applySort(pageable, sortByMacronutrient);
 
         Page<ProductEntity> page = productRepository.findAll(spec, sortedPageable);
         log.info("Найдено продуктов: {} (всего: {})", page.getNumberOfElements(), page.getTotalElements());
@@ -64,6 +65,7 @@ public class ProductService {
             log.warn("Попытка удаления несуществующего продукта id={}", id);
             throw new ProductNotFoundException(id);
         }
+        productValidator.validateDeletable(id);
         productRepository.deleteById(id);
         log.info("Продукт id={} удалён", id);
     }
@@ -76,7 +78,7 @@ public class ProductService {
         }
 
         if (name != null && !name.isBlank()) {
-            String pattern = name.trim().toLowerCase() + "%";
+            String pattern = "%" + name.trim().toLowerCase() + "%";
             spec = spec.and((root, query, cb) ->
                     cb.like(cb.lower(root.get("name")), pattern));
         }
@@ -84,11 +86,11 @@ public class ProductService {
         return spec;
     }
 
-    private Pageable applySort(Pageable pageable, Macronutrients sortBy) {
-        if (sortBy == null) {
+    private Pageable applySort(Pageable pageable, Macronutrients sortByMacronutrient) {
+        if (sortByMacronutrient == null) {
             return pageable;
         }
-        String fieldName = sortBy.name().toLowerCase();
+        String fieldName = sortByMacronutrient.name().toLowerCase();
         Sort sort = Sort.by(Sort.Direction.DESC, fieldName)
                 .and(Sort.by("name").ascending());
         return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);

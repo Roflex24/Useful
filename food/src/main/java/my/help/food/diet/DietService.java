@@ -6,6 +6,7 @@ import my.help.food.common.exception.DietNotFoundException;
 import my.help.food.diet.dto.*;
 import my.help.food.product.ProductMapper;
 import my.help.food.product.ProductRepository;
+import my.help.food.product.ProductValidator;
 import my.help.food.product.dto.ProductRs;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class DietService {
     private final DietMapper dietMapper;
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final ProductValidator productValidator;
 
     @Transactional(readOnly = true)
     public List<DietRs> getList() {
@@ -39,6 +41,8 @@ public class DietService {
     @Transactional
     public DietRs create(DietRq rq) {
         log.info("Создание рациона: name={}", rq.name());
+        validateItems(rq.items());
+
         DietEntity entity = dietMapper.toEntity(rq);
         if (rq.items() != null) {
             List<DietItemEntity> items = rq.items().stream()
@@ -49,7 +53,7 @@ public class DietService {
         }
         DietEntity saved = dietRepository.save(entity);
         log.info("Рацион создан с id={}", saved.getId());
-        return dietMapper.toResponse(saved);
+        return toDietRsWithProducts(saved);
     }
 
     @Transactional
@@ -60,6 +64,7 @@ public class DietService {
                     log.warn("Рацион с id={} не найден", id);
                     return new DietNotFoundException(id);
                 });
+        validateItems(rq.items());
         dietMapper.updateEntityFromRequest(rq, entity);
 
         entity.getItems().clear();
@@ -72,7 +77,7 @@ public class DietService {
         }
         DietEntity saved = dietRepository.save(entity);
         log.info("Рацион id={} успешно обновлён", id);
-        return dietMapper.toResponse(saved);
+        return toDietRsWithProducts(saved);
     }
 
     @Transactional
@@ -84,6 +89,15 @@ public class DietService {
         }
         dietRepository.deleteById(id);
         log.info("Рацион id={} удалён", id);
+    }
+
+    private void validateItems(List<DietItemRq> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        List<Long> productIds = items.stream().map(DietItemRq::productId).toList();
+        productValidator.validateNoDuplicateProductIds(productIds);
+        productValidator.validateExist(productIds);
     }
 
     private DietRs toDietRsWithProducts(DietEntity entity) {

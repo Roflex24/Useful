@@ -49,13 +49,13 @@ public class ProductController {
 
     @GetMapping
     public Page<ProductRs> search(
-            @RequestParam(value = "macronutrient", required = false) Macronutrients macronutrient,
+            @RequestParam(value = "sortByMacronutrient", required = false) Macronutrients sortByMacronutrient,
             @RequestParam(value = "shop", required = false) Shop shop,
             @RequestParam(value = "name", required = false) String name,
-            @PageableDefault(size = 50, sort = "name") Pageable pageable) {
-        log.info("Поиск продуктов: macronutrient={}, shop={}, name={}, page={}, size={}",
-                macronutrient, shop, name, pageable.getPageNumber(), pageable.getPageSize());
-        return productService.search(macronutrient, shop, name, pageable);
+            @PageableDefault(size = 30, sort = "name") Pageable pageable) {
+        log.info("Поиск продуктов: sortByMacronutrient={}, shop={}, name={}, page={}, size={}",
+                sortByMacronutrient, shop, name, pageable.getPageNumber(), pageable.getPageSize());
+        return productService.search(sortByMacronutrient, shop, name, pageable);
     }
 
     @PostMapping

@@ -1562,6 +1562,46 @@
             .replace(/'/g, '&#039;');
     }
 
+    function localDateString(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    const getMultiplier = (product) => {
+        const qty = product.quantity || 0;
+        return product.unit === '100г' ? qty / 100 : qty;
+    };
+
+    const calculateNutrientTotals = (products) => {
+        let totalCalories = 0, protein = 0, fat = 0, carbs = 0, fiber = 0;
+        products.forEach(p => {
+            const m = getMultiplier(p);
+            totalCalories += (p.calories || 0) * m;
+            protein += (p.protein || 0) * m;
+            fat += (p.fat || 0) * m;
+            carbs += (p.carbohydrate || 0) * m;
+            fiber += (p.fiber || 0) * m;
+        });
+        return {
+            calories: Math.round(totalCalories),
+            protein: Math.round(protein * 10) / 10,
+            fat: Math.round(fat * 10) / 10,
+            carbohydrates: Math.round(carbs * 10) / 10,
+            fiber: Math.round(fiber * 10) / 10
+        };
+    };
+
+    const parsePageMeta = (data, fallbackPage) => {
+        const pageInfo = data.page ?? {};
+        return {
+            page: pageInfo.number ?? fallbackPage,
+            totalPages: pageInfo.totalPages ?? 0,
+            totalElements: pageInfo.totalElements ?? 0
+        };
+    };
+
     const showToast = (msg) => {
         const toast = document.getElementById('toastMsg');
         if (toast) {
@@ -1623,33 +1663,20 @@
 
     // ========== Вспомогательные функции ==========
 
-    const getMultiplier = (product) => {
-        const qty = product.quantity || 0;
-        return product.unit === '100г' ? qty / 100 : qty;
-    };
-
     const updateTotalCalories = (animate = true) => {
-        let total = 0, protein = 0, fat = 0, carbs = 0, fiber = 0;
-        selectedProducts.forEach(p => {
-            const m = getMultiplier(p);
-            total += (p.calories || 0) * m;
-            protein += (p.protein || 0) * m;
-            fat += (p.fat || 0) * m;
-            carbs += (p.carbohydrate || 0) * m;
-            fiber += (p.fiber || 0) * m;
-        });
+        const totals = calculateNutrientTotals(selectedProducts);
 
         if (animate) {
             totalKcalDisplay.classList.add('animate-pulse');
             setTimeout(() => totalKcalDisplay.classList.remove('animate-pulse'), 200);
         }
 
-        totalKcalDisplay.innerHTML = `${Math.round(total)} <span>ккал</span>`;
+        totalKcalDisplay.innerHTML = `${totals.calories} <span>ккал</span>`;
         totalNutrientsDisplay.innerHTML = `
-            <span>🥩 Белки: ${protein.toFixed(1)} г</span>
-            <span>🧈 Жиры: ${fat.toFixed(1)} г</span>
-            <span>🍚 Углеводы: ${carbs.toFixed(1)} г</span>
-            <span>🌾 Клетчатка: ${fiber.toFixed(1)} г</span>
+            <span>🥩 Белки: ${totals.protein.toFixed(1)} г</span>
+            <span>🧈 Жиры: ${totals.fat.toFixed(1)} г</span>
+            <span>🍚 Углеводы: ${totals.carbohydrates.toFixed(1)} г</span>
+            <span>🌾 Клетчатка: ${totals.fiber.toFixed(1)} г</span>
         `;
     };
 
@@ -1777,7 +1804,10 @@
 
         if (editingDietId !== null) {
             const diet = savedDiets.find(d => d.id === editingDietId);
-            const items = diet ? diet.items : [];
+            const items = (diet ? diet.items : []).map(item => ({
+                productId: item.productId,
+                quantity: item.quantity
+            }));
             try {
                 await request(`/diets/${editingDietId}`, {
                     method: 'PUT',
@@ -1792,7 +1822,9 @@
             return;
         }
 
-        const items = selectedProducts.map(p => ({ productId: p.id, quantity: p.quantity }));
+        const items = selectedProducts
+            .filter(p => (p.quantity || 0) > 0)
+            .map(p => ({ productId: p.id, quantity: p.quantity }));
         try {
             await request('/diets', {
                 method: 'POST',
@@ -1959,11 +1991,13 @@
 
         try {
             const params = new URLSearchParams();
-            const macronutrient = filterMacronutrient.value;
+            const sortByMacronutrient = filterMacronutrient.value;
             const shop = filterShop.value;
             const name = filterName.value.trim();
 
-            if (macronutrient && macronutrient !== 'NAME') params.append('macronutrient', macronutrient);
+            if (sortByMacronutrient && sortByMacronutrient !== 'NAME') {
+                params.append('sortByMacronutrient', sortByMacronutrient);
+            }
             if (shop) params.append('shop', shop);
             if (name) params.append('name', name);
 
@@ -1980,9 +2014,10 @@
                     allProducts = data.content;
                 }
 
-                currentPage = data.page?.number ?? page;
-                totalPages = data.page?.totalPages ?? 0;
-                totalElements = data.page?.totalElements ?? 0;
+                const pageMeta = parsePageMeta(data, page);
+                currentPage = pageMeta.page;
+                totalPages = pageMeta.totalPages;
+                totalElements = pageMeta.totalElements;
 
                 renderSourceList();
                 if (sourceCountSpan) sourceCountSpan.innerText = totalElements;
@@ -2140,9 +2175,10 @@
                     historyRecords = data.content;
                 }
 
-                historyPage = data.page?.number ?? page;
-                historyTotalPages = data.page?.totalPages ?? 0;
-                historyTotalElements = data.page?.totalElements ?? 0;
+                const pageMeta = parsePageMeta(data, page);
+                historyPage = pageMeta.page;
+                historyTotalPages = pageMeta.totalPages;
+                historyTotalElements = pageMeta.totalElements;
 
                 renderHistoryTable();
                 updateLoadMoreButton();
@@ -2178,6 +2214,7 @@
 
             if (dayData.productsPerDay && dayData.productsPerDay.length > 0) {
                 const productsHtml = dayData.productsPerDay.map(product => {
+                    const mult = getMultiplier(product);
                     const photoHtml = product.photoUrl
                         ? `<img src="${escapeHtml(product.photoUrl)}" alt="${escapeHtml(product.name)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\' style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;\'>🍽️</div>'">`
                         : '<div class="photo-fallback" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🍽️</div>';
@@ -2187,11 +2224,11 @@
                             <div class="inline-product-info">
                                 <div class="inline-product-name">${escapeHtml(product.name)}</div>
                                 <div class="inline-product-nutrients">
-                                    <span>🔥 ${product.calories} ккал</span>
-                                    <span>🥩 ${product.protein}г</span>
-                                    <span>🧈 ${product.fat}г</span>
-                                    <span>🍚 ${product.carbohydrate}г</span>
-                                    <span>🌾 ${product.fiber || 0}г</span>
+                                    <span>🔥 ${Math.round((product.calories || 0) * mult)} ккал</span>
+                                    <span>🥩 ${((product.protein || 0) * mult).toFixed(1)}г</span>
+                                    <span>🧈 ${((product.fat || 0) * mult).toFixed(1)}г</span>
+                                    <span>🍚 ${((product.carbohydrate || 0) * mult).toFixed(1)}г</span>
+                                    <span>🌾 ${((product.fiber || 0) * mult).toFixed(1)}г</span>
                                 </div>
                             </div>
                             <div class="inline-product-quantity">
@@ -2247,48 +2284,29 @@
     // ========== Сохранение дневного рациона (PUT) ==========
 
     const saveDietForDate = async (date, dateLabel) => {
-        if (!selectedProducts.length) {
+        const activeProducts = selectedProducts.filter(p => (p.quantity || 0) > 0);
+        if (!activeProducts.length) {
             showToast('⚠️ Рацион пуст');
             return false;
         }
 
-        const productsPerDay = selectedProducts.map(p => ({
+        const productsPerDay = activeProducts.map(p => ({
             productId: p.id,
-            quantity: p.quantity || 1
+            quantity: p.quantity
         }));
 
-        let totalCalories = 0,
-            totalProtein = 0,
-            totalFat = 0,
-            totalCarbs = 0,
-            totalFiber = 0;
-
-        selectedProducts.forEach(p => {
-            const multiplier = getMultiplier(p);
-            totalCalories += (p.calories || 0) * multiplier;
-            totalProtein += (p.protein || 0) * multiplier;
-            totalFat += (p.fat || 0) * multiplier;
-            totalCarbs += (p.carbohydrate || 0) * multiplier;
-            totalFiber += (p.fiber || 0) * multiplier;
-        });
-
-        totalCalories = Math.round(totalCalories);
-        totalProtein = Math.round(totalProtein * 10) / 10;
-        totalFat = Math.round(totalFat * 10) / 10;
-        totalCarbs = Math.round(totalCarbs * 10) / 10;
-        totalFiber = Math.round(totalFiber * 10) / 10;
-
+        const totals = calculateNutrientTotals(activeProducts);
         const commentInput = document.getElementById('dietDayComment');
         const comment = commentInput ? commentInput.value.trim() : '';
 
         const payload = {
-            comment: comment,
-            calories: totalCalories,
-            protein: totalProtein,
-            fat: totalFat,
-            carbohydrates: totalCarbs,
-            fiber: totalFiber,
-            productsPerDay: productsPerDay
+            comment,
+            calories: totals.calories,
+            protein: totals.protein,
+            fat: totals.fat,
+            carbohydrates: totals.carbohydrates,
+            fiber: totals.fiber,
+            productsPerDay
         };
 
         try {
@@ -2308,7 +2326,7 @@
     };
 
     const saveCurrentDiet = () => {
-        const today = new Date().toISOString().split('T')[0];
+        const today = localDateString();
         const todayFormatted = new Date().toLocaleDateString('ru-RU');
         saveDietForDate(today, `сегодня (${todayFormatted})`);
     };
@@ -2323,7 +2341,7 @@
         if (!planDateInput.value) {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            planDateInput.value = tomorrow.toISOString().split('T')[0];
+            planDateInput.value = localDateString(tomorrow);
         }
         planDateModal.classList.add('active');
     };
@@ -2487,7 +2505,7 @@
                             selectedProducts = selectedProducts.filter(p => p.id !== id);
                             renderSelectedList();
                             updateTotalCalories(true);
-                            await loadHistory(0, false);
+                            await Promise.all([loadHistory(0, false), fetchDiets()]);
                         })
                         .catch(e => showToast(`❌ Ошибка удаления: ${e.message}`));
                 }
@@ -2627,6 +2645,13 @@
         });
     }
 
+    const clearSelectedProducts = () => {
+        selectedProducts = [];
+        renderSelectedList();
+        updateTotalCalories(true);
+        saveToLocalStorage();
+    };
+
     // ========== Инициализация ==========
 
     const init = async () => {
@@ -2634,26 +2659,18 @@
         setupInfiniteScroll();
 
         await Promise.all([loadShops(), loadMacronutrients()]);
-        await fetchProducts(0, false);
+        await Promise.all([
+            fetchProducts(0, false),
+            fetchDiets(),
+            loadHistory(0, false)
+        ]);
         loadFromLocalStorage();
-        await fetchDiets();
-        await loadHistory(0, false);
         setupDropTarget();
 
         document.getElementById('refreshProductsBtn')?.addEventListener('click', () => fetchProducts(0, false));
         document.getElementById('refreshHistoryBtn')?.addEventListener('click', () => loadHistory(0, false));
-        document.getElementById('resetSelectionBtn')?.addEventListener('click', () => {
-            selectedProducts = [];
-            renderSelectedList();
-            updateTotalCalories(true);
-            saveToLocalStorage();
-        });
-        document.getElementById('clearSelectedBtn')?.addEventListener('click', () => {
-            selectedProducts = [];
-            renderSelectedList();
-            updateTotalCalories(true);
-            saveToLocalStorage();
-        });
+        document.getElementById('resetSelectionBtn')?.addEventListener('click', clearSelectedProducts);
+        document.getElementById('clearSelectedBtn')?.addEventListener('click', clearSelectedProducts);
         document.getElementById('saveDietBtn')?.addEventListener('click', saveCurrentDiet);
         document.getElementById('addProductBtn')?.addEventListener('click', addNewProduct);
         document.getElementById('clearFormBtn')?.addEventListener('click', clearForm);

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.help.food.common.exception.NutrientsNotFoundException;
 import my.help.food.nutrients.dto.*;
+import my.help.food.product.ProductValidator;
 import my.help.food.products_per_day.ProductsPerDayService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +25,7 @@ public class NutrientsService {
     private final NutrientsRepository nutrientsRepository;
     private final NutrientsMapper nutrientsMapper;
     private final ProductsPerDayService productsPerDayService;
+    private final ProductValidator productValidator;
 
     @Transactional(readOnly = true)
     public Page<NutrientsRs> getPage(Pageable pageable) {
@@ -38,7 +40,10 @@ public class NutrientsService {
     @Transactional
     public NutrientsRs updatePerDate(LocalDate date, NutrientsUpdateRq rq) {
         log.info("Обновление данных за дату {}", date);
-        Map<Long, Double> quantities = toQuantityMap(rq.productsPerDay());
+        List<ProductsPerDayRq> products = rq.productsPerDay() != null ? rq.productsPerDay() : List.of();
+        validateProducts(products);
+
+        Map<Long, Double> quantities = toQuantityMap(products);
 
         NutrientsPerDayEntity entity = new NutrientsPerDayEntity(
                 date,
@@ -68,24 +73,9 @@ public class NutrientsService {
             throw new NutrientsNotFoundException("Данные за " + date + " не найдены");
         }
 
-        NutrientsWithProductsRowProjection first = rows.getFirst();
-        List<ProductsPerDayRs> products = rows.stream()
-                .filter(row -> row.productId() != null)
-                .map(nutrientsMapper::toProductsPerDayRs)
-                .sorted(Comparator.comparing(ProductsPerDayRs::name))
-                .toList();
-
-        log.info("За дату {} получено продуктов: {}", date, products.size());
-        return new NutrientsRs(
-                first.date(),
-                first.calories(),
-                first.protein(),
-                first.fat(),
-                first.carbohydrates(),
-                first.fiber(),
-                first.comment(),
-                products
-        );
+        NutrientsRs result = buildNutrientsRs(rows);
+        log.info("За дату {} получено продуктов: {}", date, result.productsPerDay().size());
+        return result;
     }
 
     @Transactional(readOnly = true)
@@ -108,36 +98,47 @@ public class NutrientsService {
 
                     if (dayRows.isEmpty()) {
                         log.debug("День {} отсутствует в БД, возвращаем пустой рацион", date);
-                        return new NutrientsRs(
-                                date, 0, 0, 0, 0, 0, null, List.of()
-                        );
+                        return emptyNutrientsRs(date);
                     }
-
-                    NutrientsWithProductsRowProjection first = dayRows.getFirst();
-                    List<ProductsPerDayRs> products = dayRows.stream()
-                            .filter(row -> row.productId() != null)
-                            .map(nutrientsMapper::toProductsPerDayRs)
-                            .sorted(Comparator.comparing(ProductsPerDayRs::name))
-                            .toList();
-
-                    return new NutrientsRs(
-                            first.date(),
-                            first.calories(),
-                            first.protein(),
-                            first.fat(),
-                            first.carbohydrates(),
-                            first.fiber(),
-                            first.comment(),
-                            products
-                    );
+                    return buildNutrientsRs(dayRows);
                 })
                 .toList();
         log.info("Сформирована недельная выборка, дней: {}", result.size());
         return result;
     }
 
+    private void validateProducts(List<ProductsPerDayRq> items) {
+        List<Long> productIds = items.stream().map(ProductsPerDayRq::productId).toList();
+        productValidator.validateNoDuplicateProductIds(productIds);
+        productValidator.validateExist(productIds);
+    }
+
+    private NutrientsRs buildNutrientsRs(List<NutrientsWithProductsRowProjection> rows) {
+        NutrientsWithProductsRowProjection first = rows.getFirst();
+        List<ProductsPerDayRs> products = rows.stream()
+                .filter(row -> row.productId() != null)
+                .map(nutrientsMapper::toProductsPerDayRs)
+                .sorted(Comparator.comparing(ProductsPerDayRs::name))
+                .toList();
+
+        return new NutrientsRs(
+                first.date(),
+                first.calories(),
+                first.protein(),
+                first.fat(),
+                first.carbohydrates(),
+                first.fiber(),
+                first.comment(),
+                products
+        );
+    }
+
+    private NutrientsRs emptyNutrientsRs(LocalDate date) {
+        return new NutrientsRs(date, 0, 0, 0, 0, 0, null, List.of());
+    }
+
     private Map<Long, Double> toQuantityMap(List<ProductsPerDayRq> items) {
-        if (items == null || items.isEmpty()) {
+        if (items.isEmpty()) {
             log.debug("Список продуктов пуст");
             return Map.of();
         }

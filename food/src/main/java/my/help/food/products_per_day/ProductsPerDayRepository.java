@@ -8,4 +8,6 @@ import java.time.LocalDate;
 @Repository
 public interface ProductsPerDayRepository extends JpaRepository<ProductsPerDayEntity, ProductsPerDayKeyEntity> {
     void deleteById_Date(LocalDate date);
+
+    boolean existsById_ProductId(Long productId);
 }
