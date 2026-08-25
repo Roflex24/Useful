@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
-public record CashbackRequestDto(
+public record CashbackRq(
         @NotNull(message = "ID счёта обязателен")
         Long accountId,
 

@@ -2,10 +2,10 @@ package my.help.finance.general.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import my.help.finance.general.dto.CashbackRequestDto;
+import my.help.finance.general.dto.CashbackRq;
 import my.help.finance.general.service.CashbackService;
 import my.help.finance.general.dto.BankCashbackSummaryDto;
-import my.help.finance.general.dto.CashbackResponseDto;
+import my.help.finance.general.dto.CashbackRs;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,13 +20,13 @@ public class CashbackController {
 
     // Получить все кешбеки
     @GetMapping
-    public List<CashbackResponseDto> getAllCashbacks() {
+    public List<CashbackRs> getAllCashbacks() {
         return cashbackService.getAllCashbacks();
     }
 
     // Получить кешбеки по счёту
     @GetMapping("/account/{accountId}")
-    public List<CashbackResponseDto> getCashbacksByAccount(@PathVariable Long accountId) {
+    public List<CashbackRs> getCashbacksByAccount(@PathVariable Long accountId) {
         return cashbackService.getCashbacksByAccount(accountId);
     }
 
@@ -39,15 +39,15 @@ public class CashbackController {
     // Создать кешбек
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CashbackResponseDto createCashback(@Valid @RequestBody CashbackRequestDto requestDto) {
+    public CashbackRs createCashback(@Valid @RequestBody CashbackRq requestDto) {
         return cashbackService.createCashback(requestDto);
     }
 
     // Обновить кешбек
     @PutMapping("/{id}")
-    public CashbackResponseDto updateCashback(
+    public CashbackRs updateCashback(
             @PathVariable Long id,
-            @Valid @RequestBody CashbackRequestDto requestDto) {
+            @Valid @RequestBody CashbackRq requestDto) {
         return cashbackService.updateCashback(id, requestDto);
     }
 

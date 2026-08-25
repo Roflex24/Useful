@@ -8,7 +8,7 @@ import my.help.finance.general.entity.SecurityType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public record SecurityRequestDto(
+public record SecurityRq(
         @NotNull(message = "ID счёта обязателен")
         Long accountId,
 

@@ -1,14 +1,14 @@
 package my.help.finance.general.mapper;
 
-import my.help.finance.general.dto.AccountRequestDto;
-import my.help.finance.general.dto.AccountResponseDto;
+import my.help.finance.general.dto.AccountRq;
+import my.help.finance.general.dto.AccountRs;
 import my.help.finance.general.entity.Account;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AccountMapper {
 
-    public Account toEntity(AccountRequestDto requestDto) {
+    public Account toEntity(AccountRq requestDto) {
         return Account.builder()
                 .bankName(requestDto.bankName())
                 .amount(requestDto.amount())
@@ -17,8 +17,8 @@ public class AccountMapper {
                 .build();
     }
 
-    public AccountResponseDto toResponseDto(Account account) {
-        return AccountResponseDto.builder()
+    public AccountRs toResponseDto(Account account) {
+        return AccountRs.builder()
                 .id(account.getId())
                 .bankName(account.getBankName())
                 .amount(account.getAmount())
@@ -27,7 +27,7 @@ public class AccountMapper {
                 .build();
     }
 
-    public void updateEntity(Account existingAccount, AccountRequestDto requestDto) {
+    public void updateEntity(Account existingAccount, AccountRq requestDto) {
         existingAccount.setBankName(requestDto.bankName());
         existingAccount.setAmount(requestDto.amount());
         existingAccount.setType(requestDto.type());

@@ -1,8 +1,8 @@
 package my.help.finance.general.mapper;
 
 import lombok.RequiredArgsConstructor;
-import my.help.finance.general.dto.CashbackRequestDto;
-import my.help.finance.general.dto.CashbackResponseDto;
+import my.help.finance.general.dto.CashbackRq;
+import my.help.finance.general.dto.CashbackRs;
 import my.help.finance.general.entity.Account;
 import my.help.finance.general.entity.AccountType;
 import my.help.finance.general.entity.Cashback;
@@ -15,7 +15,7 @@ public class CashbackMapper {
 
     private final AccountRepository accountRepository;
 
-    public Cashback toEntity(CashbackRequestDto requestDto) {
+    public Cashback toEntity(CashbackRq requestDto) {
         Account account = accountRepository.findById(requestDto.accountId())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
@@ -30,8 +30,8 @@ public class CashbackMapper {
                 .build();
     }
 
-    public CashbackResponseDto toResponseDto(Cashback cashback) {
-        return new CashbackResponseDto(
+    public CashbackRs toResponseDto(Cashback cashback) {
+        return new CashbackRs(
                 cashback.getId(),
                 cashback.getAccount().getId(),
                 cashback.getAccount().getBankName(),

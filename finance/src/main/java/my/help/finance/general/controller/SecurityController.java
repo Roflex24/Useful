@@ -2,8 +2,8 @@ package my.help.finance.general.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import my.help.finance.general.dto.SecurityRequestDto;
-import my.help.finance.general.dto.SecurityResponseDto;
+import my.help.finance.general.dto.SecurityRq;
+import my.help.finance.general.dto.SecurityRs;
 import my.help.finance.general.service.SecurityService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -19,28 +19,28 @@ public class SecurityController {
 
     // Получить все бумаги
     @GetMapping
-    public List<SecurityResponseDto> getAllSecurities() {
+    public List<SecurityRs> getAllSecurities() {
         return securityService.getAllSecurities();
     }
 
     // Получить бумаги по счёту
     @GetMapping("/account/{accountId}")
-    public List<SecurityResponseDto> getSecuritiesByAccount(@PathVariable Long accountId) {
+    public List<SecurityRs> getSecuritiesByAccount(@PathVariable Long accountId) {
         return securityService.getSecuritiesByAccount(accountId);
     }
 
     // Создать бумагу
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public SecurityResponseDto createSecurity(@Valid @RequestBody SecurityRequestDto requestDto) {
+    public SecurityRs createSecurity(@Valid @RequestBody SecurityRq requestDto) {
         return securityService.createSecurity(requestDto);
     }
 
     // Обновить бумагу
     @PutMapping("/{id}")
-    public SecurityResponseDto updateSecurity(
+    public SecurityRs updateSecurity(
             @PathVariable Long id,
-            @Valid @RequestBody SecurityRequestDto requestDto) {
+            @Valid @RequestBody SecurityRq requestDto) {
         return securityService.updateSecurity(id, requestDto);
     }
 

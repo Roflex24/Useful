@@ -7,7 +7,7 @@ import my.help.finance.general.entity.AccountType;
 
 import java.math.BigDecimal;
 
-public record AccountRequestDto(
+public record AccountRq(
         @NotBlank(message = "Название банка обязательно")
         String bankName,
 

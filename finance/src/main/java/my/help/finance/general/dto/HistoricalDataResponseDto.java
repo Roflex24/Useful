@@ -5,7 +5,7 @@ import java.util.List;
 
 public record HistoricalDataResponseDto(
         LocalDate snapshotDate,                    // За какой месяц данные
-        List<AccountResponseDto> accounts,         // Счета на эту дату
+        List<AccountRs> accounts,         // Счета на эту дату
         FinanceSummaryDto summary,                 // Сводка на эту дату
         List<BankCashbackSummaryDto> cashbackSummary // Кешбек сводка
 ) {}

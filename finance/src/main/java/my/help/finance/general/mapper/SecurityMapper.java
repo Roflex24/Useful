@@ -1,8 +1,8 @@
 package my.help.finance.general.mapper;
 
 import lombok.RequiredArgsConstructor;
-import my.help.finance.general.dto.SecurityRequestDto;
-import my.help.finance.general.dto.SecurityResponseDto;
+import my.help.finance.general.dto.SecurityRq;
+import my.help.finance.general.dto.SecurityRs;
 import my.help.finance.general.entity.Account;
 import my.help.finance.general.entity.AccountType;
 import my.help.finance.general.entity.Security;
@@ -16,7 +16,7 @@ public class SecurityMapper {
 
     private final AccountRepository accountRepository;
 
-    public Security toEntity(SecurityRequestDto requestDto) {
+    public Security toEntity(SecurityRq requestDto) {
         Account account = accountRepository.findById(requestDto.accountId())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
@@ -36,7 +36,7 @@ public class SecurityMapper {
         return security;
     }
 
-    public void updateEntity(Security existing, SecurityRequestDto requestDto) {
+    public void updateEntity(Security existing, SecurityRq requestDto) {
         existing.setSecurityType(requestDto.securityType());
         existing.setTicker(requestDto.ticker());
         existing.setQuantity(requestDto.quantity());
@@ -49,7 +49,7 @@ public class SecurityMapper {
         applyBondFieldsIfNeeded(existing, requestDto);
     }
 
-    private void applyBondFieldsIfNeeded(Security security, SecurityRequestDto requestDto) {
+    private void applyBondFieldsIfNeeded(Security security, SecurityRq requestDto) {
         if (requestDto.securityType() == SecurityType.BOND) {
             security.setFaceValue(requestDto.faceValue());
             security.setCouponRate(requestDto.couponRate());
@@ -57,8 +57,8 @@ public class SecurityMapper {
         }
     }
 
-    public SecurityResponseDto toResponseDto(Security security) {
-        return new SecurityResponseDto(
+    public SecurityRs toResponseDto(Security security) {
+        return new SecurityRs(
                 security.getId(),
                 security.getAccount().getId(),
                 security.getAccount().getBankName(),

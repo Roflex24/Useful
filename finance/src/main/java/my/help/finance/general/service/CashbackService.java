@@ -3,8 +3,8 @@ package my.help.finance.general.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.help.finance.general.dto.BankCashbackSummaryDto;
-import my.help.finance.general.dto.CashbackRequestDto;
-import my.help.finance.general.dto.CashbackResponseDto;
+import my.help.finance.general.dto.CashbackRq;
+import my.help.finance.general.dto.CashbackRs;
 import my.help.finance.general.entity.Account;
 import my.help.finance.general.entity.AccountType;
 import my.help.finance.general.entity.Cashback;
@@ -28,7 +28,7 @@ public class CashbackService {
     private final AccountRepository accountRepository;
     private final CashbackMapper cashbackMapper;
 
-    public List<CashbackResponseDto> getAllCashbacks() {
+    public List<CashbackRs> getAllCashbacks() {
         log.debug("Fetching all cashbacks");
         return cashbackRepository.findAll()
                 .stream()
@@ -36,7 +36,7 @@ public class CashbackService {
                 .collect(Collectors.toList());
     }
 
-    public List<CashbackResponseDto> getCashbacksByAccount(Long accountId) {
+    public List<CashbackRs> getCashbacksByAccount(Long accountId) {
         log.debug("Fetching cashbacks for account: {}", accountId);
 
         Account account = accountRepository.findById(accountId)
@@ -54,7 +54,7 @@ public class CashbackService {
     }
 
     @Transactional
-    public CashbackResponseDto createCashback(CashbackRequestDto requestDto) {
+    public CashbackRs createCashback(CashbackRq requestDto) {
         log.info("Creating cashback for account: {}", requestDto.accountId());
 
         Account account = accountRepository.findById(requestDto.accountId())
@@ -72,7 +72,7 @@ public class CashbackService {
     }
 
     @Transactional
-    public CashbackResponseDto updateCashback(Long id, CashbackRequestDto requestDto) {
+    public CashbackRs updateCashback(Long id, CashbackRq requestDto) {
         log.info("Updating cashback with id: {}", id);
 
         Cashback existingCashback = cashbackRepository.findById(id)
@@ -111,10 +111,10 @@ public class CashbackService {
                 .filter(account -> account.getType() == AccountType.CARD)
                 .toList();
 
-        Map<String, List<CashbackResponseDto>> cashbacksByBank = new HashMap<>();
+        Map<String, List<CashbackRs>> cashbacksByBank = new HashMap<>();
 
         for (Account account : cardAccounts) {
-            List<CashbackResponseDto> accountCashbacks = getCashbacksByAccount(account.getId());
+            List<CashbackRs> accountCashbacks = getCashbacksByAccount(account.getId());
             if (!accountCashbacks.isEmpty()) {
                 cashbacksByBank.put(account.getBankName(), accountCashbacks);
             }
@@ -122,24 +122,24 @@ public class CashbackService {
 
         List<BankCashbackSummaryDto> summary = new ArrayList<>();
 
-        for (Map.Entry<String, List<CashbackResponseDto>> entry : cashbacksByBank.entrySet()) {
+        for (Map.Entry<String, List<CashbackRs>> entry : cashbacksByBank.entrySet()) {
             String bankName = entry.getKey();
-            List<CashbackResponseDto> cashbacks = entry.getValue();
+            List<CashbackRs> cashbacks = entry.getValue();
 
             Map<String, BigDecimal> cashbackByCategory = cashbacks.stream()
                     .collect(Collectors.toMap(
-                            CashbackResponseDto::category,
-                            CashbackResponseDto::percentage
+                            CashbackRs::category,
+                            CashbackRs::percentage
                     ));
 
-            Optional<CashbackResponseDto> bestCashback = cashbacks.stream()
-                    .max(Comparator.comparing(CashbackResponseDto::percentage));
+            Optional<CashbackRs> bestCashback = cashbacks.stream()
+                    .max(Comparator.comparing(CashbackRs::percentage));
 
             summary.add(new BankCashbackSummaryDto(
                     bankName,
                     cashbacks.size(),
-                    bestCashback.map(CashbackResponseDto::percentage).orElse(BigDecimal.ZERO),
-                    bestCashback.map(CashbackResponseDto::category).orElse("Нет"),
+                    bestCashback.map(CashbackRs::percentage).orElse(BigDecimal.ZERO),
+                    bestCashback.map(CashbackRs::category).orElse("Нет"),
                     cashbackByCategory,
                     cashbacks
             ));
