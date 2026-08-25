@@ -115,16 +115,16 @@ public class FinanceSnapshotService {
             if (account.getType() == AccountType.INVESTMENT) {
                 List<Security> securities = securityRepository.findByAccountId(account.getId());
                 List<SecuritySnapshotDto> securityDtos = securities.stream()
-                        .map(s -> SecuritySnapshotDto.builder()
-                                .id(s.getId())
-                                .securityType(s.getSecurityType())
-                                .ticker(s.getTicker())
-                                .quantity(s.getQuantity())
-                                .currentPrice(s.getCurrentPrice())
-                                .faceValue(s.getFaceValue())
-                                .couponRate(s.getCouponRate())
-                                .maturityDate(s.getMaturityDate())
-                                .build())
+                        .map(s -> new SecuritySnapshotDto(
+                                s.getId(),
+                                s.getSecurityType(),
+                                s.getTicker(),
+                                s.getQuantity(),
+                                s.getCurrentPrice(),
+                                s.getFaceValue(),
+                                s.getCouponRate(),
+                                s.getMaturityDate()
+                        ))
                         .collect(Collectors.toList());
                 try {
                     securitiesJson = objectMapper.writeValueAsString(securityDtos);
@@ -293,19 +293,19 @@ public class FinanceSnapshotService {
 
                     List<SecurityResponseDto> securities = securityDtos.stream()
                             .map(dto -> new SecurityResponseDto(
-                                    dto.getId(),
+                                    dto.id(),
                                     snapshot.getAccountId(),
                                     snapshot.getBankName(),
-                                    dto.getSecurityType(),
-                                    dto.getTicker(),
-                                    dto.getQuantity(),
-                                    dto.getCurrentPrice(),
-                                    dto.getQuantity() != null && dto.getCurrentPrice() != null
-                                            ? dto.getQuantity().multiply(dto.getCurrentPrice())
+                                    dto.securityType(),
+                                    dto.ticker(),
+                                    dto.quantity(),
+                                    dto.currentPrice(),
+                                    dto.quantity() != null && dto.currentPrice() != null
+                                            ? dto.quantity().multiply(dto.currentPrice())
                                             : BigDecimal.ZERO,
-                                    dto.getFaceValue(),
-                                    dto.getCouponRate(),
-                                    dto.getMaturityDate()
+                                    dto.faceValue(),
+                                    dto.couponRate(),
+                                    dto.maturityDate()
                             ))
                             .collect(Collectors.toList());
 
