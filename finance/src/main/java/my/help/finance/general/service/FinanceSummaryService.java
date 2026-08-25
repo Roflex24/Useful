@@ -4,14 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.help.finance.general.dto.BankCashbackSummaryDto;
 import my.help.finance.general.dto.FinanceSummaryDto;
-import my.help.finance.general.dto.HistoricalDataResponseDto;
 import my.help.finance.general.entity.AccountType;
 import my.help.finance.general.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +23,6 @@ public class FinanceSummaryService {
 
     private final AccountRepository accountRepository;
     private final CashbackService cashbackService;
-    private final FinanceSnapshotService snapshotService;
 
     public FinanceSummaryDto getFinanceSummary() {
         log.debug("Calculating finance summary");
@@ -38,7 +35,7 @@ public class FinanceSummaryService {
         List<BankCashbackSummaryDto> cashbackSummaries = cashbackService.getCashbackSummaryByBank();
         Map<String, BankCashbackSummaryDto> cashbackSummaryByBank = cashbackSummaries.stream()
                 .collect(Collectors.toMap(
-                        BankCashbackSummaryDto::getBankName,
+                        BankCashbackSummaryDto::bankName,
                         summary -> summary
                 ));
 
@@ -84,11 +81,5 @@ public class FinanceSummaryService {
 
         log.debug("Calculated amounts for {} types", result.size());
         return result;
-    }
-
-    @Transactional(readOnly = true)
-    public FinanceSummaryDto getHistoricalSummary(YearMonth yearMonth) {
-        HistoricalDataResponseDto historicalData = snapshotService.getHistoricalData(yearMonth);
-        return historicalData != null ? historicalData.getSummary() : null;
     }
 }
