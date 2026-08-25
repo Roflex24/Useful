@@ -46,10 +46,6 @@ public class ApartmentController {
 
     private final ApartmentScoringService scoringService;
 
-// ------------------------------------------------------------------
-    // POST /api/apartments/parse
-    // ------------------------------------------------------------------
-
     /**
      * Принимает один или несколько HTML-файлов страниц Авито,
      * парсит объявления и сохраняет/обновляет их в базе данных.
@@ -116,18 +112,10 @@ public class ApartmentController {
         }
     }
 
-    // ------------------------------------------------------------------
-    // GET /api/apartments
-    // ------------------------------------------------------------------
-
     @GetMapping
     public List<Apartment> getAllApartments() {
         return repository.findAll();
     }
-
-    // ------------------------------------------------------------------
-    // GET /api/apartments/{avitoId}
-    // ------------------------------------------------------------------
 
     @GetMapping("/{avitoId}")
     public ResponseEntity<Apartment> getByAvitoId(@PathVariable String avitoId) {
@@ -135,10 +123,6 @@ public class ApartmentController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-
-    // ------------------------------------------------------------------
-    // DELETE /api/apartments
-    // ------------------------------------------------------------------
 
     /**
      * Полностью очищает таблицу квартир (и связанные фото/бейджи).
@@ -157,20 +141,12 @@ public class ApartmentController {
         parserService.deleteAllApartments();
     }
 
-    // ------------------------------------------------------------------
-    // DELETE /api/apartments/{avitoId}
-    // ------------------------------------------------------------------
-
     /** Удаляет одну квартиру по её avitoId (используется кнопкой 🗑 на фронтенде). */
     @DeleteMapping("/{avitoId}")
     public ResponseEntity<Void> deleteApartment(@PathVariable String avitoId) {
         boolean deleted = parserService.deleteApartmentByAvitoId(avitoId);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
-
-    // ------------------------------------------------------------------
-    // POST /api/apartments/bot/start · POST /bot/stop · GET /bot/status
-    // ------------------------------------------------------------------
 
     /**
      * Запускает бота-обходчика прямо в этом же backend-процессе (кнопка
@@ -194,10 +170,6 @@ public class ApartmentController {
         return botService.getStatus();
     }
 
-    // ------------------------------------------------------------------
-    // GET /api/apartments/bot/queue
-    // ------------------------------------------------------------------
-
     /**
      * Отдаёт боту-обходчику список объявлений, страницы которых ещё
      * не скачаны (detail_visited не true). Намеренно возвращает только
@@ -210,10 +182,6 @@ public class ApartmentController {
                 .map(a -> new BotQueueItem(a.getId(), a.getAvitoId(), a.getUrl(), a.getDetailVisitAttempts()))
                 .toList();
     }
-
-    // ------------------------------------------------------------------
-    // POST /api/apartments/{avitoId}/bot/visited
-    // ------------------------------------------------------------------
 
     /**
      * Внешний standalone-бот ({@link AvitoVisitorBot}) вызывает это после

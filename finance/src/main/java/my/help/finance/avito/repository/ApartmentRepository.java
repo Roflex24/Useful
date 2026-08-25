@@ -46,8 +46,10 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Long> {
      * LazyInitializationException "no session".
      */
     @EntityGraph(attributePaths = {"images", "badges"})
-    @Query("select a from Apartment a " +
-            "where a.url is not null and (a.detailVisited is null or a.detailVisited = false) " +
-            "order by a.id asc")
+    @Query("""
+    select a from Apartment a
+    where a.url is not null and (a.detailVisited is null or a.detailVisited = false)
+    order by a.id asc
+    """)
     List<Apartment> findQueueForBot();
 }
