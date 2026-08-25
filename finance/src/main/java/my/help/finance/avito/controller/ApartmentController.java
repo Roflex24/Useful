@@ -1,15 +1,11 @@
 package my.help.finance.avito.controller;
 
 import lombok.RequiredArgsConstructor;
-import my.help.finance.avito.dto.BotQueueItem;
-import my.help.finance.avito.dto.BotVisitedRequest;
-import my.help.finance.avito.dto.ParseResponse;
+import my.help.finance.avito.dto.*;
 import my.help.finance.avito.entity.Apartment;
 import my.help.finance.avito.repository.ApartmentRepository;
-import my.help.finance.avito.service.AvitoDetailPageParserService;
-import my.help.finance.avito.service.AvitoParserService;
-import my.help.finance.avito.service.AvitoVisitorBot;
-import my.help.finance.avito.service.AvitoVisitorBotService;
+import my.help.finance.avito.service.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,7 +44,9 @@ public class ApartmentController {
     private final AvitoVisitorBotService botService;
     private final AvitoDetailPageParserService detailParserService;
 
-    // ------------------------------------------------------------------
+    private final ApartmentScoringService scoringService;
+
+// ------------------------------------------------------------------
     // POST /api/apartments/parse
     // ------------------------------------------------------------------
 
@@ -123,8 +121,8 @@ public class ApartmentController {
     // ------------------------------------------------------------------
 
     @GetMapping
-    public ResponseEntity<List<Apartment>> getAllApartments() {
-        return ResponseEntity.ok(repository.findAll());
+    public List<Apartment> getAllApartments() {
+        return repository.findAll();
     }
 
     // ------------------------------------------------------------------
@@ -154,9 +152,9 @@ public class ApartmentController {
      * (дети -> родитель).
      */
     @DeleteMapping
-    public ResponseEntity<Void> deleteAllApartments() {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAllApartments() {
         parserService.deleteAllApartments();
-        return ResponseEntity.noContent().build();
     }
 
     // ------------------------------------------------------------------
@@ -180,20 +178,20 @@ public class ApartmentController {
      * идёт в фоновом потоке — см. {@link AvitoVisitorBotService}.
      */
     @PostMapping("/bot/start")
-    public ResponseEntity<AvitoVisitorBotService.BotStatusDto> startBot() {
-        return ResponseEntity.ok(botService.start());
+    public AvitoVisitorBotService.BotStatusDto startBot() {
+        return botService.start();
     }
 
     /** Просит бота остановиться после текущего шага (кнопка "Остановить"). */
     @PostMapping("/bot/stop")
-    public ResponseEntity<AvitoVisitorBotService.BotStatusDto> stopBot() {
-        return ResponseEntity.ok(botService.stop());
+    public AvitoVisitorBotService.BotStatusDto stopBot() {
+        return botService.stop();
     }
 
     /** Текущий прогресс — фронтенд опрашивает это раз в пару секунд, пока бот работает. */
     @GetMapping("/bot/status")
-    public ResponseEntity<AvitoVisitorBotService.BotStatusDto> botStatus() {
-        return ResponseEntity.ok(botService.getStatus());
+    public AvitoVisitorBotService.BotStatusDto botStatus() {
+        return botService.getStatus();
     }
 
     // ------------------------------------------------------------------
@@ -207,11 +205,10 @@ public class ApartmentController {
      * чтобы ответ был лёгким даже при большой очереди.
      */
     @GetMapping("/bot/queue")
-    public ResponseEntity<List<BotQueueItem>> getBotQueue() {
-        List<BotQueueItem> queue = repository.findQueueForBot().stream()
+    public List<BotQueueItem> getBotQueue() {
+        return repository.findQueueForBot().stream()
                 .map(a -> new BotQueueItem(a.getId(), a.getAvitoId(), a.getUrl(), a.getDetailVisitAttempts()))
                 .toList();
-        return ResponseEntity.ok(queue);
     }
 
     // ------------------------------------------------------------------
@@ -250,5 +247,19 @@ public class ApartmentController {
                     return ResponseEntity.ok(repository.save(apt));
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/rank")
+    public List<ApartmentScoreResult> rank(
+            @RequestBody ScoringRequest request,
+            @RequestParam(name = "limit", required = false) Integer limit
+    ) {
+        List<Apartment> apartments = repository.findAll();
+        List<ApartmentScoreResult> ranked = scoringService.scoreAndRank(apartments, request.weights());
+
+        if (limit != null && limit > 0 && limit < ranked.size()) {
+            return ranked.subList(0, limit);
+        }
+        return ranked;
     }
 }
