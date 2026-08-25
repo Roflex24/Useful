@@ -2,11 +2,10 @@ package my.help.finance.general.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.help.finance.general.dto.*;
 import my.help.finance.general.entity.*;
-import my.help.finance.general.mapper.AccountMapper;
 import my.help.finance.general.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +20,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class FinanceSnapshotService {
 
     private final MonthlyFinanceSnapshotRepository snapshotRepository;
@@ -28,26 +28,7 @@ public class FinanceSnapshotService {
     private final CashbackRepository cashbackRepository;
     private final DepositRepository depositRepository;
     private final SecurityRepository securityRepository;
-    private final AccountMapper accountMapper;
     private final ObjectMapper objectMapper;
-
-    // ОБНОВИТЬ КОНСТРУКТОР
-    public FinanceSnapshotService(
-            MonthlyFinanceSnapshotRepository snapshotRepository,
-            AccountRepository accountRepository,
-            CashbackRepository cashbackRepository,
-            DepositRepository depositRepository,
-            SecurityRepository securityRepository,
-            AccountMapper accountMapper) {
-        this.snapshotRepository = snapshotRepository;
-        this.accountRepository = accountRepository;
-        this.cashbackRepository = cashbackRepository;
-        this.depositRepository = depositRepository;
-        this.securityRepository = securityRepository;
-        this.accountMapper = accountMapper;
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule());
-    }
 
     /**
      * Создать снимок за прошедший месяц (вызывать 1-го числа)
