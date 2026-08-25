@@ -25,9 +25,9 @@ import java.util.Map;
  *   }
  * }
  */
-public record ScoringRequest(Map<String, Double> weights) {
+public record ScoringRq(Map<String, Double> weights) {
 
-    public ScoringRequest {
+    public ScoringRq {
         if (weights == null) {
             weights = Map.of();
         }
