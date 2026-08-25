@@ -6,7 +6,6 @@ import my.help.finance.general.dto.SecurityRequestDto;
 import my.help.finance.general.dto.SecurityResponseDto;
 import my.help.finance.general.service.SecurityService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,36 +19,35 @@ public class SecurityController {
 
     // Получить все бумаги
     @GetMapping
-    public ResponseEntity<List<SecurityResponseDto>> getAllSecurities() {
-        return ResponseEntity.ok(securityService.getAllSecurities());
+    public List<SecurityResponseDto> getAllSecurities() {
+        return securityService.getAllSecurities();
     }
 
     // Получить бумаги по счёту
     @GetMapping("/account/{accountId}")
-    public ResponseEntity<List<SecurityResponseDto>> getSecuritiesByAccount(@PathVariable Long accountId) {
-        return ResponseEntity.ok(securityService.getSecuritiesByAccount(accountId));
+    public List<SecurityResponseDto> getSecuritiesByAccount(@PathVariable Long accountId) {
+        return securityService.getSecuritiesByAccount(accountId);
     }
 
     // Создать бумагу
     @PostMapping
-    public ResponseEntity<SecurityResponseDto> createSecurity(@Valid @RequestBody SecurityRequestDto requestDto) {
-        SecurityResponseDto created = securityService.createSecurity(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    @ResponseStatus(HttpStatus.CREATED)
+    public SecurityResponseDto createSecurity(@Valid @RequestBody SecurityRequestDto requestDto) {
+        return securityService.createSecurity(requestDto);
     }
 
     // Обновить бумагу
     @PutMapping("/{id}")
-    public ResponseEntity<SecurityResponseDto> updateSecurity(
+    public SecurityResponseDto updateSecurity(
             @PathVariable Long id,
             @Valid @RequestBody SecurityRequestDto requestDto) {
-        SecurityResponseDto updated = securityService.updateSecurity(id, requestDto);
-        return ResponseEntity.ok(updated);
+        return securityService.updateSecurity(id, requestDto);
     }
 
     // Удалить бумагу
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSecurity(@PathVariable Long id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteSecurity(@PathVariable Long id) {
         securityService.deleteSecurity(id);
-        return ResponseEntity.noContent().build();
     }
 }

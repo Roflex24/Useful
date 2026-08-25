@@ -8,7 +8,6 @@ import my.help.finance.general.dto.AccountRequestDto;
 import my.help.finance.general.dto.AccountResponseDto;
 import my.help.finance.general.dto.FinanceSummaryDto;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,45 +22,41 @@ public class FinanceController {
 
     // Сводка
     @GetMapping("/summary")
-    public ResponseEntity<FinanceSummaryDto> getFinanceSummary() {
-        FinanceSummaryDto summary = financeSummaryService.getFinanceSummary();
-        return ResponseEntity.ok(summary);
+    public FinanceSummaryDto getFinanceSummary() {
+        return financeSummaryService.getFinanceSummary();
     }
 
     // Получить все счета
     @GetMapping("/accounts")
-    public ResponseEntity<List<AccountResponseDto>> getAllAccounts() {
-        List<AccountResponseDto> accounts = accountService.getAllAccounts();
-        return ResponseEntity.ok(accounts);
+    public List<AccountResponseDto> getAllAccounts() {
+        return accountService.getAllAccounts();
     }
 
     // Получить счёт по ID
     @GetMapping("/accounts/{id}")
-    public ResponseEntity<AccountResponseDto> getAccountById(@PathVariable Long id) {
-        AccountResponseDto account = accountService.getAccountById(id);
-        return ResponseEntity.ok(account);
+    public AccountResponseDto getAccountById(@PathVariable Long id) {
+        return accountService.getAccountById(id);
     }
 
     // Создать счёт
     @PostMapping("/accounts")
-    public ResponseEntity<AccountResponseDto> createAccount(@Valid @RequestBody AccountRequestDto requestDto) {
-        AccountResponseDto createdAccount = accountService.createAccount(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdAccount);
+    @ResponseStatus(HttpStatus.CREATED)
+    public AccountResponseDto createAccount(@Valid @RequestBody AccountRequestDto requestDto) {
+        return accountService.createAccount(requestDto);
     }
 
     // Обновить счёт
     @PutMapping("/accounts/{id}")
-    public ResponseEntity<AccountResponseDto> updateAccount(
+    public AccountResponseDto updateAccount(
             @PathVariable Long id,
             @Valid @RequestBody AccountRequestDto requestDto) {
-        AccountResponseDto updatedAccount = accountService.updateAccount(id, requestDto);
-        return ResponseEntity.ok(updatedAccount);
+        return accountService.updateAccount(id, requestDto);
     }
 
     // Удалить счёт
     @DeleteMapping("/accounts/{id}")
-    public ResponseEntity<Void> deleteAccount(@PathVariable Long id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAccount(@PathVariable Long id) {
         accountService.deleteAccount(id);
-        return ResponseEntity.noContent().build();
     }
 }
