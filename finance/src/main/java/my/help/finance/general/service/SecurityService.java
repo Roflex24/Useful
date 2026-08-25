@@ -53,26 +53,15 @@ public class SecurityService {
                 .collect(Collectors.toList());
     }
 
-    public List<Security> getSecuritiesByAccountEntity(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
-
-        if (account.getType() != AccountType.INVESTMENT) {
-            return Collections.emptyList();
-        }
-
-        return securityRepository.findByAccount(account);
-    }
-
     @Transactional
     public SecurityResponseDto createSecurity(SecurityRequestDto requestDto) {
-        log.info("Creating security for account: {}", requestDto.getAccountId());
+        log.info("Creating security for account: {}", requestDto.accountId());
 
         Security security = securityMapper.toEntity(requestDto);
         Security savedSecurity = securityRepository.save(security);
         log.info("Security created successfully with id: {}", savedSecurity.getId());
 
-        recalculateAccountAmount(requestDto.getAccountId());
+        recalculateAccountAmount(requestDto.accountId());
 
         return securityMapper.toResponseDto(savedSecurity);
     }
