@@ -203,15 +203,15 @@ public class FinanceSnapshotService {
                             })
                             .sum();
 
-                    return SnapshotInfoDto.builder()
-                            .yearMonth(yearMonth)
-                            .snapshotDate(date)
-                            .accountsCount(snapshots.size())
-                            .cashbacksCount(totalCashbacks)
-                            .formattedDate(yearMonth.format(DateTimeFormatter.ofPattern("LLLL yyyy", new Locale("ru"))))
-                            .build();
+                    return new SnapshotInfoDto(
+                            yearMonth,
+                            date,
+                            snapshots.size(),
+                            totalCashbacks,
+                            yearMonth.format(DateTimeFormatter.ofPattern("LLLL yyyy", new Locale("ru")))
+                    );
                 })
-                .sorted((a, b) -> b.getSnapshotDate().compareTo(a.getSnapshotDate()))
+                .sorted((a, b) -> b.snapshotDate().compareTo(a.snapshotDate()))
                 .collect(Collectors.toList());
     }
 
