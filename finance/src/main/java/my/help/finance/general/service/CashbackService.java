@@ -55,10 +55,10 @@ public class CashbackService {
 
     @Transactional
     public CashbackResponseDto createCashback(CashbackRequestDto requestDto) {
-        log.info("Creating cashback for account: {}", requestDto.getAccountId());
+        log.info("Creating cashback for account: {}", requestDto.accountId());
 
-        Account account = accountRepository.findById(requestDto.getAccountId())
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + requestDto.getAccountId()));
+        Account account = accountRepository.findById(requestDto.accountId())
+                .orElseThrow(() -> new RuntimeException("Account not found with id: " + requestDto.accountId()));
 
         if (account.getType() != AccountType.CARD) {
             throw new RuntimeException("Cashback can only be added to CARD accounts. Current account type: " + account.getType());
@@ -83,8 +83,8 @@ public class CashbackService {
             throw new RuntimeException("Cannot update cashback for non-card account");
         }
 
-        existingCashback.setCategory(requestDto.getCategory());
-        existingCashback.setPercentage(requestDto.getPercentage());
+        existingCashback.setCategory(requestDto.category());
+        existingCashback.setPercentage(requestDto.percentage());
 
         Cashback updatedCashback = cashbackRepository.save(existingCashback);
         log.info("Cashback updated successfully with id: {}", id);
