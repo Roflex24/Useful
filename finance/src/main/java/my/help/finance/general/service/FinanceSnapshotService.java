@@ -169,18 +169,7 @@ public class FinanceSnapshotService {
                     YearMonth yearMonth = YearMonth.from(date);
                     List<MonthlyFinanceSnapshot> snapshots = snapshotRepository.findBySnapshotDate(date);
                     int totalCashbacks = snapshots.stream()
-                            .mapToInt(s -> {
-                                try {
-                                    List<CashbackSnapshotDto> cashbacks = objectMapper.readValue(
-                                            s.getCashbacksJson(),
-                                            new TypeReference<>() {
-                                            }
-                                    );
-                                    return cashbacks.size();
-                                } catch (Exception e) {
-                                    return 0;
-                                }
-                            })
+                            .mapToInt(s -> parseCashbacksCount(s.getCashbacksJson()))
                             .sum();
 
                     return new SnapshotInfoDto(
@@ -188,7 +177,7 @@ public class FinanceSnapshotService {
                             date,
                             snapshots.size(),
                             totalCashbacks,
-                            yearMonth.format(DateTimeFormatter.ofPattern("LLLL yyyy", new Locale("ru")))
+                            yearMonth.format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.forLanguageTag("ru")))
                     );
                 })
                 .sorted((a, b) -> b.snapshotDate().compareTo(a.snapshotDate()))
@@ -221,79 +210,25 @@ public class FinanceSnapshotService {
                     .build();
 
             // Восстанавливаем кешбеки
-            try {
-                List<CashbackSnapshotDto> cashbackDtos = objectMapper.readValue(
-                        snapshot.getCashbacksJson(),
-                        new TypeReference<>() {
-                        }
-                );
-
-                List<CashbackRs> cashbacks = cashbackDtos.stream()
-                        .map(dto -> new CashbackRs(
-                                dto.id(),
-                                snapshot.getAccountId(),
-                                snapshot.getBankName(),
-                                dto.category(),
-                                dto.percentage()
-                        ))
-                        .collect(Collectors.toList());
-
-                accountDto.setCashbacks(cashbacks);
-            } catch (Exception e) {
-                log.error("Failed to parse cashbacks for snapshot {}", snapshot.getId(), e);
-                accountDto.setCashbacks(Collections.emptyList());
-            }
+            List<CashbackRs> cashbacks = parseCashbacksToRs(
+                    snapshot.getCashbacksJson(),
+                    snapshot.getAccountId(),
+                    snapshot.getBankName()
+            );
+            accountDto.setCashbacks(cashbacks);
 
             // Восстанавливаем информацию о депозите/накопительном счёте, если есть
-            if ((snapshot.getType() == AccountType.DEPOSIT || snapshot.getType() == AccountType.SAVINGS)
-                    && snapshot.getDepositJson() != null) {
-                try {
-                    DepositSnapshotDto depositDto = objectMapper.readValue(
-                            snapshot.getDepositJson(),
-                            DepositSnapshotDto.class
-                    );
-                    accountDto.setDepositInfo(new DepositInfoDto(
-                            depositDto.id(),
-                            depositDto.endDate(),
-                            depositDto.interestPaymentDate(),
-                            depositDto.interestRate()
-                    ));
-                } catch (Exception e) {
-                    log.error("Failed to parse deposit for snapshot {}", snapshot.getId(), e);
-                }
+            if (snapshot.getType() == AccountType.DEPOSIT || snapshot.getType() == AccountType.SAVINGS) {
+                accountDto.setDepositInfo(parseDepositToDto(snapshot.getDepositJson()));
             }
 
-            if (snapshot.getType() == AccountType.INVESTMENT && snapshot.getSecuritiesJson() != null) {
-                try {
-                    List<SecuritySnapshotDto> securityDtos = objectMapper.readValue(
-                            snapshot.getSecuritiesJson(),
-                            new TypeReference<>() {
-                            }
-                    );
-
-                    List<SecurityRs> securities = securityDtos.stream()
-                            .map(dto -> new SecurityRs(
-                                    dto.id(),
-                                    snapshot.getAccountId(),
-                                    snapshot.getBankName(),
-                                    dto.securityType(),
-                                    dto.ticker(),
-                                    dto.quantity(),
-                                    dto.currentPrice(),
-                                    dto.quantity() != null && dto.currentPrice() != null
-                                            ? dto.quantity().multiply(dto.currentPrice())
-                                            : BigDecimal.ZERO,
-                                    dto.faceValue(),
-                                    dto.couponRate(),
-                                    dto.maturityDate()
-                            ))
-                            .collect(Collectors.toList());
-
-                    accountDto.setSecurities(securities);
-                } catch (Exception e) {
-                    log.error("Failed to parse securities for snapshot {}", snapshot.getId(), e);
-                    accountDto.setSecurities(Collections.emptyList());
-                }
+            if (snapshot.getType() == AccountType.INVESTMENT) {
+                List<SecurityRs> securities = parseSecuritiesToRs(
+                        snapshot.getSecuritiesJson(),
+                        snapshot.getAccountId(),
+                        snapshot.getBankName()
+                );
+                accountDto.setSecurities(securities);
             }
 
             accounts.add(accountDto);
@@ -360,28 +295,13 @@ public class FinanceSnapshotService {
                 continue;
             }
 
-            try {
-                List<CashbackSnapshotDto> cashbackDtos = objectMapper.readValue(
-                        snapshot.getCashbacksJson(),
-                        new TypeReference<>() {
-                        }
-                );
-
-                List<CashbackRs> cashbacks = cashbackDtos.stream()
-                        .map(dto -> new CashbackRs(
-                                dto.id(),
-                                snapshot.getAccountId(),
-                                snapshot.getBankName(),
-                                dto.category(),
-                                dto.percentage()
-                        ))
-                        .collect(Collectors.toList());
-
-                if (!cashbacks.isEmpty()) {
-                    cashbacksByBank.put(snapshot.getBankName(), cashbacks);
-                }
-            } catch (Exception e) {
-                log.error("Failed to parse cashbacks for bank {}", snapshot.getBankName(), e);
+            List<CashbackRs> cashbacks = parseCashbacksToRs(
+                    snapshot.getCashbacksJson(),
+                    snapshot.getAccountId(),
+                    snapshot.getBankName()
+            );
+            if (!cashbacks.isEmpty()) {
+                cashbacksByBank.put(snapshot.getBankName(), cashbacks);
             }
         }
 
@@ -507,7 +427,7 @@ public class FinanceSnapshotService {
             }
         }
 
-        String monthLabel = month.format(DateTimeFormatter.ofPattern("LLLL yyyy", new Locale("ru")));
+        String monthLabel = month.format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.forLanguageTag("ru")));
 
         return new MonthlyDynamicsDto(
                 month,
@@ -518,5 +438,109 @@ public class FinanceSnapshotService {
                 savingsTotal,
                 investmentTotal
         );
+    }
+
+    /**
+     * Преобразует JSON-строку с кешбеками в список CashbackRs.
+     * В случае ошибки возвращает пустой список.
+     */
+    private List<CashbackRs> parseCashbacksToRs(String cashbacksJson, Long accountId, String bankName) {
+        if (cashbacksJson == null) {
+            return Collections.emptyList();
+        }
+        try {
+            List<CashbackSnapshotDto> dtos = objectMapper.readValue(
+                    cashbacksJson,
+                    new TypeReference<>() {}
+            );
+            return dtos.stream()
+                    .map(dto -> new CashbackRs(
+                            dto.id(),
+                            accountId,
+                            bankName,
+                            dto.category(),
+                            dto.percentage()
+                    ))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Failed to parse cashbacks JSON for account {}", accountId, e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Подсчитывает количество кешбеков в JSON-строке (без создания полноценных DTO).
+     */
+    private int parseCashbacksCount(String cashbacksJson) {
+        if (cashbacksJson == null) {
+            return 0;
+        }
+        try {
+            List<CashbackSnapshotDto> dtos = objectMapper.readValue(
+                    cashbacksJson,
+                    new TypeReference<>() {}
+            );
+            return dtos.size();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Преобразует JSON-строку с информацией о депозите в DepositInfoDto.
+     * Если JSON равен null или произошла ошибка, возвращает null.
+     */
+    private DepositInfoDto parseDepositToDto(String depositJson) {
+        if (depositJson == null) {
+            return null;
+        }
+        try {
+            DepositSnapshotDto depositDto = objectMapper.readValue(depositJson, DepositSnapshotDto.class);
+            return new DepositInfoDto(
+                    depositDto.id(),
+                    depositDto.endDate(),
+                    depositDto.interestPaymentDate(),
+                    depositDto.interestRate()
+            );
+        } catch (Exception e) {
+            log.error("Failed to parse deposit JSON", e);
+            return null;
+        }
+    }
+
+    /**
+     * Преобразует JSON-строку с бумагами в список SecurityRs.
+     * В случае ошибки возвращает пустой список.
+     */
+    private List<SecurityRs> parseSecuritiesToRs(String securitiesJson, Long accountId, String bankName) {
+        if (securitiesJson == null) {
+            return Collections.emptyList();
+        }
+        try {
+            List<SecuritySnapshotDto> dtos = objectMapper.readValue(
+                    securitiesJson,
+                    new TypeReference<>() {}
+            );
+            return dtos.stream()
+                    .map(dto -> new SecurityRs(
+                            dto.id(),
+                            accountId,
+                            bankName,
+                            dto.securityType(),
+                            dto.ticker(),
+                            dto.quantity(),
+                            dto.currentPrice(),
+                            dto.quantity() != null && dto.currentPrice() != null
+                                    ? dto.quantity().multiply(dto.currentPrice())
+                                    : BigDecimal.ZERO,
+                            dto.faceValue(),
+                            dto.couponRate(),
+                            dto.maturityDate()
+                    ))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Failed to parse securities JSON for account {}", accountId, e);
+            return Collections.emptyList();
+        }
     }
 }
