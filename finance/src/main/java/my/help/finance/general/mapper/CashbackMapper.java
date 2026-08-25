@@ -16,7 +16,7 @@ public class CashbackMapper {
     private final AccountRepository accountRepository;
 
     public Cashback toEntity(CashbackRequestDto requestDto) {
-        Account account = accountRepository.findById(requestDto.getAccountId())
+        Account account = accountRepository.findById(requestDto.accountId())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
         if (account.getType() != AccountType.CARD) {
@@ -25,8 +25,8 @@ public class CashbackMapper {
 
         return Cashback.builder()
                 .account(account)
-                .category(requestDto.getCategory())
-                .percentage(requestDto.getPercentage())
+                .category(requestDto.category())
+                .percentage(requestDto.percentage())
                 .build();
     }
 
