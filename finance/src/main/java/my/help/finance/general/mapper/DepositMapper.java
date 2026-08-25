@@ -15,9 +15,9 @@ public class DepositMapper {
 
         return Deposit.builder()
                 .account(account)
-                .endDate(dto.getEndDate())
-                .interestPaymentDate(dto.getInterestPaymentDate())
-                .interestRate(dto.getInterestRate())
+                .endDate(dto.endDate())               // вызов метода record вместо getEndDate()
+                .interestPaymentDate(dto.interestPaymentDate())
+                .interestRate(dto.interestRate())
                 .build();
     }
 
@@ -26,20 +26,20 @@ public class DepositMapper {
             return null;
         }
 
-        return DepositInfoDto.builder()
-                .id(deposit.getId())
-                .endDate(deposit.getEndDate())
-                .interestPaymentDate(deposit.getInterestPaymentDate())
-                .interestRate(deposit.getInterestRate())
-                .build();
+        return new DepositInfoDto(
+                deposit.getId(),
+                deposit.getEndDate(),
+                deposit.getInterestPaymentDate(),
+                deposit.getInterestRate()
+        );
     }
 
     public void updateEntity(Deposit existingDeposit, DepositInfoDto dto) {
         if (dto == null) {
             return;
         }
-        existingDeposit.setEndDate(dto.getEndDate());
-        existingDeposit.setInterestPaymentDate(dto.getInterestPaymentDate());
-        existingDeposit.setInterestRate(dto.getInterestRate());
+        existingDeposit.setEndDate(dto.endDate());               // record-методы
+        existingDeposit.setInterestPaymentDate(dto.interestPaymentDate());
+        existingDeposit.setInterestRate(dto.interestRate());
     }
 }
