@@ -97,12 +97,12 @@ public class FinanceSnapshotService {
                 Optional<Deposit> depositOpt = depositRepository.findByAccountId(account.getId());
                 if (depositOpt.isPresent()) {
                     Deposit deposit = depositOpt.get();
-                    DepositSnapshotDto depositDto = DepositSnapshotDto.builder()
-                            .id(deposit.getId())
-                            .endDate(deposit.getEndDate())
-                            .interestPaymentDate(deposit.getInterestPaymentDate())
-                            .interestRate(deposit.getInterestRate())
-                            .build();
+                    DepositSnapshotDto depositDto = new DepositSnapshotDto(
+                            deposit.getId(),
+                            deposit.getEndDate(),
+                            deposit.getInterestPaymentDate(),
+                            deposit.getInterestRate()
+                    );
                     try {
                         depositJson = objectMapper.writeValueAsString(depositDto);
                     } catch (Exception e) {
@@ -273,10 +273,10 @@ public class FinanceSnapshotService {
                             DepositSnapshotDto.class
                     );
                     accountDto.setDepositInfo(new DepositInfoDto(
-                            depositDto.getId(),
-                            depositDto.getEndDate(),
-                            depositDto.getInterestPaymentDate(),
-                            depositDto.getInterestRate()
+                            depositDto.id(),
+                            depositDto.endDate(),
+                            depositDto.interestPaymentDate(),
+                            depositDto.interestRate()
                     ));
                 } catch (Exception e) {
                     log.error("Failed to parse deposit for snapshot {}", snapshot.getId(), e);
