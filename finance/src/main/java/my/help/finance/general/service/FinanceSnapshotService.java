@@ -77,11 +77,11 @@ public class FinanceSnapshotService {
 
             // Конвертируем кешбеки в JSON
             List<CashbackSnapshotDto> cashbackDtos = cashbacks.stream()
-                    .map(cb -> CashbackSnapshotDto.builder()
-                            .id(cb.getId())
-                            .category(cb.getCategory())
-                            .percentage(cb.getPercentage())
-                            .build())
+                    .map(cb -> new CashbackSnapshotDto(
+                            cb.getId(),
+                            cb.getCategory(),
+                            cb.getPercentage()
+                    ))
                     .collect(Collectors.toList());
 
             String cashbacksJson;
@@ -250,11 +250,11 @@ public class FinanceSnapshotService {
 
                 List<CashbackResponseDto> cashbacks = cashbackDtos.stream()
                         .map(dto -> new CashbackResponseDto(
-                                dto.getId(),
+                                dto.id(),
                                 snapshot.getAccountId(),
                                 snapshot.getBankName(),
-                                dto.getCategory(),
-                                dto.getPercentage()
+                                dto.category(),
+                                dto.percentage()
                         ))
                         .collect(Collectors.toList());
 
@@ -389,11 +389,11 @@ public class FinanceSnapshotService {
 
                 List<CashbackResponseDto> cashbacks = cashbackDtos.stream()
                         .map(dto -> new CashbackResponseDto(
-                                dto.getId(),
+                                dto.id(),
                                 snapshot.getAccountId(),
                                 snapshot.getBankName(),
-                                dto.getCategory(),
-                                dto.getPercentage()
+                                dto.category(),
+                                dto.percentage()
                         ))
                         .collect(Collectors.toList());
 
