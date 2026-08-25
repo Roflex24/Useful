@@ -32,16 +32,16 @@ public class SecurityController {
     // Создать бумагу
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public SecurityRs createSecurity(@Valid @RequestBody SecurityRq requestDto) {
-        return securityService.createSecurity(requestDto);
+    public SecurityRs createSecurity(@Valid @RequestBody SecurityRq rq) {
+        return securityService.createSecurity(rq);
     }
 
     // Обновить бумагу
     @PutMapping("/{id}")
     public SecurityRs updateSecurity(
             @PathVariable Long id,
-            @Valid @RequestBody SecurityRq requestDto) {
-        return securityService.updateSecurity(id, requestDto);
+            @Valid @RequestBody SecurityRq rq) {
+        return securityService.updateSecurity(id, rq);
     }
 
     // Удалить бумагу
