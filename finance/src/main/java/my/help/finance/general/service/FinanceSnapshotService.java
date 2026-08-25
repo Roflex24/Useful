@@ -56,8 +56,7 @@ public class FinanceSnapshotService {
     public void createSnapshotForPreviousMonth() {
         LocalDate today = LocalDate.now();
         LocalDate firstOfCurrentMonth = today.withDayOfMonth(1);
-        LocalDate lastDayOfPreviousMonth = firstOfCurrentMonth.minusDays(1);
-        LocalDate snapshotDate = lastDayOfPreviousMonth;
+        LocalDate snapshotDate = firstOfCurrentMonth.minusDays(1);
 
         YearMonth snapshotYearMonth = YearMonth.from(snapshotDate);
 
@@ -108,7 +107,6 @@ public class FinanceSnapshotService {
                         depositJson = objectMapper.writeValueAsString(depositDto);
                     } catch (Exception e) {
                         log.error("Failed to serialize deposit for account {}", account.getId(), e);
-                        depositJson = null;
                     }
                 }
             }
@@ -195,7 +193,8 @@ public class FinanceSnapshotService {
                                 try {
                                     List<CashbackSnapshotDto> cashbacks = objectMapper.readValue(
                                             s.getCashbacksJson(),
-                                            new TypeReference<List<CashbackSnapshotDto>>() {}
+                                            new TypeReference<>() {
+                                            }
                                     );
                                     return cashbacks.size();
                                 } catch (Exception e) {
@@ -245,7 +244,8 @@ public class FinanceSnapshotService {
             try {
                 List<CashbackSnapshotDto> cashbackDtos = objectMapper.readValue(
                         snapshot.getCashbacksJson(),
-                        new TypeReference<List<CashbackSnapshotDto>>() {}
+                        new TypeReference<>() {
+                        }
                 );
 
                 List<CashbackResponseDto> cashbacks = cashbackDtos.stream()
@@ -287,7 +287,8 @@ public class FinanceSnapshotService {
                 try {
                     List<SecuritySnapshotDto> securityDtos = objectMapper.readValue(
                             snapshot.getSecuritiesJson(),
-                            new TypeReference<List<SecuritySnapshotDto>>() {}
+                            new TypeReference<>() {
+                            }
                     );
 
                     List<SecurityResponseDto> securities = securityDtos.stream()
@@ -382,7 +383,8 @@ public class FinanceSnapshotService {
             try {
                 List<CashbackSnapshotDto> cashbackDtos = objectMapper.readValue(
                         snapshot.getCashbacksJson(),
-                        new TypeReference<List<CashbackSnapshotDto>>() {}
+                        new TypeReference<>() {
+                        }
                 );
 
                 List<CashbackResponseDto> cashbacks = cashbackDtos.stream()
@@ -419,14 +421,14 @@ public class FinanceSnapshotService {
             Optional<CashbackResponseDto> bestCashback = cashbacks.stream()
                     .max(Comparator.comparing(CashbackResponseDto::getPercentage));
 
-            summary.add(BankCashbackSummaryDto.builder()
-                    .bankName(bankName)
-                    .totalCashbackCategories(cashbacks.size())
-                    .bestCashbackPercentage(bestCashback.map(CashbackResponseDto::getPercentage).orElse(BigDecimal.ZERO))
-                    .bestCashbackCategory(bestCashback.map(CashbackResponseDto::getCategory).orElse("Нет"))
-                    .cashbackByCategory(cashbackByCategory)
-                    .activeCashbacks(cashbacks)
-                    .build());
+            summary.add(new BankCashbackSummaryDto(
+                    bankName,
+                    cashbacks.size(),
+                    bestCashback.map(CashbackResponseDto::getPercentage).orElse(BigDecimal.ZERO),
+                    bestCashback.map(CashbackResponseDto::getCategory).orElse("Нет"),
+                    cashbackByCategory,
+                    cashbacks
+            ));
         }
 
         return summary;
@@ -446,18 +448,6 @@ public class FinanceSnapshotService {
         }
 
         return false;
-    }
-
-    /**
-     * Создать начальный снимок (при первом запуске)
-     */
-    public void createInitialSnapshot() {
-        LocalDate lastDayOfLastMonth = LocalDate.now().minusMonths(1).withDayOfMonth(1).minusDays(1);
-
-        if (!snapshotRepository.existsBySnapshotDate(lastDayOfLastMonth)) {
-            log.info("Creating initial snapshot for {}", lastDayOfLastMonth);
-            createSnapshotForPreviousMonth();
-        }
     }
 
     /**

@@ -135,14 +135,14 @@ public class CashbackService {
             Optional<CashbackResponseDto> bestCashback = cashbacks.stream()
                     .max(Comparator.comparing(CashbackResponseDto::getPercentage));
 
-            summary.add(BankCashbackSummaryDto.builder()
-                    .bankName(bankName)
-                    .totalCashbackCategories(cashbacks.size())
-                    .bestCashbackPercentage(bestCashback.map(CashbackResponseDto::getPercentage).orElse(BigDecimal.ZERO))
-                    .bestCashbackCategory(bestCashback.map(CashbackResponseDto::getCategory).orElse("Нет"))
-                    .cashbackByCategory(cashbackByCategory)
-                    .activeCashbacks(cashbacks)
-                    .build());
+            summary.add(new BankCashbackSummaryDto(
+                    bankName,
+                    cashbacks.size(),
+                    bestCashback.map(CashbackResponseDto::getPercentage).orElse(BigDecimal.ZERO),
+                    bestCashback.map(CashbackResponseDto::getCategory).orElse("Нет"),
+                    cashbackByCategory,
+                    cashbacks
+            ));
         }
 
         return summary;
