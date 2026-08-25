@@ -13,14 +13,14 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccountResponseDto {
+public class AccountRs {
     private Long id;
     private String bankName;
     private BigDecimal amount;
     private AccountType type;
     private String comment;
 
-    private List<CashbackResponseDto> cashbacks;
+    private List<CashbackRs> cashbacks;
     private DepositInfoDto depositInfo;
-    private List<SecurityResponseDto> securities;
+    private List<SecurityRs> securities;
 }

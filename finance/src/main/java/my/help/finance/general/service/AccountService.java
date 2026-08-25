@@ -2,9 +2,9 @@ package my.help.finance.general.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import my.help.finance.general.dto.AccountRequestDto;
-import my.help.finance.general.dto.AccountResponseDto;
-import my.help.finance.general.dto.SecurityResponseDto;
+import my.help.finance.general.dto.AccountRq;
+import my.help.finance.general.dto.AccountRs;
+import my.help.finance.general.dto.SecurityRs;
 import my.help.finance.general.entity.Account;
 import my.help.finance.general.entity.AccountType;
 import my.help.finance.general.entity.Cashback;
@@ -35,25 +35,25 @@ public class AccountService {
         return type == AccountType.DEPOSIT || type == AccountType.SAVINGS;
     }
 
-    public List<AccountResponseDto> getAllAccounts() {
+    public List<AccountRs> getAllAccounts() {
         log.debug("Fetching all accounts");
         return accountRepository.findAll()
                 .stream()
                 .map(this::toResponseDtoWithDetails)
-                .sorted(Comparator.comparing(AccountResponseDto::getType)
-                        .thenComparing(AccountResponseDto::getAmount, Comparator.reverseOrder()))
+                .sorted(Comparator.comparing(AccountRs::getType)
+                        .thenComparing(AccountRs::getAmount, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
     }
 
-    public AccountResponseDto getAccountById(Long id) {
+    public AccountRs getAccountById(Long id) {
         log.debug("Fetching account with id: {}", id);
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
         return toResponseDtoWithDetails(account);
     }
 
-    private AccountResponseDto toResponseDtoWithDetails(Account account) {
-        AccountResponseDto dto = accountMapper.toResponseDto(account);
+    private AccountRs toResponseDtoWithDetails(Account account) {
+        AccountRs dto = accountMapper.toResponseDto(account);
 
         if (account.getType() == AccountType.CARD) {
             dto.setCashbacks(cashbackService.getCashbacksByAccount(account.getId()));
@@ -78,7 +78,7 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountResponseDto createAccount(AccountRequestDto requestDto) {
+    public AccountRs createAccount(AccountRq requestDto) {
         log.info("Creating new account: {}", requestDto.bankName());
 
         if (hasDepositInfo(requestDto.type()) && requestDto.depositInfoDto() == null) {
@@ -103,7 +103,7 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountResponseDto updateAccount(Long id, AccountRequestDto requestDto) {
+    public AccountRs updateAccount(Long id, AccountRq requestDto) {
         log.info("Updating account with id: {}", id);
 
         Account existingAccount = accountRepository.findById(id)
@@ -117,7 +117,7 @@ public class AccountService {
         // авто-рассчитанное значение (на случай если форма прислала своё)
         if (newType == AccountType.INVESTMENT) {
             BigDecimal recalculated = securityService.getSecuritiesByAccount(id).stream()
-                    .map(SecurityResponseDto::totalValue)
+                    .map(SecurityRs::totalValue)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             existingAccount.setAmount(recalculated);
         }

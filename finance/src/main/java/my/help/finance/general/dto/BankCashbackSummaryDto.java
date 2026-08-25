@@ -10,6 +10,6 @@ public record BankCashbackSummaryDto(
         BigDecimal bestCashbackPercentage,
         String bestCashbackCategory,
         Map<String, BigDecimal> cashbackByCategory,
-        List<CashbackResponseDto> activeCashbacks
+        List<CashbackRs> activeCashbacks
 ) {
 }

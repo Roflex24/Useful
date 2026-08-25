@@ -2,7 +2,7 @@ package my.help.finance.general.dto;
 
 import java.math.BigDecimal;
 
-public record CashbackResponseDto(
+public record CashbackRs(
         Long id,
         Long accountId,
         String bankName,

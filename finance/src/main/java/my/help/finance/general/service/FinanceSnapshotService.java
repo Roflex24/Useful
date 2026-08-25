@@ -8,7 +8,6 @@ import my.help.finance.general.dto.*;
 import my.help.finance.general.entity.*;
 import my.help.finance.general.mapper.AccountMapper;
 import my.help.finance.general.repository.*;
-import my.help.finance.general.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -229,10 +228,10 @@ public class FinanceSnapshotService {
         }
 
         // Восстанавливаем счета из снимков
-        List<AccountResponseDto> accounts = new ArrayList<>();
+        List<AccountRs> accounts = new ArrayList<>();
 
         for (MonthlyFinanceSnapshot snapshot : snapshots) {
-            AccountResponseDto accountDto = AccountResponseDto.builder()
+            AccountRs accountDto = AccountRs.builder()
                     .id(snapshot.getAccountId())
                     .bankName(snapshot.getBankName())
                     .amount(snapshot.getAmount())
@@ -248,8 +247,8 @@ public class FinanceSnapshotService {
                         }
                 );
 
-                List<CashbackResponseDto> cashbacks = cashbackDtos.stream()
-                        .map(dto -> new CashbackResponseDto(
+                List<CashbackRs> cashbacks = cashbackDtos.stream()
+                        .map(dto -> new CashbackRs(
                                 dto.id(),
                                 snapshot.getAccountId(),
                                 snapshot.getBankName(),
@@ -291,8 +290,8 @@ public class FinanceSnapshotService {
                             }
                     );
 
-                    List<SecurityResponseDto> securities = securityDtos.stream()
-                            .map(dto -> new SecurityResponseDto(
+                    List<SecurityRs> securities = securityDtos.stream()
+                            .map(dto -> new SecurityRs(
                                     dto.id(),
                                     snapshot.getAccountId(),
                                     snapshot.getBankName(),
@@ -373,7 +372,7 @@ public class FinanceSnapshotService {
      * Построить сводку кешбека из снимков
      */
     private List<BankCashbackSummaryDto> buildCashbackSummaryFromSnapshots(List<MonthlyFinanceSnapshot> snapshots) {
-        Map<String, List<CashbackResponseDto>> cashbacksByBank = new HashMap<>();
+        Map<String, List<CashbackRs>> cashbacksByBank = new HashMap<>();
 
         for (MonthlyFinanceSnapshot snapshot : snapshots) {
             if (snapshot.getType() != AccountType.CARD) {
@@ -387,8 +386,8 @@ public class FinanceSnapshotService {
                         }
                 );
 
-                List<CashbackResponseDto> cashbacks = cashbackDtos.stream()
-                        .map(dto -> new CashbackResponseDto(
+                List<CashbackRs> cashbacks = cashbackDtos.stream()
+                        .map(dto -> new CashbackRs(
                                 dto.id(),
                                 snapshot.getAccountId(),
                                 snapshot.getBankName(),
@@ -407,25 +406,25 @@ public class FinanceSnapshotService {
 
         List<BankCashbackSummaryDto> summary = new ArrayList<>();
 
-        for (Map.Entry<String, List<CashbackResponseDto>> entry : cashbacksByBank.entrySet()) {
+        for (Map.Entry<String, List<CashbackRs>> entry : cashbacksByBank.entrySet()) {
             String bankName = entry.getKey();
-            List<CashbackResponseDto> cashbacks = entry.getValue();
+            List<CashbackRs> cashbacks = entry.getValue();
 
             Map<String, BigDecimal> cashbackByCategory = cashbacks.stream()
                     .collect(Collectors.toMap(
-                            CashbackResponseDto::category,
-                            CashbackResponseDto::percentage,
+                            CashbackRs::category,
+                            CashbackRs::percentage,
                             (existing, replacement) -> existing
                     ));
 
-            Optional<CashbackResponseDto> bestCashback = cashbacks.stream()
-                    .max(Comparator.comparing(CashbackResponseDto::percentage));
+            Optional<CashbackRs> bestCashback = cashbacks.stream()
+                    .max(Comparator.comparing(CashbackRs::percentage));
 
             summary.add(new BankCashbackSummaryDto(
                     bankName,
                     cashbacks.size(),
-                    bestCashback.map(CashbackResponseDto::percentage).orElse(BigDecimal.ZERO),
-                    bestCashback.map(CashbackResponseDto::category).orElse("Нет"),
+                    bestCashback.map(CashbackRs::percentage).orElse(BigDecimal.ZERO),
+                    bestCashback.map(CashbackRs::category).orElse("Нет"),
                     cashbackByCategory,
                     cashbacks
             ));
@@ -488,8 +487,8 @@ public class FinanceSnapshotService {
     private MonthlyDynamicsDto getCurrentMonthDynamics() {
         List<Account> currentAccounts = accountRepository.findAll();
 
-        List<AccountResponseDto> accountDtos = currentAccounts.stream()
-                .map(account -> AccountResponseDto.builder()
+        List<AccountRs> accountDtos = currentAccounts.stream()
+                .map(account -> AccountRs.builder()
                         .id(account.getId())
                         .bankName(account.getBankName())
                         .amount(account.getAmount())
@@ -505,14 +504,14 @@ public class FinanceSnapshotService {
     /**
      * Из списка счетов собираем статистику по типам
      */
-    private MonthlyDynamicsDto buildMonthlyDynamicsFromAccounts(List<AccountResponseDto> accounts, YearMonth month) {
+    private MonthlyDynamicsDto buildMonthlyDynamicsFromAccounts(List<AccountRs> accounts, YearMonth month) {
         BigDecimal total = BigDecimal.ZERO;
         BigDecimal cardTotal = BigDecimal.ZERO;
         BigDecimal depositTotal = BigDecimal.ZERO;
         BigDecimal savingsTotal = BigDecimal.ZERO;
         BigDecimal investmentTotal = BigDecimal.ZERO;
 
-        for (AccountResponseDto account : accounts) {
+        for (AccountRs account : accounts) {
             BigDecimal amount = account.getAmount() != null ? account.getAmount() : BigDecimal.ZERO;
             total = total.add(amount);
 

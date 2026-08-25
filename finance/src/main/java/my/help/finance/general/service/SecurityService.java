@@ -2,8 +2,8 @@ package my.help.finance.general.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import my.help.finance.general.dto.SecurityRequestDto;
-import my.help.finance.general.dto.SecurityResponseDto;
+import my.help.finance.general.dto.SecurityRq;
+import my.help.finance.general.dto.SecurityRs;
 import my.help.finance.general.entity.Account;
 import my.help.finance.general.entity.AccountType;
 import my.help.finance.general.entity.Security;
@@ -28,7 +28,7 @@ public class SecurityService {
     private final AccountRepository accountRepository;
     private final SecurityMapper securityMapper;
 
-    public List<SecurityResponseDto> getAllSecurities() {
+    public List<SecurityRs> getAllSecurities() {
         log.debug("Fetching all securities");
         return securityRepository.findAll()
                 .stream()
@@ -36,7 +36,7 @@ public class SecurityService {
                 .collect(Collectors.toList());
     }
 
-    public List<SecurityResponseDto> getSecuritiesByAccount(Long accountId) {
+    public List<SecurityRs> getSecuritiesByAccount(Long accountId) {
         log.debug("Fetching securities for account: {}", accountId);
 
         Account account = accountRepository.findById(accountId)
@@ -54,7 +54,7 @@ public class SecurityService {
     }
 
     @Transactional
-    public SecurityResponseDto createSecurity(SecurityRequestDto requestDto) {
+    public SecurityRs createSecurity(SecurityRq requestDto) {
         log.info("Creating security for account: {}", requestDto.accountId());
 
         Security security = securityMapper.toEntity(requestDto);
@@ -67,7 +67,7 @@ public class SecurityService {
     }
 
     @Transactional
-    public SecurityResponseDto updateSecurity(Long id, SecurityRequestDto requestDto) {
+    public SecurityRs updateSecurity(Long id, SecurityRq requestDto) {
         log.info("Updating security with id: {}", id);
 
         Security existingSecurity = securityRepository.findById(id)

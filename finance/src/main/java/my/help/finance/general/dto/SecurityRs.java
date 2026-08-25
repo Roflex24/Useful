@@ -5,7 +5,7 @@ import my.help.finance.general.entity.SecurityType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public record SecurityResponseDto(
+public record SecurityRs(
         Long id,
         Long accountId,
         String bankName,          // Название счёта/брокера (для единообразия с CashbackResponseDto)
