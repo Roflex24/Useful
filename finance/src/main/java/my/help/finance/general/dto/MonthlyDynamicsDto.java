@@ -1,23 +1,14 @@
 package my.help.finance.general.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.YearMonth;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class MonthlyDynamicsDto {
-    private YearMonth month;                // Месяц (например 2026-01)
-    private String monthLabel;              // Читаемый формат: "Январь 2026"
-    private BigDecimal totalAmount;         // Общая сумма всех средств
-    private BigDecimal cardAmount;          // Карты/счета (CARD)
-    private BigDecimal depositAmount;       // Вклады (DEPOSIT)
-    private BigDecimal savingsAmount;       // Накопительные счета (SAVINGS)
-    private BigDecimal investmentAmount;    // Инвестиции (INVESTMENT)
-}
+public record MonthlyDynamicsDto(
+        YearMonth month,                // Месяц (например 2026-01)
+        String monthLabel,              // Читаемый формат: "Январь 2026"
+        BigDecimal totalAmount,         // Общая сумма всех средств
+        BigDecimal cardAmount,          // Карты/счета (CARD)
+        BigDecimal depositAmount,       // Вклады (DEPOSIT)
+        BigDecimal savingsAmount,       // Накопительные счета (SAVINGS)
+        BigDecimal investmentAmount    // Инвестиции (INVESTMENT)
+) {}
