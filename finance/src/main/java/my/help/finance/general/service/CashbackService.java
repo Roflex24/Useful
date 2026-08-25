@@ -54,17 +54,17 @@ public class CashbackService {
     }
 
     @Transactional
-    public CashbackRs createCashback(CashbackRq requestDto) {
-        log.info("Creating cashback for account: {}", requestDto.accountId());
+    public CashbackRs createCashback(CashbackRq rq) {
+        log.info("Creating cashback for account: {}", rq.accountId());
 
-        Account account = accountRepository.findById(requestDto.accountId())
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + requestDto.accountId()));
+        Account account = accountRepository.findById(rq.accountId())
+                .orElseThrow(() -> new RuntimeException("Account not found with id: " + rq.accountId()));
 
         if (account.getType() != AccountType.CARD) {
             throw new RuntimeException("Cashback can only be added to CARD accounts. Current account type: " + account.getType());
         }
 
-        Cashback cashback = cashbackMapper.toEntity(requestDto);
+        Cashback cashback = cashbackMapper.toEntity(rq);
         Cashback savedCashback = cashbackRepository.save(cashback);
         log.info("Cashback created successfully with id: {}", savedCashback.getId());
 
@@ -72,7 +72,7 @@ public class CashbackService {
     }
 
     @Transactional
-    public CashbackRs updateCashback(Long id, CashbackRq requestDto) {
+    public CashbackRs updateCashback(Long id, CashbackRq rq) {
         log.info("Updating cashback with id: {}", id);
 
         Cashback existingCashback = cashbackRepository.findById(id)
@@ -83,8 +83,8 @@ public class CashbackService {
             throw new RuntimeException("Cannot update cashback for non-card account");
         }
 
-        existingCashback.setCategory(requestDto.category());
-        existingCashback.setPercentage(requestDto.percentage());
+        existingCashback.setCategory(rq.category());
+        existingCashback.setPercentage(rq.percentage());
 
         Cashback updatedCashback = cashbackRepository.save(existingCashback);
         log.info("Cashback updated successfully with id: {}", id);

@@ -78,14 +78,14 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountRs createAccount(AccountRq requestDto) {
-        log.info("Creating new account: {}", requestDto.bankName());
+    public AccountRs createAccount(AccountRq rq) {
+        log.info("Creating new account: {}", rq.bankName());
 
-        if (hasDepositInfo(requestDto.type()) && requestDto.depositInfoDto() == null) {
-            throw new RuntimeException("Deposit info is required for " + requestDto.type() + " account type");
+        if (hasDepositInfo(rq.type()) && rq.depositInfoDto() == null) {
+            throw new RuntimeException("Deposit info is required for " + rq.type() + " account type");
         }
 
-        Account account = accountMapper.toEntity(requestDto);
+        Account account = accountMapper.toEntity(rq);
 
         // Для INVESTMENT счёт всегда создаётся с amount = 0 — бумаги ещё не добавлены
         if (account.getType() == AccountType.INVESTMENT) {
@@ -95,23 +95,23 @@ public class AccountService {
         Account savedAccount = accountRepository.save(account);
         log.info("Account created successfully with id: {}", savedAccount.getId());
 
-        if (hasDepositInfo(savedAccount.getType()) && requestDto.depositInfoDto() != null) {
-            depositService.createDeposit(savedAccount, requestDto.depositInfoDto());
+        if (hasDepositInfo(savedAccount.getType()) && rq.depositInfoDto() != null) {
+            depositService.createDeposit(savedAccount, rq.depositInfoDto());
         }
 
         return toResponseDtoWithDetails(savedAccount);
     }
 
     @Transactional
-    public AccountRs updateAccount(Long id, AccountRq requestDto) {
+    public AccountRs updateAccount(Long id, AccountRq rq) {
         log.info("Updating account with id: {}", id);
 
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
 
-        AccountType newType = requestDto.type();
+        AccountType newType = rq.type();
 
-        accountMapper.updateEntity(existingAccount, requestDto);
+        accountMapper.updateEntity(existingAccount, rq);
 
         // Для INVESTMENT amount не редактируется вручную — восстанавливаем
         // авто-рассчитанное значение (на случай если форма прислала своё)
@@ -123,7 +123,7 @@ public class AccountService {
         }
 
         if (hasDepositInfo(newType)) {
-            depositService.updateDeposit(id, requestDto.depositInfoDto());
+            depositService.updateDeposit(id, rq.depositInfoDto());
         }
 
         Account updatedAccount = accountRepository.save(existingAccount);
