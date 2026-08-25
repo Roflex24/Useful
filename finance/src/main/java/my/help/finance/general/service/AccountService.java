@@ -117,7 +117,7 @@ public class AccountService {
         // авто-рассчитанное значение (на случай если форма прислала своё)
         if (newType == AccountType.INVESTMENT) {
             BigDecimal recalculated = securityService.getSecuritiesByAccount(id).stream()
-                    .map(SecurityResponseDto::getTotalValue)
+                    .map(SecurityResponseDto::totalValue)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             existingAccount.setAmount(recalculated);
         }

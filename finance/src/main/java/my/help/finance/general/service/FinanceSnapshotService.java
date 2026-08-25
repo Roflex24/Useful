@@ -292,21 +292,21 @@ public class FinanceSnapshotService {
                     );
 
                     List<SecurityResponseDto> securities = securityDtos.stream()
-                            .map(dto -> SecurityResponseDto.builder()
-                                    .id(dto.getId())
-                                    .accountId(snapshot.getAccountId())
-                                    .bankName(snapshot.getBankName())
-                                    .securityType(dto.getSecurityType())
-                                    .ticker(dto.getTicker())
-                                    .quantity(dto.getQuantity())
-                                    .currentPrice(dto.getCurrentPrice())
-                                    .totalValue(dto.getQuantity() != null && dto.getCurrentPrice() != null
+                            .map(dto -> new SecurityResponseDto(
+                                    dto.getId(),
+                                    snapshot.getAccountId(),
+                                    snapshot.getBankName(),
+                                    dto.getSecurityType(),
+                                    dto.getTicker(),
+                                    dto.getQuantity(),
+                                    dto.getCurrentPrice(),
+                                    dto.getQuantity() != null && dto.getCurrentPrice() != null
                                             ? dto.getQuantity().multiply(dto.getCurrentPrice())
-                                            : BigDecimal.ZERO)
-                                    .faceValue(dto.getFaceValue())
-                                    .couponRate(dto.getCouponRate())
-                                    .maturityDate(dto.getMaturityDate())
-                                    .build())
+                                            : BigDecimal.ZERO,
+                                    dto.getFaceValue(),
+                                    dto.getCouponRate(),
+                                    dto.getMaturityDate()
+                            ))
                             .collect(Collectors.toList());
 
                     accountDto.setSecurities(securities);
