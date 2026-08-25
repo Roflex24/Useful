@@ -56,12 +56,12 @@ public class ApartmentController {
      *        <a href="http://localhost:8080/api/apartments/parse">...</a>
      */
     @PostMapping(value = "/parse", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ParseResponse> parseHtmlFiles(
+    public ResponseEntity<ParseRs> parseHtmlFiles(
             @RequestParam("files") List<MultipartFile> files
     ) {
         if (files == null || files.isEmpty() || files.stream().allMatch(MultipartFile::isEmpty)) {
             return ResponseEntity.badRequest()
-                    .body(new ParseResponse(0, List.of(), "Файлы не выбраны"));
+                    .body(new ParseRs(0, List.of(), "Файлы не выбраны"));
         }
 
         List<String> htmlContents = new ArrayList<>();
@@ -87,14 +87,14 @@ public class ApartmentController {
                 htmlContents.add(html);
             } catch (IOException e) {
                 return ResponseEntity.internalServerError()
-                        .body(new ParseResponse(0, List.of(),
+                        .body(new ParseRs(0, List.of(),
                                 "Ошибка чтения файла " + filename + ": " + e.getMessage()));
             }
         }
 
         if (htmlContents.isEmpty()) {
             return ResponseEntity.badRequest()
-                    .body(new ParseResponse(0, List.of(),
+                    .body(new ParseRs(0, List.of(),
                             "Среди загруженных файлов нет подходящих .html/.htm"));
         }
 
@@ -104,11 +104,11 @@ public class ApartmentController {
             String warning = skippedFiles.isEmpty() ? null
                     : "Пропущены файлы (не .html/.htm): " + skippedFiles;
 
-            return ResponseEntity.ok(new ParseResponse(saved.size(), saved, warning));
+            return ResponseEntity.ok(new ParseRs(saved.size(), saved, warning));
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(new ParseResponse(0, List.of(), "Ошибка парсинга: " + e.getMessage()));
+                    .body(new ParseRs(0, List.of(), "Ошибка парсинга: " + e.getMessage()));
         }
     }
 
@@ -195,7 +195,7 @@ public class ApartmentController {
     @PostMapping("/{avitoId}/bot/visited")
     public ResponseEntity<Apartment> markVisited(
             @PathVariable String avitoId,
-            @RequestBody BotVisitedRequest body
+            @RequestBody BotVisitedRq body
     ) {
         return repository.findByAvitoId(avitoId)
                 .map(apt -> {
@@ -219,11 +219,11 @@ public class ApartmentController {
 
     @PostMapping("/rank")
     public List<ApartmentScoreResult> rank(
-            @RequestBody ScoringRequest request,
+            @RequestBody ScoringRq rq,
             @RequestParam(name = "limit", required = false) Integer limit
     ) {
         List<Apartment> apartments = repository.findAll();
-        List<ApartmentScoreResult> ranked = scoringService.scoreAndRank(apartments, request.weights());
+        List<ApartmentScoreResult> ranked = scoringService.scoreAndRank(apartments, rq.weights());
 
         if (limit != null && limit > 0 && limit < ranked.size()) {
             return ranked.subList(0, limit);
