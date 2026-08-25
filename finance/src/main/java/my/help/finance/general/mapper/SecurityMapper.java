@@ -58,18 +58,18 @@ public class SecurityMapper {
     }
 
     public SecurityResponseDto toResponseDto(Security security) {
-        return SecurityResponseDto.builder()
-                .id(security.getId())
-                .accountId(security.getAccount().getId())
-                .bankName(security.getAccount().getBankName())
-                .securityType(security.getSecurityType())
-                .ticker(security.getTicker())
-                .quantity(security.getQuantity())
-                .currentPrice(security.getCurrentPrice())
-                .totalValue(security.getTotalValue())
-                .faceValue(security.getFaceValue())
-                .couponRate(security.getCouponRate())
-                .maturityDate(security.getMaturityDate())
-                .build();
+        return new SecurityResponseDto(
+                security.getId(),
+                security.getAccount().getId(),
+                security.getAccount().getBankName(),
+                security.getSecurityType(),
+                security.getTicker(),
+                security.getQuantity(),
+                security.getCurrentPrice(),
+                security.getTotalValue(),
+                security.getFaceValue(),
+                security.getCouponRate(),
+                security.getMaturityDate()
+        );
     }
 }
