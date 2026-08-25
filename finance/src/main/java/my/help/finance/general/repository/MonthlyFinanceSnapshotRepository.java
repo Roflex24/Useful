@@ -1,4 +1,3 @@
-// repository/MonthlyFinanceSnapshotRepository.java
 package my.help.finance.general.repository;
 
 import my.help.finance.general.entity.MonthlyFinanceSnapshot;
@@ -8,7 +7,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface MonthlyFinanceSnapshotRepository extends JpaRepository<MonthlyFinanceSnapshot, Long> {
