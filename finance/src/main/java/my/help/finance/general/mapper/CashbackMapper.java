@@ -31,12 +31,12 @@ public class CashbackMapper {
     }
 
     public CashbackResponseDto toResponseDto(Cashback cashback) {
-        return CashbackResponseDto.builder()
-                .id(cashback.getId())
-                .accountId(cashback.getAccount().getId())
-                .bankName(cashback.getAccount().getBankName())
-                .category(cashback.getCategory())
-                .percentage(cashback.getPercentage())
-                .build();
+        return new CashbackResponseDto(
+                cashback.getId(),
+                cashback.getAccount().getId(),
+                cashback.getAccount().getBankName(),
+                cashback.getCategory(),
+                cashback.getPercentage()
+        );
     }
 }
