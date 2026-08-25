@@ -1,29 +1,16 @@
 package my.help.finance.general.mapper;
 
-import lombok.RequiredArgsConstructor;
 import my.help.finance.general.dto.SecurityRq;
 import my.help.finance.general.dto.SecurityRs;
 import my.help.finance.general.entity.Account;
-import my.help.finance.general.entity.AccountType;
 import my.help.finance.general.entity.Security;
 import my.help.finance.general.entity.SecurityType;
-import my.help.finance.general.repository.AccountRepository;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class SecurityMapper {
 
-    private final AccountRepository accountRepository;
-
-    public Security toEntity(SecurityRq requestDto) {
-        Account account = accountRepository.findById(requestDto.accountId())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
-
-        if (account.getType() != AccountType.INVESTMENT) {
-            throw new RuntimeException("Securities can only be added to INVESTMENT accounts. Current type: " + account.getType());
-        }
-
+    public Security toEntity(SecurityRq requestDto, Account account) {
         Security security = Security.builder()
                 .account(account)
                 .securityType(requestDto.securityType())
