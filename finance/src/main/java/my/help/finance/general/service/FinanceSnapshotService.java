@@ -477,7 +477,7 @@ public class FinanceSnapshotService {
         result.add(currentMonthDto);
 
         // 4. Сортируем по месяцу (от старых к новым)
-        result.sort(Comparator.comparing(MonthlyDynamicsDto::getMonth));
+        result.sort(Comparator.comparing(MonthlyDynamicsDto::month));
 
         return result;
     }
@@ -529,14 +529,14 @@ public class FinanceSnapshotService {
 
         String monthLabel = month.format(DateTimeFormatter.ofPattern("LLLL yyyy", new Locale("ru")));
 
-        return MonthlyDynamicsDto.builder()
-                .month(month)
-                .monthLabel(monthLabel)
-                .totalAmount(total)
-                .cardAmount(cardTotal)
-                .depositAmount(depositTotal)
-                .savingsAmount(savingsTotal)
-                .investmentAmount(investmentTotal)
-                .build();
+        return new MonthlyDynamicsDto(
+                month,
+                monthLabel,
+                total,
+                cardTotal,
+                depositTotal,
+                savingsTotal,
+                investmentTotal
+        );
     }
 }
