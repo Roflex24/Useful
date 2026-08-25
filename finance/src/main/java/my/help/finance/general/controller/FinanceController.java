@@ -41,16 +41,16 @@ public class FinanceController {
     // Создать счёт
     @PostMapping("/accounts")
     @ResponseStatus(HttpStatus.CREATED)
-    public AccountRs createAccount(@Valid @RequestBody AccountRq requestDto) {
-        return accountService.createAccount(requestDto);
+    public AccountRs createAccount(@Valid @RequestBody AccountRq rq) {
+        return accountService.createAccount(rq);
     }
 
     // Обновить счёт
     @PutMapping("/accounts/{id}")
     public AccountRs updateAccount(
             @PathVariable Long id,
-            @Valid @RequestBody AccountRq requestDto) {
-        return accountService.updateAccount(id, requestDto);
+            @Valid @RequestBody AccountRq rq) {
+        return accountService.updateAccount(id, rq);
     }
 
     // Удалить счёт

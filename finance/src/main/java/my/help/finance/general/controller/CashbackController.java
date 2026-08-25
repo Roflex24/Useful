@@ -39,16 +39,16 @@ public class CashbackController {
     // Создать кешбек
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CashbackRs createCashback(@Valid @RequestBody CashbackRq requestDto) {
-        return cashbackService.createCashback(requestDto);
+    public CashbackRs createCashback(@Valid @RequestBody CashbackRq rq) {
+        return cashbackService.createCashback(rq);
     }
 
     // Обновить кешбек
     @PutMapping("/{id}")
     public CashbackRs updateCashback(
             @PathVariable Long id,
-            @Valid @RequestBody CashbackRq requestDto) {
-        return cashbackService.updateCashback(id, requestDto);
+            @Valid @RequestBody CashbackRq rq) {
+        return cashbackService.updateCashback(id, rq);
     }
 
     // Удалить кешбек
