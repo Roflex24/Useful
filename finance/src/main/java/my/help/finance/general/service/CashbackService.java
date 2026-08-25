@@ -128,18 +128,18 @@ public class CashbackService {
 
             Map<String, BigDecimal> cashbackByCategory = cashbacks.stream()
                     .collect(Collectors.toMap(
-                            CashbackResponseDto::getCategory,
-                            CashbackResponseDto::getPercentage
+                            CashbackResponseDto::category,
+                            CashbackResponseDto::percentage
                     ));
 
             Optional<CashbackResponseDto> bestCashback = cashbacks.stream()
-                    .max(Comparator.comparing(CashbackResponseDto::getPercentage));
+                    .max(Comparator.comparing(CashbackResponseDto::percentage));
 
             summary.add(new BankCashbackSummaryDto(
                     bankName,
                     cashbacks.size(),
-                    bestCashback.map(CashbackResponseDto::getPercentage).orElse(BigDecimal.ZERO),
-                    bestCashback.map(CashbackResponseDto::getCategory).orElse("Нет"),
+                    bestCashback.map(CashbackResponseDto::percentage).orElse(BigDecimal.ZERO),
+                    bestCashback.map(CashbackResponseDto::category).orElse("Нет"),
                     cashbackByCategory,
                     cashbacks
             ));

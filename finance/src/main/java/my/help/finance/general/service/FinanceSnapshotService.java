@@ -249,13 +249,13 @@ public class FinanceSnapshotService {
                 );
 
                 List<CashbackResponseDto> cashbacks = cashbackDtos.stream()
-                        .map(dto -> CashbackResponseDto.builder()
-                                .id(dto.getId())
-                                .accountId(snapshot.getAccountId())
-                                .bankName(snapshot.getBankName())
-                                .category(dto.getCategory())
-                                .percentage(dto.getPercentage())
-                                .build())
+                        .map(dto -> new CashbackResponseDto(
+                                dto.getId(),
+                                snapshot.getAccountId(),
+                                snapshot.getBankName(),
+                                dto.getCategory(),
+                                dto.getPercentage()
+                        ))
                         .collect(Collectors.toList());
 
                 accountDto.setCashbacks(cashbacks);
@@ -388,13 +388,13 @@ public class FinanceSnapshotService {
                 );
 
                 List<CashbackResponseDto> cashbacks = cashbackDtos.stream()
-                        .map(dto -> CashbackResponseDto.builder()
-                                .id(dto.getId())
-                                .accountId(snapshot.getAccountId())
-                                .bankName(snapshot.getBankName())
-                                .category(dto.getCategory())
-                                .percentage(dto.getPercentage())
-                                .build())
+                        .map(dto -> new CashbackResponseDto(
+                                dto.getId(),
+                                snapshot.getAccountId(),
+                                snapshot.getBankName(),
+                                dto.getCategory(),
+                                dto.getPercentage()
+                        ))
                         .collect(Collectors.toList());
 
                 if (!cashbacks.isEmpty()) {
@@ -413,19 +413,19 @@ public class FinanceSnapshotService {
 
             Map<String, BigDecimal> cashbackByCategory = cashbacks.stream()
                     .collect(Collectors.toMap(
-                            CashbackResponseDto::getCategory,
-                            CashbackResponseDto::getPercentage,
+                            CashbackResponseDto::category,
+                            CashbackResponseDto::percentage,
                             (existing, replacement) -> existing
                     ));
 
             Optional<CashbackResponseDto> bestCashback = cashbacks.stream()
-                    .max(Comparator.comparing(CashbackResponseDto::getPercentage));
+                    .max(Comparator.comparing(CashbackResponseDto::percentage));
 
             summary.add(new BankCashbackSummaryDto(
                     bankName,
                     cashbacks.size(),
-                    bestCashback.map(CashbackResponseDto::getPercentage).orElse(BigDecimal.ZERO),
-                    bestCashback.map(CashbackResponseDto::getCategory).orElse("Нет"),
+                    bestCashback.map(CashbackResponseDto::percentage).orElse(BigDecimal.ZERO),
+                    bestCashback.map(CashbackResponseDto::category).orElse("Нет"),
                     cashbackByCategory,
                     cashbacks
             ));
