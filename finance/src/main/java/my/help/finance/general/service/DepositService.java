@@ -29,7 +29,7 @@ public class DepositService {
             throw new RuntimeException("Deposit info is required for " + account.getType() + " account type");
         }
 
-        if (account.getType() == AccountType.DEPOSIT && depositInfo.getEndDate() == null) {
+        if (account.getType() == AccountType.DEPOSIT && depositInfo.endDate() == null) {
             throw new RuntimeException("End date is required for DEPOSIT account type");
         }
 
@@ -38,7 +38,7 @@ public class DepositService {
         }
 
         Deposit deposit = depositMapper.toEntity(depositInfo, account);
-        Deposit savedDeposit = depositRepository.save(deposit);
+        depositRepository.save(deposit);
         log.info("Deposit created for account id: {}", account.getId());
 
     }

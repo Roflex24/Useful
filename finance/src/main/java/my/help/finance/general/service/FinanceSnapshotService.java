@@ -272,12 +272,12 @@ public class FinanceSnapshotService {
                             snapshot.getDepositJson(),
                             DepositSnapshotDto.class
                     );
-                    accountDto.setDepositInfo(DepositInfoDto.builder()
-                            .id(depositDto.getId())
-                            .endDate(depositDto.getEndDate())
-                            .interestPaymentDate(depositDto.getInterestPaymentDate())
-                            .interestRate(depositDto.getInterestRate())
-                            .build());
+                    accountDto.setDepositInfo(new DepositInfoDto(
+                            depositDto.getId(),
+                            depositDto.getEndDate(),
+                            depositDto.getInterestPaymentDate(),
+                            depositDto.getInterestRate()
+                    ));
                 } catch (Exception e) {
                     log.error("Failed to parse deposit for snapshot {}", snapshot.getId(), e);
                 }
