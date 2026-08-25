@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.help.finance.general.dto.AccountRequestDto;
 import my.help.finance.general.dto.AccountResponseDto;
+import my.help.finance.general.dto.SecurityResponseDto;
 import my.help.finance.general.entity.Account;
 import my.help.finance.general.entity.AccountType;
 import my.help.finance.general.entity.Cashback;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.YearMonth;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -30,7 +30,6 @@ public class AccountService {
     private final CashbackService cashbackService;
     private final DepositService depositService;
     private final SecurityService securityService; // Добавлено
-    private final FinanceSnapshotService snapshotService;
 
     private boolean hasDepositInfo(AccountType type) {
         return type == AccountType.DEPOSIT || type == AccountType.SAVINGS;
@@ -80,10 +79,10 @@ public class AccountService {
 
     @Transactional
     public AccountResponseDto createAccount(AccountRequestDto requestDto) {
-        log.info("Creating new account: {}", requestDto.getBankName());
+        log.info("Creating new account: {}", requestDto.bankName());
 
-        if (hasDepositInfo(requestDto.getType()) && requestDto.getDepositInfoDto() == null) {
-            throw new RuntimeException("Deposit info is required for " + requestDto.getType() + " account type");
+        if (hasDepositInfo(requestDto.type()) && requestDto.depositInfoDto() == null) {
+            throw new RuntimeException("Deposit info is required for " + requestDto.type() + " account type");
         }
 
         Account account = accountMapper.toEntity(requestDto);
@@ -96,8 +95,8 @@ public class AccountService {
         Account savedAccount = accountRepository.save(account);
         log.info("Account created successfully with id: {}", savedAccount.getId());
 
-        if (hasDepositInfo(savedAccount.getType()) && requestDto.getDepositInfoDto() != null) {
-            depositService.createDeposit(savedAccount, requestDto.getDepositInfoDto());
+        if (hasDepositInfo(savedAccount.getType()) && requestDto.depositInfoDto() != null) {
+            depositService.createDeposit(savedAccount, requestDto.depositInfoDto());
         }
 
         return toResponseDtoWithDetails(savedAccount);
@@ -110,7 +109,7 @@ public class AccountService {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
 
-        AccountType newType = requestDto.getType();
+        AccountType newType = requestDto.type();
 
         accountMapper.updateEntity(existingAccount, requestDto);
 
@@ -118,13 +117,13 @@ public class AccountService {
         // авто-рассчитанное значение (на случай если форма прислала своё)
         if (newType == AccountType.INVESTMENT) {
             BigDecimal recalculated = securityService.getSecuritiesByAccount(id).stream()
-                    .map(s -> s.getTotalValue())
+                    .map(SecurityResponseDto::getTotalValue)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             existingAccount.setAmount(recalculated);
         }
 
         if (hasDepositInfo(newType)) {
-            depositService.updateDeposit(id, requestDto.getDepositInfoDto());
+            depositService.updateDeposit(id, requestDto.depositInfoDto());
         }
 
         Account updatedAccount = accountRepository.save(existingAccount);
@@ -158,10 +157,5 @@ public class AccountService {
 
         accountRepository.deleteById(id);
         log.info("Account deleted successfully with id: {}", id);
-    }
-
-    public List<AccountResponseDto> getHistoricalAccounts(YearMonth yearMonth) {
-        var historicalData = snapshotService.getHistoricalData(yearMonth);
-        return historicalData != null ? historicalData.getAccounts() : Collections.emptyList();
     }
 }
