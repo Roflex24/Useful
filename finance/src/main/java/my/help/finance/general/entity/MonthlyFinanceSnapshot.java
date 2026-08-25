@@ -1,11 +1,7 @@
-// entity/MonthlyFinanceSnapshot.java
 package my.help.finance.general.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
@@ -21,7 +17,8 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_snapshot_date", columnList = "snapshotDate"),
                 @Index(name = "idx_account_id", columnList = "accountId")
         })
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
