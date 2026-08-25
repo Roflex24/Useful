@@ -54,20 +54,20 @@ public class SecurityService {
     }
 
     @Transactional
-    public SecurityRs createSecurity(SecurityRq requestDto) {
-        log.info("Creating security for account: {}", requestDto.accountId());
+    public SecurityRs createSecurity(SecurityRq rq) {
+        log.info("Creating security for account: {}", rq.accountId());
 
-        Security security = securityMapper.toEntity(requestDto);
+        Security security = securityMapper.toEntity(rq);
         Security savedSecurity = securityRepository.save(security);
         log.info("Security created successfully with id: {}", savedSecurity.getId());
 
-        recalculateAccountAmount(requestDto.accountId());
+        recalculateAccountAmount(rq.accountId());
 
         return securityMapper.toResponseDto(savedSecurity);
     }
 
     @Transactional
-    public SecurityRs updateSecurity(Long id, SecurityRq requestDto) {
+    public SecurityRs updateSecurity(Long id, SecurityRq rq) {
         log.info("Updating security with id: {}", id);
 
         Security existingSecurity = securityRepository.findById(id)
@@ -78,7 +78,7 @@ public class SecurityService {
             throw new RuntimeException("Cannot update security for non-investment account");
         }
 
-        securityMapper.updateEntity(existingSecurity, requestDto);
+        securityMapper.updateEntity(existingSecurity, rq);
         Security updatedSecurity = securityRepository.save(existingSecurity);
         log.info("Security updated successfully with id: {}", id);
 
