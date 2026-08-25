@@ -18,7 +18,7 @@ public class FinanceSnapshotScheduler {
     /**
      * Каждый день в 7:30 проверяем и создаём снимок если нужно
      */
-    @Scheduled(cron = "0 0 7 * * *")
+    @Scheduled(cron = "0 30 7 * * *")
     public void checkAndCreateSnapshot() {
         if (snapshotService.shouldCreateSnapshot()) {
             log.info("Starting scheduled snapshot creation...");

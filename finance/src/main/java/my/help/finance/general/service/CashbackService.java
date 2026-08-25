@@ -64,7 +64,7 @@ public class CashbackService {
             throw new RuntimeException("Cashback can only be added to CARD accounts. Current account type: " + account.getType());
         }
 
-        Cashback cashback = cashbackMapper.toEntity(rq);
+        Cashback cashback = cashbackMapper.toEntity(rq, account);
         Cashback savedCashback = cashbackRepository.save(cashback);
         log.info("Cashback created successfully with id: {}", savedCashback.getId());
 

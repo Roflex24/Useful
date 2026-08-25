@@ -57,7 +57,14 @@ public class SecurityService {
     public SecurityRs createSecurity(SecurityRq rq) {
         log.info("Creating security for account: {}", rq.accountId());
 
-        Security security = securityMapper.toEntity(rq);
+        Account account = accountRepository.findById(rq.accountId())
+                .orElseThrow(() -> new RuntimeException("Account not found with id: " + rq.accountId()));
+
+        if (account.getType() != AccountType.INVESTMENT) {
+            throw new RuntimeException("Securities can only be added to INVESTMENT accounts. Current type: " + account.getType());
+        }
+
+        Security security = securityMapper.toEntity(rq, account);
         Security savedSecurity = securityRepository.save(security);
         log.info("Security created successfully with id: {}", savedSecurity.getId());
 
