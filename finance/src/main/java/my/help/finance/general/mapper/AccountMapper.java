@@ -10,10 +10,10 @@ public class AccountMapper {
 
     public Account toEntity(AccountRequestDto requestDto) {
         return Account.builder()
-                .bankName(requestDto.getBankName())
-                .amount(requestDto.getAmount())
-                .type(requestDto.getType())
-                .comment(requestDto.getComment())
+                .bankName(requestDto.bankName())
+                .amount(requestDto.amount())
+                .type(requestDto.type())
+                .comment(requestDto.comment())
                 .build();
     }
 
@@ -28,9 +28,9 @@ public class AccountMapper {
     }
 
     public void updateEntity(Account existingAccount, AccountRequestDto requestDto) {
-        existingAccount.setBankName(requestDto.getBankName());
-        existingAccount.setAmount(requestDto.getAmount());
-        existingAccount.setType(requestDto.getType());
-        existingAccount.setComment(requestDto.getComment());
+        existingAccount.setBankName(requestDto.bankName());
+        existingAccount.setAmount(requestDto.amount());
+        existingAccount.setType(requestDto.type());
+        existingAccount.setComment(requestDto.comment());
     }
 }
