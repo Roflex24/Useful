@@ -325,12 +325,12 @@ public class FinanceSnapshotService {
         // Формируем сводку по кешбеку
         List<BankCashbackSummaryDto> cashbackSummary = buildCashbackSummaryFromSnapshots(snapshots);
 
-        return HistoricalDataResponseDto.builder()
-                .snapshotDate(snapshotDate)
-                .accounts(accounts)
-                .summary(summary)
-                .cashbackSummary(cashbackSummary)
-                .build();
+        return new HistoricalDataResponseDto(
+                snapshotDate,
+                accounts,
+                summary,
+                cashbackSummary
+        );
     }
 
     /**
@@ -466,8 +466,8 @@ public class FinanceSnapshotService {
         for (LocalDate snapshotDate : snapshotDates) {
             YearMonth yearMonth = YearMonth.from(snapshotDate);
             HistoricalDataResponseDto historicalData = getHistoricalData(yearMonth);
-            if (historicalData != null && historicalData.getAccounts() != null) {
-                MonthlyDynamicsDto dto = buildMonthlyDynamicsFromAccounts(historicalData.getAccounts(), yearMonth);
+            if (historicalData != null && historicalData.accounts() != null) {
+                MonthlyDynamicsDto dto = buildMonthlyDynamicsFromAccounts(historicalData.accounts(), yearMonth);
                 result.add(dto);
             }
         }
