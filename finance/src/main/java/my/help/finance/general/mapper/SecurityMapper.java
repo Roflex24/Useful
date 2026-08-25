@@ -17,7 +17,7 @@ public class SecurityMapper {
     private final AccountRepository accountRepository;
 
     public Security toEntity(SecurityRequestDto requestDto) {
-        Account account = accountRepository.findById(requestDto.getAccountId())
+        Account account = accountRepository.findById(requestDto.accountId())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
         if (account.getType() != AccountType.INVESTMENT) {
@@ -26,10 +26,10 @@ public class SecurityMapper {
 
         Security security = Security.builder()
                 .account(account)
-                .securityType(requestDto.getSecurityType())
-                .ticker(requestDto.getTicker())
-                .quantity(requestDto.getQuantity())
-                .currentPrice(requestDto.getCurrentPrice())
+                .securityType(requestDto.securityType())
+                .ticker(requestDto.ticker())
+                .quantity(requestDto.quantity())
+                .currentPrice(requestDto.currentPrice())
                 .build();
 
         applyBondFieldsIfNeeded(security, requestDto);
@@ -37,10 +37,10 @@ public class SecurityMapper {
     }
 
     public void updateEntity(Security existing, SecurityRequestDto requestDto) {
-        existing.setSecurityType(requestDto.getSecurityType());
-        existing.setTicker(requestDto.getTicker());
-        existing.setQuantity(requestDto.getQuantity());
-        existing.setCurrentPrice(requestDto.getCurrentPrice());
+        existing.setSecurityType(requestDto.securityType());
+        existing.setTicker(requestDto.ticker());
+        existing.setQuantity(requestDto.quantity());
+        existing.setCurrentPrice(requestDto.currentPrice());
 
         // Сбрасываем bond-поля перед применением, на случай смены типа бумаги
         existing.setFaceValue(null);
@@ -50,10 +50,10 @@ public class SecurityMapper {
     }
 
     private void applyBondFieldsIfNeeded(Security security, SecurityRequestDto requestDto) {
-        if (requestDto.getSecurityType() == SecurityType.BOND) {
-            security.setFaceValue(requestDto.getFaceValue());
-            security.setCouponRate(requestDto.getCouponRate());
-            security.setMaturityDate(requestDto.getMaturityDate());
+        if (requestDto.securityType() == SecurityType.BOND) {
+            security.setFaceValue(requestDto.faceValue());
+            security.setCouponRate(requestDto.couponRate());
+            security.setMaturityDate(requestDto.maturityDate());
         }
     }
 
