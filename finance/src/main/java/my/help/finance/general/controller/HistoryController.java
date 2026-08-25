@@ -25,9 +25,8 @@ public class HistoryController {
      * GET /api/finance/history/snapshots
      */
     @GetMapping("/snapshots")
-    public ResponseEntity<List<SnapshotInfoDto>> getAvailableSnapshots() {
-        List<SnapshotInfoDto> snapshots = snapshotService.getAvailableSnapshots();
-        return ResponseEntity.ok(snapshots);
+    public List<SnapshotInfoDto> getAvailableSnapshots() {
+        return snapshotService.getAvailableSnapshots();
     }
 
     /**
@@ -88,8 +87,7 @@ public class HistoryController {
      * GET /api/finance/history/dynamics/monthly
      */
     @GetMapping("/dynamics/monthly")
-    public ResponseEntity<List<MonthlyDynamicsDto>> getMonthlyDynamics() {
-        List<MonthlyDynamicsDto> dynamics = snapshotService.getMonthlyDynamics();
-        return ResponseEntity.ok(dynamics);
+    public List<MonthlyDynamicsDto> getMonthlyDynamics() {
+        return snapshotService.getMonthlyDynamics();
     }
 }

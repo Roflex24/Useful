@@ -7,7 +7,6 @@ import my.help.finance.general.service.CashbackService;
 import my.help.finance.general.dto.BankCashbackSummaryDto;
 import my.help.finance.general.dto.CashbackResponseDto;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,42 +20,41 @@ public class CashbackController {
 
     // Получить все кешбеки
     @GetMapping
-    public ResponseEntity<List<CashbackResponseDto>> getAllCashbacks() {
-        return ResponseEntity.ok(cashbackService.getAllCashbacks());
+    public List<CashbackResponseDto> getAllCashbacks() {
+        return cashbackService.getAllCashbacks();
     }
 
     // Получить кешбеки по счёту
     @GetMapping("/account/{accountId}")
-    public ResponseEntity<List<CashbackResponseDto>> getCashbacksByAccount(@PathVariable Long accountId) {
-        return ResponseEntity.ok(cashbackService.getCashbacksByAccount(accountId));
+    public List<CashbackResponseDto> getCashbacksByAccount(@PathVariable Long accountId) {
+        return cashbackService.getCashbacksByAccount(accountId);
     }
 
     // Получить сводку кешбека по банкам
     @GetMapping("/summary")
-    public ResponseEntity<List<BankCashbackSummaryDto>> getCashbackSummary() {
-        return ResponseEntity.ok(cashbackService.getCashbackSummaryByBank());
+    public List<BankCashbackSummaryDto> getCashbackSummary() {
+        return cashbackService.getCashbackSummaryByBank();
     }
 
     // Создать кешбек
     @PostMapping
-    public ResponseEntity<CashbackResponseDto> createCashback(@Valid @RequestBody CashbackRequestDto requestDto) {
-        CashbackResponseDto createdCashback = cashbackService.createCashback(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdCashback);
+    @ResponseStatus(HttpStatus.CREATED)
+    public CashbackResponseDto createCashback(@Valid @RequestBody CashbackRequestDto requestDto) {
+        return cashbackService.createCashback(requestDto);
     }
 
     // Обновить кешбек
     @PutMapping("/{id}")
-    public ResponseEntity<CashbackResponseDto> updateCashback(
+    public CashbackResponseDto updateCashback(
             @PathVariable Long id,
             @Valid @RequestBody CashbackRequestDto requestDto) {
-        CashbackResponseDto updatedCashback = cashbackService.updateCashback(id, requestDto);
-        return ResponseEntity.ok(updatedCashback);
+        return cashbackService.updateCashback(id, requestDto);
     }
 
     // Удалить кешбек
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCashback(@PathVariable Long id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCashback(@PathVariable Long id) {
         cashbackService.deleteCashback(id);
-        return ResponseEntity.noContent().build();
     }
 }
