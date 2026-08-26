@@ -1444,29 +1444,29 @@
     async function createEvent(name, description, dateTime) {
         try {
             const res = await fetch(EVENT_API, {
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ name, description: description || '', dateTime, projectId:null })
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description: description || '', dateTime })
             });
             if (!res.ok) throw new Error();
             showToast('✅ Событие создано');
             await fetchEventsForMonth(currentYear, currentMonth);
-        } catch(e) {
+        } catch (e) {
             showToast('Ошибка создания события', true);
         }
     }
 
-    async function updateEvent(eventModel) {
+    async function updateEvent(id, data) {
         try {
-            const res = await fetch(EVENT_API, {
-                method:'PUT',
-                headers:{'Content-Type':'application/json'},
-                body:JSON.stringify(eventModel)
+            const res = await fetch(`${EVENT_API}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
             });
             if (!res.ok) throw new Error();
             showToast('✅ Событие обновлено');
             await fetchEventsForMonth(currentYear, currentMonth);
-        } catch(e) {
+        } catch (e) {
             showToast('Ошибка обновления', true);
         }
     }
@@ -1550,12 +1550,10 @@
                 showToast('Введите название', true);
                 return;
             }
-            updateEvent({
-                id:event.id,
+            updateEvent(event.id, {
                 name,
                 description: modal.querySelector('#eventDesc').value,
-                dateTime: modal.querySelector('#eventDateTime').value,
-                projectId:null
+                dateTime: modal.querySelector('#eventDateTime').value
             });
             modal.remove();
         };

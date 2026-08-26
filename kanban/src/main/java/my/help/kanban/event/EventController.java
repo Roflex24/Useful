@@ -2,7 +2,6 @@ package my.help.kanban.event;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,10 +36,9 @@ public class EventController {
         eventService.createEvent(eventRq);
     }
 
-    @PutMapping
-    public ResponseEntity<Void> updateEvent(@RequestBody EventModel eventModel) {
-        eventService.updateEvent(eventModel);
-        return ResponseEntity.ok().build();
+    @PutMapping("/{id}")
+    public EventModel updateEvent(@PathVariable Long id, @RequestBody EventRq rq) {
+        return eventService.updateEvent(id, rq);
     }
 
     @DeleteMapping("/{id}")

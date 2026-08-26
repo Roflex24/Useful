@@ -3,6 +3,7 @@ package my.help.kanban.event;
 import lombok.RequiredArgsConstructor;
 import my.help.kanban.common.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,8 +40,14 @@ public class EventService {
         return eventMapper.toModelList(events);
     }
 
-    public void updateEvent(EventModel eventModel) {
-        eventRepository.save(eventMapper.toEntity(eventModel));
+    @Transactional
+    public EventModel updateEvent(Long id, EventRq rq) {
+        EventEntity eventEntity = eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Событие с id=" + id + " не найдено"));
+        eventEntity.setName(rq.getName());
+        eventEntity.setDateTime(rq.getDateTime());
+        eventEntity.setDescription(rq.getDescription());
+        return eventMapper.toModel(eventEntity);
     }
 
     public void deleteEventById(Long id) {
