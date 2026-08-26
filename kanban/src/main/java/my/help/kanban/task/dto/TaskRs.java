@@ -1,8 +1,10 @@
-package my.help.kanban.task;
+package my.help.kanban.task.dto;
+
+import my.help.kanban.task.Difficulty;
 
 import java.time.LocalDate;
 
-public record TaskModel(
+public record TaskRs(
         Long id,
         String title,
         String description,

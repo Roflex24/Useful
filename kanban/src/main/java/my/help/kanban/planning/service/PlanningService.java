@@ -2,8 +2,8 @@ package my.help.kanban.planning.service;
 
 import lombok.RequiredArgsConstructor;
 import my.help.kanban.common.ResourceNotFoundException;
-import my.help.kanban.planning.dto.PlanRequestDto;
-import my.help.kanban.planning.dto.PlanResponseDto;
+import my.help.kanban.planning.dto.PlanRq;
+import my.help.kanban.planning.dto.PlanRs;
 import my.help.kanban.planning.entity.PlanType;
 import my.help.kanban.planning.entity.StrategicPlan;
 import my.help.kanban.planning.mapper.PlanningMapper;
@@ -22,25 +22,25 @@ public class PlanningService {
     private final PlanningMapper planningMapper;
 
     @Transactional
-    public PlanResponseDto create(PlanRequestDto rq) {
+    public PlanRs create(PlanRq rq) {
         StrategicPlan saved = planRepository.save(planningMapper.rqToEntity(rq));
         return planningMapper.toResponseDto(saved);
     }
 
     @Transactional
-    public PlanResponseDto update(Long id, PlanRequestDto rq) {
+    public PlanRs update(Long id, PlanRq rq) {
         StrategicPlan plan = planRepository.findById(id).orElseThrow();
         planningMapper.updateEntity(rq, plan);
         return planningMapper.toResponseDto(planRepository.save(plan));
     }
 
-    public PlanResponseDto getById(Long id) {
+    public PlanRs getById(Long id) {
         StrategicPlan plan = planRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("План с id=" + id + " не найден"));
         return planningMapper.toResponseDto(plan);
     }
 
-    public List<PlanResponseDto> getPlanList(String type, boolean relevantOnly) {
+    public List<PlanRs> getPlanList(String type, boolean relevantOnly) {
         LocalDate today = LocalDate.now();
         PlanType planType = null;
 

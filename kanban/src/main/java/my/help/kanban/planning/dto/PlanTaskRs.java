@@ -4,7 +4,7 @@ import my.help.kanban.planning.entity.PlanStatus;
 
 import java.time.LocalDateTime;
 
-public record PlanTaskResponseDto(
+public record PlanTaskRs(
          Long id,
          Long planId,
          String title,

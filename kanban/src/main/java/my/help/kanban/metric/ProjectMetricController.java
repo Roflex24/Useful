@@ -1,6 +1,8 @@
 package my.help.kanban.metric;
 
 import lombok.RequiredArgsConstructor;
+import my.help.kanban.metric.dto.ProjectMetricRs;
+import my.help.kanban.metric.dto.ProjectMetricRq;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +16,7 @@ public class ProjectMetricController {
     private final ProjectMetricService projectMetricService;
 
     @GetMapping("/{id}")
-    public List<ProjectMetricModel> getListByProjectId(@PathVariable Long id) {
+    public List<ProjectMetricRs> getListByProjectId(@PathVariable Long id) {
         return projectMetricService.getListByProjectId(id);
     }
 
@@ -26,12 +28,12 @@ public class ProjectMetricController {
 
     @PutMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateList(@RequestBody List<ProjectMetricModel> rq) {
+    public void updateList(@RequestBody List<ProjectMetricRs> rq) {
         projectMetricService.updateList(rq);
     }
 
     @PutMapping("/{id}")
-    public ProjectMetricModel update(@PathVariable Long id, @RequestBody ProjectMetricRq rq) {
+    public ProjectMetricRs update(@PathVariable Long id, @RequestBody ProjectMetricRq rq) {
         return projectMetricService.update(id, rq);
     }
 

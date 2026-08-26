@@ -2,7 +2,8 @@ package my.help.kanban.project;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import my.help.kanban.metric.ProjectMetricModel;
+import my.help.kanban.metric.dto.ProjectMetricRs;
+import my.help.kanban.project.dto.ProjectRs;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -15,8 +16,8 @@ public class ProjectMetricAggregator {
     /**
      * Создает базовый объект ProjectWithMetricModel из ProjectEntity
      */
-    public ProjectModel buildBasicProjectWithMetric(ProjectEntity entity) {
-        return new ProjectModel(
+    public ProjectRs buildBasicProjectWithMetric(ProjectEntity entity) {
+        return new ProjectRs(
                 entity.getId(),
                 entity.getName(),
                 entity.getDescription(),
@@ -30,7 +31,7 @@ public class ProjectMetricAggregator {
     /**
      * Обрабатывает метрики проекта и заполняет результат
      */
-    public void processMetrics(List<ProjectMetricModel> metrics, ProjectModel result) {
+    public void processMetrics(List<ProjectMetricRs> metrics, ProjectRs result) {
         if (metrics == null || metrics.isEmpty()) {
             result.setMainMetricCompletePercent(0);
             return;
@@ -39,7 +40,7 @@ public class ProjectMetricAggregator {
         int totalNonMainMetrics = 0;
         int completedNonMainMetrics = 0;
 
-        for (ProjectMetricModel metric : metrics) {
+        for (ProjectMetricRs metric : metrics) {
             if (metric.isMain()) {
                 result.setMainProjectMetric(metric);
             } else {
@@ -57,9 +58,9 @@ public class ProjectMetricAggregator {
     /**
      * Полностью собирает объект ProjectWithMetricModel из сущности и метрик
      */
-    public ProjectModel aggregateProjectWithMetrics(ProjectEntity projectEntity,
-                                                    List<ProjectMetricModel> metrics) {
-        ProjectModel result = buildBasicProjectWithMetric(projectEntity);
+    public ProjectRs aggregateProjectWithMetrics(ProjectEntity projectEntity,
+                                                 List<ProjectMetricRs> metrics) {
+        ProjectRs result = buildBasicProjectWithMetric(projectEntity);
         processMetrics(metrics, result);
         return result;
     }

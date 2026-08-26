@@ -1,6 +1,8 @@
 package my.help.kanban.project;
 
 import lombok.RequiredArgsConstructor;
+import my.help.kanban.project.dto.ProjectRs;
+import my.help.kanban.project.dto.ProjectRq;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,22 +16,22 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
-    public List<ProjectModel> getList() {
+    public List<ProjectRs> getList() {
         return projectService.getList();
     }
 
     @GetMapping("/{id}")
-    public ProjectModel getById(@PathVariable Long id) {
+    public ProjectRs getById(@PathVariable Long id) {
         return projectService.getProjectById(id);
     }
 
     @PostMapping()
-    public ProjectModel create(@RequestBody ProjectRq rq) {
+    public ProjectRs create(@RequestBody ProjectRq rq) {
         return projectService.create(rq);
     }
 
     @PutMapping("/{id}")
-    public ProjectModel update(@PathVariable Long id, @RequestBody ProjectRq rq) {
+    public ProjectRs update(@PathVariable Long id, @RequestBody ProjectRq rq) {
         return projectService.update(id, rq);
     }
 

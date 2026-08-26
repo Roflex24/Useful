@@ -2,6 +2,8 @@ package my.help.kanban.metric;
 
 import lombok.RequiredArgsConstructor;
 import my.help.kanban.common.ResourceNotFoundException;
+import my.help.kanban.metric.dto.ProjectMetricRs;
+import my.help.kanban.metric.dto.ProjectMetricRq;
 import my.help.kanban.project.ProjectRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,16 +26,16 @@ public class ProjectMetricService {
         projectMetricRepository.save(projectMetricEntity);
     }
 
-    public List<ProjectMetricModel> getListByProjectId(Long projectId) {
-        List<ProjectMetricModel> projectMetricModelList = projectMetricMapper.toModelList(projectMetricRepository.findAllByProjectId(projectId));
-        for (ProjectMetricModel model: projectMetricModelList) {
+    public List<ProjectMetricRs> getListByProjectId(Long projectId) {
+        List<ProjectMetricRs> projectMetricRsList = projectMetricMapper.toModelList(projectMetricRepository.findAllByProjectId(projectId));
+        for (ProjectMetricRs model: projectMetricRsList) {
             model.setProjectId(projectId);
         }
-        return projectMetricModelList;
+        return projectMetricRsList;
     }
 
     @Transactional
-    public void updateList(List<ProjectMetricModel> rq) {
+    public void updateList(List<ProjectMetricRs> rq) {
         List<ProjectMetricEntity> projectMetricEntityList = projectMetricMapper.toEntityList(rq);
         Long id = rq.getFirst().getProjectId();
         for (ProjectMetricEntity projectMetricEntity: projectMetricEntityList) {
@@ -44,7 +46,7 @@ public class ProjectMetricService {
     }
 
     @Transactional
-    public ProjectMetricModel update(Long id, ProjectMetricRq rq) {
+    public ProjectMetricRs update(Long id, ProjectMetricRq rq) {
         ProjectMetricEntity projectMetricEntity = projectMetricRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Метрика проекта с id=" + id + " не найдено"));
         projectMetricEntity.setName(rq.name());

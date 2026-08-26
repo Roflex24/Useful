@@ -1,6 +1,8 @@
 package my.help.kanban.task;
 
 import lombok.RequiredArgsConstructor;
+import my.help.kanban.task.dto.TaskRq;
+import my.help.kanban.task.dto.TaskRs;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +17,7 @@ public class TaskController {
     private final TaskService taskService;
 
     @GetMapping("/column/{columnId}")
-    public List<TaskModel> getByColumn(@PathVariable Long columnId) {
+    public List<TaskRs> getByColumn(@PathVariable Long columnId) {
         return taskService.getByColumn(columnId);
     }
 
@@ -26,7 +28,7 @@ public class TaskController {
     }
 
     @PutMapping
-    public List<TaskModel> updateList(@RequestBody List<TaskModel> rq) {
+    public List<TaskRs> updateList(@RequestBody List<TaskRs> rq) {
         return taskService.updateList(rq);
     }
 
@@ -42,7 +44,7 @@ public class TaskController {
     }
 
     @GetMapping("/period")
-    public List<TaskModel> getListForPeriod(@RequestParam LocalDate start, @RequestParam LocalDate end) {
+    public List<TaskRs> getListForPeriod(@RequestParam LocalDate start, @RequestParam LocalDate end) {
         return taskService.getListForPeriod(start, end);
     }
 }

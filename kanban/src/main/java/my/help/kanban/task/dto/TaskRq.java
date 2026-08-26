@@ -1,4 +1,6 @@
-package my.help.kanban.task;
+package my.help.kanban.task.dto;
+
+import my.help.kanban.task.Difficulty;
 
 public record TaskRq(
         String title,

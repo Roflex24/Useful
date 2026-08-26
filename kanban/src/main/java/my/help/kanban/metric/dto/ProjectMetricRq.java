@@ -1,4 +1,4 @@
-package my.help.kanban.metric;
+package my.help.kanban.metric.dto;
 
 public record ProjectMetricRq (
         String name,

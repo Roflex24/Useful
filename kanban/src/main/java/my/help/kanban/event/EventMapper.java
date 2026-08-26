@@ -1,5 +1,7 @@
 package my.help.kanban.event;
 
+import my.help.kanban.event.dto.EventRs;
+import my.help.kanban.event.dto.EventRq;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -11,6 +13,6 @@ public interface EventMapper {
     @Mapping(target = "id", ignore = true)
     EventEntity rqToEntity(EventRq rq);
 
-    EventModel toModel(EventEntity eventEntity);
-    List<EventModel> toModelList(List<EventEntity> eventEntityList);
+    EventRs toModel(EventEntity eventEntity);
+    List<EventRs> toModelList(List<EventEntity> eventEntityList);
 }

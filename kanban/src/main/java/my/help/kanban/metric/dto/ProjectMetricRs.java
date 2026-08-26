@@ -1,4 +1,4 @@
-package my.help.kanban.metric;
+package my.help.kanban.metric.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProjectMetricModel {
+public class ProjectMetricRs {
 
     private Long id;
     private String name;

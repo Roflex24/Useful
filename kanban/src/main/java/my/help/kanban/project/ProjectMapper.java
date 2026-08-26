@@ -1,5 +1,7 @@
 package my.help.kanban.project;
 
+import my.help.kanban.project.dto.ProjectRs;
+import my.help.kanban.project.dto.ProjectRq;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -8,7 +10,7 @@ public interface ProjectMapper {
 
     @Mapping(target = "mainProjectMetric", ignore = true)
     @Mapping(target = "mainMetricCompletePercent", ignore = true)
-    ProjectModel toModel(ProjectEntity projectEntity);
+    ProjectRs toModel(ProjectEntity projectEntity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createDate", ignore = true)

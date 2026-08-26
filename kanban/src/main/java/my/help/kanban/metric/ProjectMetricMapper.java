@@ -1,5 +1,7 @@
 package my.help.kanban.metric;
 
+import my.help.kanban.metric.dto.ProjectMetricRs;
+import my.help.kanban.metric.dto.ProjectMetricRq;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -15,12 +17,12 @@ public interface ProjectMetricMapper {
     ProjectMetricEntity projectMetricRqToEntity(ProjectMetricRq projectMetricRq);
 
     @Mapping(target = "project", ignore = true)
-    ProjectMetricEntity toEntity(ProjectMetricModel projectMetricModel);
+    ProjectMetricEntity toEntity(ProjectMetricRs projectMetricRs);
 
     @Mapping(target = "projectId", ignore = true)
-    ProjectMetricModel toModel(ProjectMetricEntity projectMetricEntity);
+    ProjectMetricRs toModel(ProjectMetricEntity projectMetricEntity);
 
-    List<ProjectMetricEntity> toEntityList(List<ProjectMetricModel> projectMetricModelList);
-    List<ProjectMetricModel> toModelList(List<ProjectMetricEntity> projectMetricEntityList);
+    List<ProjectMetricEntity> toEntityList(List<ProjectMetricRs> projectMetricRsList);
+    List<ProjectMetricRs> toModelList(List<ProjectMetricEntity> projectMetricEntityList);
 
 }

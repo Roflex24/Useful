@@ -1,8 +1,8 @@
 package my.help.kanban.planning.service;
 
 import lombok.RequiredArgsConstructor;
-import my.help.kanban.planning.dto.PlanTaskRequestDto;
-import my.help.kanban.planning.dto.PlanTaskResponseDto;
+import my.help.kanban.planning.dto.PlanTaskRq;
+import my.help.kanban.planning.dto.PlanTaskRs;
 import my.help.kanban.planning.entity.PlanTask;
 import my.help.kanban.planning.entity.StrategicPlan;
 import my.help.kanban.planning.mapper.PlanTaskMapper;
@@ -23,7 +23,7 @@ public class PlanTaskService {
     private final PlanTaskMapper planTaskMapper;
 
     @Transactional
-    public PlanTaskResponseDto create(Long planId, PlanTaskRequestDto rq) {
+    public PlanTaskRs create(Long planId, PlanTaskRq rq) {
         StrategicPlan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan not found"));
 
@@ -39,7 +39,7 @@ public class PlanTaskService {
     }
 
     @Transactional
-    public PlanTaskResponseDto update(Long taskId, PlanTaskRequestDto dto) {
+    public PlanTaskRs update(Long taskId, PlanTaskRq dto) {
         PlanTask task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
 
@@ -52,13 +52,13 @@ public class PlanTaskService {
         return planTaskMapper.toResponseDto(taskRepository.save(task));
     }
 
-    public PlanTaskResponseDto getById(Long taskId) {
+    public PlanTaskRs getById(Long taskId) {
         PlanTask task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
         return planTaskMapper.toResponseDto(task);
     }
 
-    public List<PlanTaskResponseDto> getByPlan(Long planId) {
+    public List<PlanTaskRs> getByPlan(Long planId) {
         return taskRepository.findByPlanIdOrderByOrderIndexAsc(planId)
                 .stream()
                 .map(planTaskMapper::toResponseDto)

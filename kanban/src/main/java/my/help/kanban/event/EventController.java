@@ -1,6 +1,8 @@
 package my.help.kanban.event;
 
 import lombok.RequiredArgsConstructor;
+import my.help.kanban.event.dto.EventRs;
+import my.help.kanban.event.dto.EventRq;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,17 +16,17 @@ public class EventController {
     private final EventService eventService;
 
     @GetMapping()
-    public List<EventModel> getList() {
+    public List<EventRs> getList() {
         return eventService.getList();
     }
 
     @GetMapping("/{id}")
-    public EventModel getById(@PathVariable Long id) {
+    public EventRs getById(@PathVariable Long id) {
         return eventService.getById(id);
     }
 
     @GetMapping("/month")
-    public List<EventModel> getByMonth(
+    public List<EventRs> getByMonth(
             @RequestParam int year,
             @RequestParam int month) {
         return eventService.getByMonth(year, month);
@@ -37,7 +39,7 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
-    public EventModel update(@PathVariable Long id, @RequestBody EventRq rq) {
+    public EventRs update(@PathVariable Long id, @RequestBody EventRq rq) {
         return eventService.update(id, rq);
     }
 

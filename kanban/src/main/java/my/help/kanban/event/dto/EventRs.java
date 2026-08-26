@@ -1,8 +1,8 @@
-package my.help.kanban.event;
+package my.help.kanban.event.dto;
 
 import java.time.LocalDateTime;
 
-public record EventModel(
+public record EventRs(
     Long id,
     String name,
     String description,

@@ -1,5 +1,7 @@
 package my.help.kanban.task;
 
+import my.help.kanban.task.dto.TaskRq;
+import my.help.kanban.task.dto.TaskRs;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -9,9 +11,9 @@ import java.util.List;
 public interface TaskMapper {
 
     @Mapping(source = "column.id", target = "columnId")
-    TaskModel toModel(TaskEntity entity);
+    TaskRs toModel(TaskEntity entity);
 
-    List<TaskModel> toModelList(List<TaskEntity> entities);
+    List<TaskRs> toModelList(List<TaskEntity> entities);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createDate", ignore = true)
@@ -19,5 +21,5 @@ public interface TaskMapper {
     @Mapping(target = "closeDate", ignore = true)
     TaskEntity toEntity(TaskRq rq);
 
-    List<TaskEntity> toEntityList(List<TaskModel> models);
+    List<TaskEntity> toEntityList(List<TaskRs> models);
 }

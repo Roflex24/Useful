@@ -1,9 +1,10 @@
 package my.help.kanban.planning.mapper;
 
-import my.help.kanban.planning.dto.PlanRequestDto;
-import my.help.kanban.planning.dto.PlanResponseDto;
+import my.help.kanban.planning.dto.PlanRq;
+import my.help.kanban.planning.dto.PlanRs;
 import my.help.kanban.planning.entity.StrategicPlan;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 import java.util.List;
@@ -11,8 +12,12 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface PlanningMapper {
 
-    void updateEntity(PlanRequestDto dto, @MappingTarget StrategicPlan plan);
-    StrategicPlan rqToEntity(PlanRequestDto dto);
-    PlanResponseDto toResponseDto(StrategicPlan plan);
-    List<PlanResponseDto> toResponseDtoList(List<StrategicPlan> plans);
+    @Mapping(target = "id", ignore = true)
+    void updateEntity(PlanRq dto, @MappingTarget StrategicPlan plan);
+
+    @Mapping(target = "id", ignore = true)
+    StrategicPlan rqToEntity(PlanRq dto);
+
+    PlanRs toResponseDto(StrategicPlan plan);
+    List<PlanRs> toResponseDtoList(List<StrategicPlan> plans);
 }

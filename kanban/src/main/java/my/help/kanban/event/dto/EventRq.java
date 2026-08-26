@@ -1,4 +1,4 @@
-package my.help.kanban.event;
+package my.help.kanban.event.dto;
 
 import java.time.LocalDateTime;
 

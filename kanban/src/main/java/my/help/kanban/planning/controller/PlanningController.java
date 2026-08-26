@@ -1,10 +1,10 @@
 package my.help.kanban.planning.controller;
 
 import lombok.RequiredArgsConstructor;
-import my.help.kanban.planning.dto.PlanRequestDto;
-import my.help.kanban.planning.dto.PlanResponseDto;
-import my.help.kanban.planning.dto.PlanTaskRequestDto;
-import my.help.kanban.planning.dto.PlanTaskResponseDto;
+import my.help.kanban.planning.dto.PlanRq;
+import my.help.kanban.planning.dto.PlanRs;
+import my.help.kanban.planning.dto.PlanTaskRq;
+import my.help.kanban.planning.dto.PlanTaskRs;
 import my.help.kanban.planning.service.PlanTaskService;
 import my.help.kanban.planning.service.PlanningService;
 import org.springframework.http.HttpStatus;
@@ -20,22 +20,22 @@ public class PlanningController {
     private final PlanTaskService planTaskService;
 
     @PostMapping
-    public PlanResponseDto create(@RequestBody PlanRequestDto rq) {
+    public PlanRs create(@RequestBody PlanRq rq) {
         return planningService.create(rq);
     }
 
     @PutMapping("/{id}")
-    public PlanResponseDto update(@PathVariable Long id, @RequestBody PlanRequestDto rq) {
+    public PlanRs update(@PathVariable Long id, @RequestBody PlanRq rq) {
         return planningService.update(id, rq);
     }
 
     @GetMapping("/{id}")
-    public PlanResponseDto getById(@PathVariable Long id) {
+    public PlanRs getById(@PathVariable Long id) {
         return planningService.getById(id);
     }
 
     @GetMapping
-    public List<PlanResponseDto> getPlanList(
+    public List<PlanRs> getPlanList(
             @RequestParam(required = false) String type,
             @RequestParam(required = false, defaultValue = "false") boolean relevantOnly) {
         return planningService.getPlanList(type, relevantOnly);
@@ -49,12 +49,12 @@ public class PlanningController {
     }
 
     @GetMapping("/tasks/{taskId}")
-    public PlanTaskResponseDto getTaskById(@PathVariable Long taskId) {
+    public PlanTaskRs getTaskById(@PathVariable Long taskId) {
         return planTaskService.getById(taskId);
     }
 
     @PutMapping("/tasks/{taskId}")
-    public PlanTaskResponseDto updateTask(@PathVariable Long taskId, @RequestBody PlanTaskRequestDto rq) {
+    public PlanTaskRs updateTask(@PathVariable Long taskId, @RequestBody PlanTaskRq rq) {
         return planTaskService.update(taskId, rq);
     }
 
@@ -65,12 +65,12 @@ public class PlanningController {
     }
 
     @GetMapping("/{planId}/tasks")
-    public List<PlanTaskResponseDto> getTasksByPlan(@PathVariable Long planId) {
+    public List<PlanTaskRs> getTasksByPlan(@PathVariable Long planId) {
         return planTaskService.getByPlan(planId);
     }
 
     @PostMapping("/{planId}/tasks")
-    public PlanTaskResponseDto createTask(@PathVariable Long planId, @RequestBody PlanTaskRequestDto rq) {
+    public PlanTaskRs createTask(@PathVariable Long planId, @RequestBody PlanTaskRq rq) {
         return planTaskService.create(planId, rq);
     }
 }

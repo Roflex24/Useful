@@ -2,6 +2,8 @@ package my.help.kanban.event;
 
 import lombok.RequiredArgsConstructor;
 import my.help.kanban.common.ResourceNotFoundException;
+import my.help.kanban.event.dto.EventRs;
+import my.help.kanban.event.dto.EventRq;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,16 +21,16 @@ public class EventService {
         eventRepository.save(eventMapper.rqToEntity(eventRq));
     }
 
-    public List<EventModel> getList() {
+    public List<EventRs> getList() {
         return eventMapper.toModelList(eventRepository.findAll());
     }
 
-    public EventModel getById(Long id) {
+    public EventRs getById(Long id) {
         return eventMapper.toModel(eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Событие с id=" + id + " не найдено")));
     }
 
-    public List<EventModel> getByMonth(int year, int month) {
+    public List<EventRs> getByMonth(int year, int month) {
         LocalDateTime startOfMonth = LocalDateTime.of(year, month, 1, 0, 0, 0);
         LocalDateTime endOfMonth = startOfMonth
                 .withDayOfMonth(startOfMonth.toLocalDate().lengthOfMonth())
@@ -41,7 +43,7 @@ public class EventService {
     }
 
     @Transactional
-    public EventModel update(Long id, EventRq rq) {
+    public EventRs update(Long id, EventRq rq) {
         EventEntity eventEntity = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Событие с id=" + id + " не найдено"));
         eventEntity.setName(rq.name());

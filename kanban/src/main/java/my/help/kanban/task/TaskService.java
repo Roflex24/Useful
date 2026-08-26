@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import my.help.kanban.column.ColumnEntity;
 import my.help.kanban.column.ColumnRepository;
 import my.help.kanban.common.ResourceNotFoundException;
+import my.help.kanban.task.dto.TaskRq;
+import my.help.kanban.task.dto.TaskRs;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,11 +23,11 @@ public class TaskService {
 
     private static final int DAYS_LIMIT_FOR_ARCHIVE = 7;
 
-    public List<TaskModel> getByColumn(Long columnId) {
+    public List<TaskRs> getByColumn(Long columnId) {
         ColumnEntity column = columnRepository.findById(columnId).orElseThrow(() -> new ResourceNotFoundException(
                 String.format("Колонка с id %d не найдена", columnId)));
 
-        List<TaskModel> list = taskMapper.toModelList(
+        List<TaskRs> list = taskMapper.toModelList(
                 taskRepository.findByColumnId(columnId));
 
         if (column.getOrderIndex() == 3) {
@@ -49,7 +51,7 @@ public class TaskService {
         taskRepository.save(taskEntity);
     }
 
-    public List<TaskModel> updateList(List<TaskModel> rq) {
+    public List<TaskRs> updateList(List<TaskRs> rq) {
         List<TaskEntity> taskEntityList = taskMapper.toEntityList(rq);
         for (int i = 0; i < taskEntityList.size(); i++) {
             TaskEntity taskEntity = taskEntityList.get(i);
@@ -80,7 +82,7 @@ public class TaskService {
         return taskEntityList.size();
     }
 
-    public List<TaskModel> getListForPeriod(LocalDate start, LocalDate end) {
+    public List<TaskRs> getListForPeriod(LocalDate start, LocalDate end) {
         return taskMapper.toModelList(taskRepository.findByCloseDateBetween(start, end));
     }
 }
