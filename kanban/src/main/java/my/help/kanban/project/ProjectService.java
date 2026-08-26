@@ -28,23 +28,23 @@ public class ProjectService {
     private final ProjectMetricAggregator projectMetricAggregator;
     private final ProjectMetricService projectMetricService;
 
-
-    public ProjectModel createProject(ProjectRq rq) {
+    @Transactional
+    public ProjectModel create(ProjectRq rq) {
         ProjectEntity projectEntity = projectMapper.projectRqToEntity(rq);
         ProjectEntity saved = projectRepository.save(projectEntity);
         columnService.createColumns(saved);
-        projectMetricService.createProjectMetric(
-                new ProjectMetricRq("Метрика завершения проекта", false, true, null, projectEntity.getId())
+        projectMetricService.create(
+                new ProjectMetricRq("Метрика завершения проекта", false, true, null, saved.getId())
         );
         return projectMapper.toModel(saved);
     }
 
     @Transactional
-    public ProjectModel updateProject(Long id, ProjectRq rq) {
+    public ProjectModel update(Long id, ProjectRq rq) {
         ProjectEntity projectEntity = projectRepository.findById(id)
                         .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено"));
-        projectEntity.setName(rq.getName());
-        projectEntity.setDescription(rq.getDescription());
+        projectEntity.setName(rq.name());
+        projectEntity.setDescription(rq.description());
 
         return projectMapper.toModel(projectEntity);
     }
@@ -68,7 +68,7 @@ public class ProjectService {
     }
 
     @Transactional
-    public void deleteProjectById(Long id) {
+    public void delete(Long id) {
         for(ColumnEntity columnEntity: columnRepository.findAllByProjectId(id)) {
             taskRepository.deleteByColumnId(columnEntity.getId());
         }
@@ -88,7 +88,7 @@ public class ProjectService {
         return projectMetricAggregator.aggregateProjectWithMetrics(projectEntity, projectMetricModelList);
     }
 
-    public List<ProjectModel> getProjectList() {
+    public List<ProjectModel> getList() {
         List<ProjectEntity> projectEntityList = projectRepository.findAll();
         return buildProjectModelsWithMetrics(projectEntityList);
     }

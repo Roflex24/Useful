@@ -16,14 +16,15 @@ public class ProjectMetricService {
     private final ProjectMetricMapper projectMetricMapper;
     private final ProjectRepository projectRepository;
 
-    public void createProjectMetric(ProjectMetricRq rq) {
+    @Transactional
+    public void create(ProjectMetricRq rq) {
         ProjectMetricEntity projectMetricEntity = projectMetricMapper.projectMetricRqToEntity(rq);
-        projectMetricEntity.setProject(projectRepository.findById(rq.getProjectId())
-                .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + rq.getProjectId() + " не найдено")));
+        projectMetricEntity.setProject(projectRepository.findById(rq.projectId())
+                .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + rq.projectId() + " не найдено")));
         projectMetricRepository.save(projectMetricEntity);
     }
 
-    public List<ProjectMetricModel> getMetricByProjectId(Long projectId) {
+    public List<ProjectMetricModel> getListByProjectId(Long projectId) {
         List<ProjectMetricModel> projectMetricModelList = projectMetricMapper.toModelList(projectMetricRepository.findAllByProjectId(projectId));
         for (ProjectMetricModel model: projectMetricModelList) {
             model.setProjectId(projectId);
@@ -31,9 +32,10 @@ public class ProjectMetricService {
         return projectMetricModelList;
     }
 
-    public void updateProjectMetricList(List<ProjectMetricModel> list) {
-        List<ProjectMetricEntity> projectMetricEntityList = projectMetricMapper.toEntityList(list);
-        Long id = list.getFirst().getProjectId();
+    @Transactional
+    public void updateList(List<ProjectMetricModel> rq) {
+        List<ProjectMetricEntity> projectMetricEntityList = projectMetricMapper.toEntityList(rq);
+        Long id = rq.getFirst().getProjectId();
         for (ProjectMetricEntity projectMetricEntity: projectMetricEntityList) {
             projectMetricEntity.setProject(projectRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено")));
@@ -42,19 +44,19 @@ public class ProjectMetricService {
     }
 
     @Transactional
-    public ProjectMetricModel updateProjectMetric(Long id, ProjectMetricRq rq) {
+    public ProjectMetricModel update(Long id, ProjectMetricRq rq) {
         ProjectMetricEntity projectMetricEntity = projectMetricRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Метрика проекта с id=" + id + " не найдено"));
-        projectMetricEntity.setName(rq.getName());
+        projectMetricEntity.setName(rq.name());
         projectMetricEntity.setComplete(rq.isComplete());
         projectMetricEntity.setMain(rq.isMain());
-        projectMetricEntity.setOrderIndex(rq.getOrderIndex());
+        projectMetricEntity.setOrderIndex(rq.orderIndex());
 
         return projectMetricMapper.toModel(projectMetricEntity);
     }
 
 
-    public void deleteProjectById(Long id) {
+    public void delete(Long id) {
         projectMetricRepository.deleteById(id);
     }
 }

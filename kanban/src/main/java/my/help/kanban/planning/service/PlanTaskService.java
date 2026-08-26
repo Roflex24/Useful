@@ -5,6 +5,7 @@ import my.help.kanban.planning.dto.PlanTaskRequestDto;
 import my.help.kanban.planning.dto.PlanTaskResponseDto;
 import my.help.kanban.planning.entity.PlanTask;
 import my.help.kanban.planning.entity.StrategicPlan;
+import my.help.kanban.planning.mapper.PlanTaskMapper;
 import my.help.kanban.planning.repository.PlanTaskRepository;
 import my.help.kanban.planning.repository.StrategicPlanRepository;
 import org.springframework.stereotype.Service;
@@ -19,52 +20,53 @@ public class PlanTaskService {
 
     private final PlanTaskRepository taskRepository;
     private final StrategicPlanRepository planRepository;
+    private final PlanTaskMapper planTaskMapper;
 
     @Transactional
-    public PlanTaskResponseDto createTask(Long planId, PlanTaskRequestDto dto) {
+    public PlanTaskResponseDto create(Long planId, PlanTaskRequestDto rq) {
         StrategicPlan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan not found"));
 
         PlanTask task = new PlanTask();
         task.setPlan(plan);
-        task.setTitle(dto.getTitle());
-        task.setDescription(dto.getDescription());
-        task.setStatus(dto.getStatus());
-        task.setComment(dto.getComment());
-        task.setOrderIndex(dto.getOrderIndex() != null ? dto.getOrderIndex() : 0);
+        task.setTitle(rq.title());
+        task.setDescription(rq.description());
+        task.setStatus(rq.status());
+        task.setComment(rq.comment());
+        task.setOrderIndex(rq.orderIndex() != null ? rq.orderIndex() : 0);
 
-        return toResponseDto(taskRepository.save(task));
+        return planTaskMapper.toResponseDto(taskRepository.save(task));
     }
 
     @Transactional
-    public PlanTaskResponseDto updateTask(Long taskId, PlanTaskRequestDto dto) {
+    public PlanTaskResponseDto update(Long taskId, PlanTaskRequestDto dto) {
         PlanTask task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
 
-        task.setTitle(dto.getTitle());
-        task.setDescription(dto.getDescription());
-        task.setStatus(dto.getStatus());
-        task.setComment(dto.getComment());
-        task.setOrderIndex(dto.getOrderIndex());
+        task.setTitle(dto.title());
+        task.setDescription(dto.description());
+        task.setStatus(dto.status());
+        task.setComment(dto.comment());
+        task.setOrderIndex(dto.orderIndex());
 
-        return toResponseDto(taskRepository.save(task));
+        return planTaskMapper.toResponseDto(taskRepository.save(task));
     }
 
-    public PlanTaskResponseDto getTaskById(Long taskId) {
+    public PlanTaskResponseDto getById(Long taskId) {
         PlanTask task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
-        return toResponseDto(task);
+        return planTaskMapper.toResponseDto(task);
     }
 
-    public List<PlanTaskResponseDto> getTasksByPlan(Long planId) {
+    public List<PlanTaskResponseDto> getByPlan(Long planId) {
         return taskRepository.findByPlanIdOrderByOrderIndexAsc(planId)
                 .stream()
-                .map(this::toResponseDto)
+                .map(planTaskMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public void deleteTask(Long taskId) {
+    public void delete(Long taskId) {
         if (!taskRepository.existsById(taskId)) {
             throw new RuntimeException("Task not found with id: " + taskId);
         }
@@ -72,23 +74,7 @@ public class PlanTaskService {
     }
 
     @Transactional
-    public void deleteAllTasksByPlan(Long planId) {
-        StrategicPlan plan = planRepository.findById(planId).orElse(null);
-        if (plan != null) {
-            taskRepository.deleteByPlan(plan);
-        }
-    }
-
-    private PlanTaskResponseDto toResponseDto(PlanTask task) {
-        PlanTaskResponseDto dto = new PlanTaskResponseDto();
-        dto.setId(task.getId());
-        dto.setPlanId(task.getPlan().getId());
-        dto.setTitle(task.getTitle());
-        dto.setDescription(task.getDescription());
-        dto.setStatus(task.getStatus());
-        dto.setComment(task.getComment());
-        dto.setOrderIndex(task.getOrderIndex());
-        dto.setCreatedAt(task.getCreatedAt());
-        return dto;
+    public void deleteByPlan(Long planId) {
+        planRepository.findById(planId).ifPresent(taskRepository::deleteByPlan);
     }
 }

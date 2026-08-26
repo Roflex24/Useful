@@ -13,12 +13,12 @@ public class ColumnController {
     private final ColumnService columnService;
 
     @GetMapping("/{id}")
-    List<ColumnModel> getColumnsByProjectId(@PathVariable Long id) {
-        return columnService.getColumnsByProjectId(id);
+    List<ColumnModel> getByProjectId(@PathVariable Long id) {
+        return columnService.getByProjectId(id);
     }
 
     @GetMapping
-    List<ColumnModel> getAllColumns() {
-        return columnService.getAllColumns();
+    List<ColumnModel> getAll() {
+        return columnService.getAll();
     }
 }

@@ -22,25 +22,25 @@ public class PlanningService {
     private final PlanningMapper planningMapper;
 
     @Transactional
-    public PlanResponseDto createPlan(PlanRequestDto dto) {
-        StrategicPlan saved = planRepository.save(planningMapper.rqToEntity(dto));
+    public PlanResponseDto create(PlanRequestDto rq) {
+        StrategicPlan saved = planRepository.save(planningMapper.rqToEntity(rq));
         return planningMapper.toResponseDto(saved);
     }
 
     @Transactional
-    public PlanResponseDto updatePlan(Long id, PlanRequestDto dto) {
+    public PlanResponseDto update(Long id, PlanRequestDto rq) {
         StrategicPlan plan = planRepository.findById(id).orElseThrow();
-        planningMapper.updateEntity(dto, plan);
+        planningMapper.updateEntity(rq, plan);
         return planningMapper.toResponseDto(planRepository.save(plan));
     }
 
-    public PlanResponseDto getPlan(Long id) {
+    public PlanResponseDto getById(Long id) {
         StrategicPlan plan = planRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("План с id=" + id + " не найден"));
         return planningMapper.toResponseDto(plan);
     }
 
-    public List<PlanResponseDto> getPlans(String type, boolean relevantOnly) {
+    public List<PlanResponseDto> getPlanList(String type, boolean relevantOnly) {
         LocalDate today = LocalDate.now();
         PlanType planType = null;
 
@@ -63,7 +63,7 @@ public class PlanningService {
     }
 
     @Transactional
-    public void deletePlan(Long id) {
+    public void delete(Long id) {
         planRepository.deleteById(id);
     }
 }

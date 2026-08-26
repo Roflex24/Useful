@@ -13,10 +13,4 @@ public interface ColumnMapper {
     ColumnModel toModel(ColumnEntity entity);
 
     List<ColumnModel> toModelList(List<ColumnEntity> entities);
-
-    ColumnEntity toEntity(ColumnModel model);
-
-    List<ColumnEntity> toEntityList(List<ColumnModel> models);
-
-    ColumnEntity columnRqToEntity(ColumnRq rq);
 }

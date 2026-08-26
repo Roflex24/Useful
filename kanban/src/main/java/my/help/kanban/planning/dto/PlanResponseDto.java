@@ -1,18 +1,16 @@
 package my.help.kanban.planning.dto;
 
-import lombok.Data;
 import my.help.kanban.planning.entity.PlanStatus;
 import my.help.kanban.planning.entity.PlanType;
 
 import java.time.LocalDate;
 
-@Data
-public class PlanResponseDto {
-    private Long id;
-    private PlanType planType;
-    private String title;
-    private String description;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private PlanStatus status;
-}
+public record PlanResponseDto(
+        Long id,
+        PlanType planType,
+        String title,
+        String description,
+        LocalDate startDate,
+        LocalDate endDate,
+        PlanStatus status
+) {}

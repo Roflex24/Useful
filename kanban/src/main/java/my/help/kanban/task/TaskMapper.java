@@ -13,11 +13,11 @@ public interface TaskMapper {
 
     List<TaskModel> toModelList(List<TaskEntity> entities);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createDate", ignore = true)
+    @Mapping(target = "column", ignore = true)
+    @Mapping(target = "closeDate", ignore = true)
     TaskEntity toEntity(TaskRq rq);
 
     List<TaskEntity> toEntityList(List<TaskModel> models);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "column", ignore = true)
-    TaskEntity rqToEntity(TaskRq rq);
 }

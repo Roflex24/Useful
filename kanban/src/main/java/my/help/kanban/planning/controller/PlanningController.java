@@ -20,57 +20,57 @@ public class PlanningController {
     private final PlanTaskService planTaskService;
 
     @PostMapping
-    public PlanResponseDto createPlan(@RequestBody PlanRequestDto dto) {
-        return planningService.createPlan(dto);
+    public PlanResponseDto create(@RequestBody PlanRequestDto rq) {
+        return planningService.create(rq);
     }
 
     @PutMapping("/{id}")
-    public PlanResponseDto updatePlan(@PathVariable Long id, @RequestBody PlanRequestDto dto) {
-        return planningService.updatePlan(id, dto);
+    public PlanResponseDto update(@PathVariable Long id, @RequestBody PlanRequestDto rq) {
+        return planningService.update(id, rq);
     }
 
     @GetMapping("/{id}")
-    public PlanResponseDto getPlan(@PathVariable Long id) {
-        return planningService.getPlan(id);
+    public PlanResponseDto getById(@PathVariable Long id) {
+        return planningService.getById(id);
     }
 
     @GetMapping
-    public List<PlanResponseDto> getAllPlans(
+    public List<PlanResponseDto> getPlanList(
             @RequestParam(required = false) String type,
             @RequestParam(required = false, defaultValue = "false") boolean relevantOnly) {
-        return planningService.getPlans(type, relevantOnly);
+        return planningService.getPlanList(type, relevantOnly);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deletePlan(@PathVariable Long id) {
-        planTaskService.deleteAllTasksByPlan(id);
-        planningService.deletePlan(id);
+    public void delete(@PathVariable Long id) {
+        planTaskService.deleteByPlan(id);
+        planningService.delete(id);
     }
 
     @GetMapping("/tasks/{taskId}")
     public PlanTaskResponseDto getTaskById(@PathVariable Long taskId) {
-        return planTaskService.getTaskById(taskId);
+        return planTaskService.getById(taskId);
     }
 
     @PutMapping("/tasks/{taskId}")
-    public PlanTaskResponseDto updateTask(@PathVariable Long taskId, @RequestBody PlanTaskRequestDto dto) {
-        return planTaskService.updateTask(taskId, dto);
+    public PlanTaskResponseDto updateTask(@PathVariable Long taskId, @RequestBody PlanTaskRequestDto rq) {
+        return planTaskService.update(taskId, rq);
     }
 
     @DeleteMapping("/tasks/{taskId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTask(@PathVariable Long taskId) {
-        planTaskService.deleteTask(taskId);
+        planTaskService.delete(taskId);
     }
 
     @GetMapping("/{planId}/tasks")
     public List<PlanTaskResponseDto> getTasksByPlan(@PathVariable Long planId) {
-        return planTaskService.getTasksByPlan(planId);
+        return planTaskService.getByPlan(planId);
     }
 
     @PostMapping("/{planId}/tasks")
-    public PlanTaskResponseDto createTask(@PathVariable Long planId, @RequestBody PlanTaskRequestDto dto) {
-        return planTaskService.createTask(planId, dto);
+    public PlanTaskResponseDto createTask(@PathVariable Long planId, @RequestBody PlanTaskRequestDto rq) {
+        return planTaskService.create(planId, rq);
     }
 }

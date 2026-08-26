@@ -14,11 +14,11 @@ public class ColumnService {
     private final ColumnRepository columnRepository;
     private final ColumnMapper columnMapper;
 
-    public List<ColumnModel> getColumnsByProjectId(Long projectId) {
+    public List<ColumnModel> getByProjectId(Long projectId) {
         return columnMapper.toModelList(columnRepository.findAllByProjectId(projectId));
     }
 
-    public List<ColumnModel> getAllColumns() {
+    public List<ColumnModel> getAll() {
         return columnMapper.toModelList(columnRepository.findAll());
     }
 
