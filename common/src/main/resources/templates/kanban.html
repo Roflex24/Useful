@@ -1538,36 +1538,25 @@
 
     async function updateMetric(id, name, isComplete, isMain = false) {
         try {
-            if (!isMain) {
-                const updated = intermediateMetrics.map(m => m.id === id ? { ...m, name, isComplete } : m);
-                await fetch(METRIC_API, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updated.map((m,i) => ({
-                        ...m,
-                        orderIndex: i,
-                        projectId: PROJECT_ID
-                    })))
-                });
-                intermediateMetrics = updated;
-            } else {
-                await fetch(`${METRIC_API}/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: id,
-                        name: name,
-                        isComplete: isComplete,
-                        isMain: true,
-                        projectId: PROJECT_ID
-                    })
-                });
-                if (mainMetric) {
-                    mainMetric.name = name;
-                    mainMetric.isComplete = isComplete;
-                }
-                projectData.mainProjectMetric = name;
-            }
+            const metric = isMain ? mainMetric : intermediateMetrics.find(m => m.id === id);
+            if (!metric) throw new Error('Метрика не найдена');
+
+            const rq = {
+                name: name,
+                isComplete: isComplete,
+                isMain: isMain,
+                orderIndex: metric.orderIndex,
+                projectId: PROJECT_ID
+            };
+
+            const response = await fetch(`${METRIC_API}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rq)
+            });
+
+            if (!response.ok) throw new Error(`Ошибка обновления: ${response.status}`);
+
             await refreshProjectAfterMetricUpdate();
             await fetchMetrics();
             showToast('Метрика обновлена');

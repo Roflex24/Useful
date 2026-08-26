@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import my.help.kanban.common.ResourceNotFoundException;
 import my.help.kanban.project.ProjectRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -40,11 +41,16 @@ public class ProjectMetricService {
         projectMetricRepository.saveAll(projectMetricEntityList);
     }
 
-    public void updateProjectMetric(ProjectMetricModel projectMetricModel) {
-        ProjectMetricEntity projectMetricEntity = projectMetricMapper.toEntity(projectMetricModel);
-        projectMetricEntity.setProject(projectRepository.findById(projectMetricModel.getProjectId())
-                .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + projectMetricModel.getProjectId() + " не найдено")));
-        projectMetricRepository.save(projectMetricEntity);
+    @Transactional
+    public ProjectMetricModel updateProjectMetric(Long id, ProjectMetricRq rq) {
+        ProjectMetricEntity projectMetricEntity = projectMetricRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Метрика проекта с id=" + id + " не найдено"));
+        projectMetricEntity.setName(rq.getName());
+        projectMetricEntity.setComplete(rq.isComplete());
+        projectMetricEntity.setMain(rq.isMain());
+        projectMetricEntity.setOrderIndex(rq.getOrderIndex());
+
+        return projectMetricMapper.toModel(projectMetricEntity);
     }
 
 

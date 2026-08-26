@@ -32,9 +32,8 @@ public class ProjectMetricController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Void> updateProjectMetric(@RequestBody ProjectMetricModel rq) {
-        projectMetricService.updateProjectMetric(rq);
-        return ResponseEntity.ok().build();
+    public ProjectMetricModel updateProjectMetric(@PathVariable Long id, @RequestBody ProjectMetricRq rq) {
+        return projectMetricService.updateProjectMetric(id, rq);
     }
 
 
