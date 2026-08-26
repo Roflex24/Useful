@@ -21,6 +21,6 @@ public class Cashback {
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
-    private String category;          // Категория кешбека (например "Супермаркеты", "Такси")
-    private BigDecimal percentage;    // Процент кешбека (например 5.0)
+    private String category;
+    private BigDecimal percentage;
 }

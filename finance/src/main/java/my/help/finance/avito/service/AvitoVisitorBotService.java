@@ -19,33 +19,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Бот-обходчик объявлений, встроенный в backend — запускается и
- * останавливается кнопкой на странице avito.html.
- * <p>
- * Ничего не скачивает на диск. По каждому объявлению: открывает страницу
- * в настоящем браузере (java.awt.Desktop), "читает" её (случайные движения
- * мыши/прокрутка через java.awt.Robot — то самое подобие живого человека),
- * затем жмёт Ctrl+U ("Просмотр кода страницы"), выделяет всё (Ctrl+A) и
- * копирует в буфер обмена (Ctrl+C). Дальше исходник страницы читается из
- * системного буфера обмена и парсится {@link AvitoDetailPageParserService}
- * напрямую в поля {@link Apartment} — файл на диске не создаётся вообще.
- * <p>
- * ВАЖНО: backend должен работать на десктопе с монитором, а не в
- * headless-окружении. Spring Boot по умолчанию выставляет
- * java.awt.headless=true — это нужно переопределить ДО старта Spring
- * (см. javadoc в главном классе приложения), иначе Robot не создастся.
- * <p>
- * Пока бот работает — не трогайте мышь и клавиатуру сами, иначе он
- * собьётся с вкладкой просмотра кода или скопирует не то.
- */
 @Slf4j
 @Service
 public class AvitoVisitorBotService {
-
-    // ------------------------------------------------------------------
-    // Конфигурация
-    // ------------------------------------------------------------------
 
     private static final int PAGE_LOAD_MIN_MS = 4_000;
     private static final int PAGE_LOAD_MAX_MS = 9_000;
@@ -62,7 +38,6 @@ public class AvitoVisitorBotService {
 
     private static final int MAX_ATTEMPTS_PER_RUN = 3;
 
-    /** Ниже этой длины скопированный текст точно не похож на исходник страницы объявления. */
     private static final int MIN_HTML_LENGTH = 2000;
 
     // ------------------------------------------------------------------
@@ -92,7 +67,6 @@ public class AvitoVisitorBotService {
 
     public enum Status { IDLE, RUNNING, STOPPING }
 
-    /** Снимок состояния бота, отдаётся фронтенду для отрисовки прогресса. */
     public record BotStatusDto(
             Status status,
             int total,
@@ -101,10 +75,6 @@ public class AvitoVisitorBotService {
             String currentUrl,
             String lastError
     ) {}
-
-    // ------------------------------------------------------------------
-    // Публичное API (вызывается контроллером)
-    // ------------------------------------------------------------------
 
     public synchronized BotStatusDto start() {
         if (status == Status.RUNNING || status == Status.STOPPING) {
@@ -132,7 +102,7 @@ public class AvitoVisitorBotService {
             status = Status.STOPPING;
             stopRequested.set(true);
             if (runningTask != null) {
-                runningTask.cancel(true); // прерывает текущий Thread.sleep — бот остановится между шагами
+                runningTask.cancel(true);
             }
         }
         return getStatus();
@@ -141,10 +111,6 @@ public class AvitoVisitorBotService {
     public BotStatusDto getStatus() {
         return new BotStatusDto(status, totalCount.get(), processedCount.get(), currentAvitoId, currentUrl, lastError);
     }
-
-    // ------------------------------------------------------------------
-    // Основной цикл (выполняется в фоновом потоке executor'а)
-    // ------------------------------------------------------------------
 
     private void runLoop() {
         try {
@@ -204,7 +170,6 @@ public class AvitoVisitorBotService {
         }
     }
 
-    /** Парсит скопированный HTML (если есть) в поля квартиры и сохраняет через репозиторий. */
     private void enrichAndSave(Apartment apt, String html) {
         int attempts = apt.getDetailVisitAttempts() == null ? 0 : apt.getDetailVisitAttempts();
         apt.setDetailVisitAttempts(attempts + 1);
@@ -228,33 +193,28 @@ public class AvitoVisitorBotService {
                 apt.getAvitoId());
     }
 
-    // ------------------------------------------------------------------
-    // Один визит на страницу объявления
-    // ------------------------------------------------------------------
-
-    /** Открывает объявление, копирует исходник страницы через буфер обмена. Возвращает html либо null. */
     private String visitAndCapture(Robot robot, Apartment apt) throws Exception {
         Desktop.getDesktop().browse(new URI(apt.getUrl()));
         sleep(randomBetween(PAGE_LOAD_MIN_MS, PAGE_LOAD_MAX_MS));
 
         humanizeReading(robot);
 
-        chord(robot, KeyEvent.VK_U); // "Просмотр кода страницы" — открывает новую вкладку
+        chord(robot, KeyEvent.VK_U);
         sleep(randomBetween(VIEW_SOURCE_LOAD_MIN_MS, VIEW_SOURCE_LOAD_MAX_MS));
 
-        chord(robot, KeyEvent.VK_A); // выделить весь текст исходника
+        chord(robot, KeyEvent.VK_A);
         sleep(randomBetween(200, 500));
-        chord(robot, KeyEvent.VK_C); // скопировать в буфер обмена
+        chord(robot, KeyEvent.VK_C);
         sleep(randomBetween(400, 900));
 
         String html = readClipboardText();
 
-        closeTab(robot); // закрыть вкладку с исходником
+        closeTab(robot);
         sleep(randomBetween(300, 700));
-        closeTab(robot); // закрыть вкладку с самим объявлением — с ним покончено
+        closeTab(robot);
 
         if (html == null || html.length() < MIN_HTML_LENGTH) {
-            return null; // скопировалось явно не то (капча, пустая страница и т.п.)
+            return null;
         }
         return html;
     }
@@ -296,12 +256,8 @@ public class AvitoVisitorBotService {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Клавиатурные комбинации
-    // ------------------------------------------------------------------
-
     private void closeTab(Robot robot) {
-        chord(robot, KeyEvent.VK_W); // macOS: VK_META
+        chord(robot, KeyEvent.VK_W);
     }
 
     private void chord(Robot robot, int key) {

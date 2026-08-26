@@ -17,26 +17,22 @@ public class SecurityController {
 
     private final SecurityService securityService;
 
-    // Получить все бумаги
     @GetMapping
     public List<SecurityRs> getAllSecurities() {
         return securityService.getAllSecurities();
     }
 
-    // Получить бумаги по счёту
     @GetMapping("/account/{accountId}")
     public List<SecurityRs> getSecuritiesByAccount(@PathVariable Long accountId) {
         return securityService.getSecuritiesByAccount(accountId);
     }
 
-    // Создать бумагу
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public SecurityRs createSecurity(@Valid @RequestBody SecurityRq rq) {
         return securityService.createSecurity(rq);
     }
 
-    // Обновить бумагу
     @PutMapping("/{id}")
     public SecurityRs updateSecurity(
             @PathVariable Long id,
@@ -44,7 +40,6 @@ public class SecurityController {
         return securityService.updateSecurity(id, rq);
     }
 
-    // Удалить бумагу
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteSecurity(@PathVariable Long id) {

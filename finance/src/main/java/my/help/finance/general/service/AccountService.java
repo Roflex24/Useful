@@ -67,7 +67,6 @@ public class AccountService {
             dto.setDepositInfo(null);
         }
 
-        // Добавляем бумаги для INVESTMENT
         if (account.getType() == AccountType.INVESTMENT) {
             dto.setSecurities(securityService.getSecuritiesByAccount(account.getId()));
         } else {
@@ -87,7 +86,6 @@ public class AccountService {
 
         Account account = accountMapper.toEntity(rq);
 
-        // Для INVESTMENT счёт всегда создаётся с amount = 0 — бумаги ещё не добавлены
         if (account.getType() == AccountType.INVESTMENT) {
             account.setAmount(BigDecimal.ZERO);
         }
@@ -113,8 +111,6 @@ public class AccountService {
 
         accountMapper.updateEntity(existingAccount, rq);
 
-        // Для INVESTMENT amount не редактируется вручную — восстанавливаем
-        // авто-рассчитанное значение (на случай если форма прислала своё)
         if (newType == AccountType.INVESTMENT) {
             BigDecimal recalculated = securityService.getSecuritiesByAccount(id).stream()
                     .map(SecurityRs::totalValue)

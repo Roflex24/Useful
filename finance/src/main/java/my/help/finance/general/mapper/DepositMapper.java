@@ -15,7 +15,7 @@ public class DepositMapper {
 
         return Deposit.builder()
                 .account(account)
-                .endDate(dto.endDate())               // вызов метода record вместо getEndDate()
+                .endDate(dto.endDate())
                 .interestPaymentDate(dto.interestPaymentDate())
                 .interestRate(dto.interestRate())
                 .build();
@@ -38,7 +38,7 @@ public class DepositMapper {
         if (dto == null) {
             return;
         }
-        existingDeposit.setEndDate(dto.endDate());               // record-методы
+        existingDeposit.setEndDate(dto.endDate());
         existingDeposit.setInterestPaymentDate(dto.interestPaymentDate());
         existingDeposit.setInterestRate(dto.interestRate());
     }

@@ -20,32 +20,27 @@ public class FinanceController {
     private final AccountService accountService;
     private final FinanceSummaryService financeSummaryService;
 
-    // Сводка
     @GetMapping("/summary")
     public FinanceSummaryDto getFinanceSummary() {
         return financeSummaryService.getFinanceSummary();
     }
 
-    // Получить все счета
     @GetMapping("/accounts")
     public List<AccountRs> getAllAccounts() {
         return accountService.getAllAccounts();
     }
 
-    // Получить счёт по ID
     @GetMapping("/accounts/{id}")
     public AccountRs getAccountById(@PathVariable Long id) {
         return accountService.getAccountById(id);
     }
 
-    // Создать счёт
     @PostMapping("/accounts")
     @ResponseStatus(HttpStatus.CREATED)
     public AccountRs createAccount(@Valid @RequestBody AccountRq rq) {
         return accountService.createAccount(rq);
     }
 
-    // Обновить счёт
     @PutMapping("/accounts/{id}")
     public AccountRs updateAccount(
             @PathVariable Long id,
@@ -53,7 +48,6 @@ public class FinanceController {
         return accountService.updateAccount(id, rq);
     }
 
-    // Удалить счёт
     @DeleteMapping("/accounts/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAccount(@PathVariable Long id) {

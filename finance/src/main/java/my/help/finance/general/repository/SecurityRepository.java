@@ -13,7 +13,6 @@ public interface SecurityRepository extends JpaRepository<Security, Long> {
 
     List<Security> findByAccountId(Long accountId);
 
-    // Сумма (quantity * currentPrice) по всем бумагам счёта — для пересчёта Account.amount
     @Query("SELECT COALESCE(SUM(s.quantity * s.currentPrice), 0) FROM Security s WHERE s.account.id = :accountId")
     BigDecimal getTotalValueByAccountId(Long accountId);
 }

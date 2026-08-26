@@ -26,7 +26,6 @@ public record SecurityRq(
         @DecimalMin(value = "0.000001", message = "Цена должна быть больше 0")
         BigDecimal currentPrice,
 
-        // Только для BOND
         BigDecimal faceValue,
         BigDecimal couponRate,
         LocalDate maturityDate
