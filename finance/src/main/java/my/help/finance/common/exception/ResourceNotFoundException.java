@@ -1,4 +1,4 @@
-package my.help.finance.common;
+package my.help.finance.common.exception;
 
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String message) {

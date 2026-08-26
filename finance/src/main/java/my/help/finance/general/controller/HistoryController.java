@@ -2,12 +2,11 @@ package my.help.finance.general.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import my.help.finance.common.ResourceNotFoundException;
+import my.help.finance.common.exception.ResourceNotFoundException;
 import my.help.finance.general.service.FinanceSnapshotService;
 import my.help.finance.general.dto.HistoricalDataResponseDto;
 import my.help.finance.general.dto.MonthlyDynamicsDto;
 import my.help.finance.general.dto.SnapshotInfoDto;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.YearMonth;
@@ -27,7 +26,7 @@ public class HistoryController {
     }
 
     @GetMapping("/data")
-    public ResponseEntity<HistoricalDataResponseDto> getHistoricalData(
+    public HistoricalDataResponseDto getHistoricalData(
             @RequestParam int year,
             @RequestParam int month
     ) {
@@ -36,11 +35,11 @@ public class HistoryController {
         if (data == null) {
             throw new ResourceNotFoundException("No snapshot found for " + yearMonth);
         }
-        return ResponseEntity.ok(data);
+        return data;
     }
 
     @GetMapping("/data/{yearMonth}")
-    public ResponseEntity<HistoricalDataResponseDto> getHistoricalDataByPath(
+    public HistoricalDataResponseDto getHistoricalDataByPath(
             @PathVariable String yearMonth
     ) {
         YearMonth ym = YearMonth.parse(yearMonth);
@@ -48,13 +47,13 @@ public class HistoryController {
         if (data == null) {
             throw new ResourceNotFoundException("No snapshot found for " + ym);
         }
-        return ResponseEntity.ok(data);
+        return data;
     }
 
     @PostMapping("/snapshots/create")
-    public ResponseEntity<String> createSnapshotManually() {
+    public String createSnapshotManually() {
         snapshotService.createSnapshotForPreviousMonth();
-        return ResponseEntity.ok("Snapshot created successfully");
+        return "Snapshot created successfully";
     }
 
     @GetMapping("/dynamics/monthly")

@@ -2,9 +2,9 @@ package my.help.finance.general.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import my.help.finance.common.BusinessValidationException;
-import my.help.finance.common.ConflictException;
-import my.help.finance.common.ResourceNotFoundException;
+import my.help.finance.common.exception.BusinessValidationException;
+import my.help.finance.common.exception.ConflictException;
+import my.help.finance.common.exception.ResourceNotFoundException;
 import my.help.finance.general.dto.DepositInfoDto;
 import my.help.finance.general.entity.Account;
 import my.help.finance.general.entity.AccountType;
