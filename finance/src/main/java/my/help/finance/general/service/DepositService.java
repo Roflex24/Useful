@@ -2,6 +2,9 @@ package my.help.finance.general.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.help.finance.common.BusinessValidationException;
+import my.help.finance.common.ConflictException;
+import my.help.finance.common.ResourceNotFoundException;
 import my.help.finance.general.dto.DepositInfoDto;
 import my.help.finance.general.entity.Account;
 import my.help.finance.general.entity.AccountType;
@@ -22,19 +25,19 @@ public class DepositService {
     @Transactional
     public void createDeposit(Account account, DepositInfoDto depositInfo) {
         if (account.getType() != AccountType.DEPOSIT && account.getType() != AccountType.SAVINGS) {
-            throw new RuntimeException("Deposit can only be created for DEPOSIT or SAVINGS accounts");
+            throw new BusinessValidationException("Deposit can only be created for DEPOSIT or SAVINGS accounts");
         }
 
         if (depositInfo == null) {
-            throw new RuntimeException("Deposit info is required for " + account.getType() + " account type");
+            throw new BusinessValidationException("Deposit info is required for " + account.getType() + " account type");
         }
 
         if (account.getType() == AccountType.DEPOSIT && depositInfo.endDate() == null) {
-            throw new RuntimeException("End date is required for DEPOSIT account type");
+            throw new BusinessValidationException("End date is required for DEPOSIT account type");
         }
 
         if (depositRepository.findByAccountId(account.getId()).isPresent()) {
-            throw new RuntimeException("Deposit already exists for this account");
+            throw new ConflictException("Deposit already exists for this account");
         }
 
         Deposit deposit = depositMapper.toEntity(depositInfo, account);
@@ -51,7 +54,7 @@ public class DepositService {
         }
 
         Deposit existingDeposit = depositRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new RuntimeException("Deposit not found for account id: " + accountId));
+                .orElseThrow(() -> new ResourceNotFoundException("Deposit not found for account id: " + accountId));
 
         depositMapper.updateEntity(existingDeposit, depositInfo);
         depositRepository.save(existingDeposit);

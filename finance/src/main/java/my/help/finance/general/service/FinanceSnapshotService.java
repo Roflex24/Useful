@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.help.finance.common.ConflictException;
 import my.help.finance.general.dto.*;
 import my.help.finance.general.entity.*;
 import my.help.finance.general.repository.*;
@@ -38,8 +39,7 @@ public class FinanceSnapshotService {
         YearMonth snapshotYearMonth = YearMonth.from(snapshotDate);
 
         if (snapshotRepository.existsBySnapshotDate(snapshotDate)) {
-            log.info("Snapshot for {} already exists, skipping", snapshotYearMonth);
-            return;
+            throw new ConflictException("Snapshot for " + snapshotYearMonth + " already exists");
         }
 
         log.info("Creating finance snapshot for {}", snapshotYearMonth);

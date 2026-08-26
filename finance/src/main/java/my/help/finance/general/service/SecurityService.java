@@ -2,6 +2,8 @@ package my.help.finance.general.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.help.finance.common.BusinessValidationException;
+import my.help.finance.common.ResourceNotFoundException;
 import my.help.finance.general.dto.SecurityRq;
 import my.help.finance.general.dto.SecurityRs;
 import my.help.finance.general.entity.Account;
@@ -40,7 +42,7 @@ public class SecurityService {
         log.debug("Fetching securities for account: {}", accountId);
 
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + accountId));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
 
         if (account.getType() != AccountType.INVESTMENT) {
             log.warn("Attempt to get securities for non-investment account: {} (type: {})", accountId, account.getType());
@@ -58,10 +60,10 @@ public class SecurityService {
         log.info("Creating security for account: {}", rq.accountId());
 
         Account account = accountRepository.findById(rq.accountId())
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + rq.accountId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + rq.accountId()));
 
         if (account.getType() != AccountType.INVESTMENT) {
-            throw new RuntimeException("Securities can only be added to INVESTMENT accounts. Current type: " + account.getType());
+            throw new BusinessValidationException("Securities can only be added to INVESTMENT accounts. Current type: " + account.getType());
         }
 
         Security security = securityMapper.toEntity(rq, account);
@@ -78,11 +80,11 @@ public class SecurityService {
         log.info("Updating security with id: {}", id);
 
         Security existingSecurity = securityRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Security not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Security not found with id: " + id));
 
         Account account = existingSecurity.getAccount();
         if (account.getType() != AccountType.INVESTMENT) {
-            throw new RuntimeException("Cannot update security for non-investment account");
+            throw new BusinessValidationException("Cannot update security for non-investment account");
         }
 
         securityMapper.updateEntity(existingSecurity, rq);
@@ -99,7 +101,7 @@ public class SecurityService {
         log.info("Deleting security with id: {}", id);
 
         Security security = securityRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Security not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Security not found with id: " + id));
 
         Long accountId = security.getAccount().getId();
 
@@ -122,7 +124,7 @@ public class SecurityService {
     public void recalculateAccountAmount(Long accountId) {
         BigDecimal total = securityRepository.getTotalValueByAccountId(accountId);
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + accountId));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
         account.setAmount(total);
         accountRepository.save(account);
         log.debug("Recalculated amount for INVESTMENT account {}: {}", accountId, total);

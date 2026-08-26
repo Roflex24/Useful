@@ -2,6 +2,8 @@ package my.help.finance.general.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.help.finance.common.BusinessValidationException;
+import my.help.finance.common.ResourceNotFoundException;
 import my.help.finance.general.dto.AccountRq;
 import my.help.finance.general.dto.AccountRs;
 import my.help.finance.general.dto.SecurityRs;
@@ -48,7 +50,7 @@ public class AccountService {
     public AccountRs getAccountById(Long id) {
         log.debug("Fetching account with id: {}", id);
         Account account = accountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + id));
         return toResponseDtoWithDetails(account);
     }
 
@@ -81,7 +83,7 @@ public class AccountService {
         log.info("Creating new account: {}", rq.bankName());
 
         if (hasDepositInfo(rq.type()) && rq.depositInfoDto() == null) {
-            throw new RuntimeException("Deposit info is required for " + rq.type() + " account type");
+            throw new BusinessValidationException("Deposit info is required for " + rq.type() + " account type");
         }
 
         Account account = accountMapper.toEntity(rq);
@@ -105,7 +107,7 @@ public class AccountService {
         log.info("Updating account with id: {}", id);
 
         Account existingAccount = accountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + id));
 
         AccountType newType = rq.type();
 
@@ -133,11 +135,8 @@ public class AccountService {
     public void deleteAccount(Long id) {
         log.info("Deleting account with id: {}", id);
 
-        if (!accountRepository.existsById(id)) {
-            throw new RuntimeException("Account not found with id: " + id);
-        }
-
-        Account account = accountRepository.findById(id).orElseThrow();
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + id));
         if (account.getType() == AccountType.CARD) {
             List<Cashback> cashbacks = cashbackService.getCashbacksByAccountEntity(id);
             for (var cb : cashbacks) {

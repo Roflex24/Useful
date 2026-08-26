@@ -2,6 +2,7 @@ package my.help.finance.general.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.help.finance.common.ResourceNotFoundException;
 import my.help.finance.general.service.FinanceSnapshotService;
 import my.help.finance.general.dto.HistoricalDataResponseDto;
 import my.help.finance.general.dto.MonthlyDynamicsDto;
@@ -32,11 +33,9 @@ public class HistoryController {
     ) {
         YearMonth yearMonth = YearMonth.of(year, month);
         HistoricalDataResponseDto data = snapshotService.getHistoricalData(yearMonth);
-
         if (data == null) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("No snapshot found for " + yearMonth);
         }
-
         return ResponseEntity.ok(data);
     }
 
@@ -44,29 +43,18 @@ public class HistoryController {
     public ResponseEntity<HistoricalDataResponseDto> getHistoricalDataByPath(
             @PathVariable String yearMonth
     ) {
-        try {
-            YearMonth ym = YearMonth.parse(yearMonth);
-            HistoricalDataResponseDto data = snapshotService.getHistoricalData(ym);
-
-            if (data == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            return ResponseEntity.ok(data);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+        YearMonth ym = YearMonth.parse(yearMonth);
+        HistoricalDataResponseDto data = snapshotService.getHistoricalData(ym);
+        if (data == null) {
+            throw new ResourceNotFoundException("No snapshot found for " + ym);
         }
+        return ResponseEntity.ok(data);
     }
 
     @PostMapping("/snapshots/create")
     public ResponseEntity<String> createSnapshotManually() {
-        try {
-            snapshotService.createSnapshotForPreviousMonth();
-            return ResponseEntity.ok("Snapshot created successfully");
-        } catch (Exception e) {
-            log.error("Failed to create snapshot", e);
-            return ResponseEntity.internalServerError().body("Failed: " + e.getMessage());
-        }
+        snapshotService.createSnapshotForPreviousMonth();
+        return ResponseEntity.ok("Snapshot created successfully");
     }
 
     @GetMapping("/dynamics/monthly")
