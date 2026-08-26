@@ -1,6 +1,7 @@
 package my.help.kanban.project.metric;
 
 import lombok.RequiredArgsConstructor;
+import my.help.kanban.common.ResourceNotFoundException;
 import my.help.kanban.project.ProjectRepository;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +17,8 @@ public class ProjectMetricService {
 
     public void createProjectMetric(ProjectMetricRq rq) {
         ProjectMetricEntity projectMetricEntity = projectMetricMapper.projectMetricRqToEntity(rq);
-        projectMetricEntity.setProject(projectRepository.findById(rq.getProjectId()).get());
+        projectMetricEntity.setProject(projectRepository.findById(rq.getProjectId())
+                .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + rq.getProjectId() + " не найдено")));
         projectMetricRepository.save(projectMetricEntity);
     }
 
@@ -32,14 +34,16 @@ public class ProjectMetricService {
         List<ProjectMetricEntity> projectMetricEntityList = projectMetricMapper.toEntityList(list);
         Long id = list.getFirst().getProjectId();
         for (ProjectMetricEntity projectMetricEntity: projectMetricEntityList) {
-            projectMetricEntity.setProject(projectRepository.findById(id).get());
+            projectMetricEntity.setProject(projectRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено")));
         }
         projectMetricRepository.saveAll(projectMetricEntityList);
     }
 
     public void updateProjectMetric(ProjectMetricModel projectMetricModel) {
         ProjectMetricEntity projectMetricEntity = projectMetricMapper.toEntity(projectMetricModel);
-        projectMetricEntity.setProject(projectRepository.findById(projectMetricModel.getProjectId()).get());
+        projectMetricEntity.setProject(projectRepository.findById(projectMetricModel.getProjectId())
+                .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + projectMetricModel.getProjectId() + " не найдено")));
         projectMetricRepository.save(projectMetricEntity);
     }
 

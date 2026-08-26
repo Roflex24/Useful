@@ -1,9 +1,9 @@
 package my.help.kanban.task;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import my.help.kanban.column.ColumnEntity;
 import my.help.kanban.column.ColumnRepository;
+import my.help.kanban.common.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +22,8 @@ public class TaskService {
     private static final int DAYS_LIMIT_FOR_ARCHIVE = 7;
 
     public List<TaskModel> getTasksByColumn(Long columnId) {
-        ColumnEntity column = columnRepository.findById(columnId).orElseThrow(() -> new EntityNotFoundException(
-                String.format("Column with id %d not found", columnId)));
+        ColumnEntity column = columnRepository.findById(columnId).orElseThrow(() -> new ResourceNotFoundException(
+                String.format("Колонка с id %d не найдена", columnId)));
 
         List<TaskModel> list = taskMapper.toModelList(
                 taskRepository.findByColumnId(columnId));
@@ -44,7 +44,8 @@ public class TaskService {
         if (taskEntity.getDifficulty() == null) {
             taskEntity.setDifficulty(Difficulty.BASE);
         }
-        taskEntity.setColumn(columnRepository.findById(rq.getColumnId()).get());
+        taskEntity.setColumn(columnRepository.findById(rq.getColumnId())
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Колонка с id %d не найдена", rq.getColumnId()))));
         taskRepository.save(taskEntity);
     }
 
@@ -52,7 +53,9 @@ public class TaskService {
         List<TaskEntity> taskEntityList = taskMapper.toEntityList(rq);
         for (int i = 0; i < taskEntityList.size(); i++) {
             TaskEntity taskEntity = taskEntityList.get(i);
-            ColumnEntity column = columnRepository.findById(rq.get(i).getColumnId()).get();
+            Long id = rq.get(i).getColumnId();
+            ColumnEntity column = columnRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException(String.format("Колонка с id %d не найдена", id)));
             if (column.getOrderIndex() == 3) {
                 if (taskEntity.getCloseDate() == null) {
                     taskEntity.setCloseDate(LocalDate.now());

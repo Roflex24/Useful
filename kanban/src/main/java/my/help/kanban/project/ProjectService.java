@@ -1,7 +1,7 @@
 package my.help.kanban.project;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import my.help.kanban.common.ResourceNotFoundException;
 import my.help.kanban.project.metric.*;
 import my.help.kanban.column.ColumnEntity;
 import my.help.kanban.column.ColumnRepository;
@@ -50,7 +50,7 @@ public class ProjectService {
     @Transactional
     public void archiveProject(Long id) {
         ProjectEntity project = projectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено"));
         project.setArchived(true);
         project.setArchiveDate(LocalDate.now());
         projectRepository.save(project);
@@ -59,7 +59,7 @@ public class ProjectService {
     @Transactional
     public void unarchiveProject(Long id) {
         ProjectEntity project = projectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено"));
         project.setArchived(false);
         project.setArchiveDate(null);
         projectRepository.save(project);
@@ -77,7 +77,7 @@ public class ProjectService {
 
     public ProjectModel getProjectById(Long id) {
         ProjectEntity projectEntity = projectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено"));
 
         List<ProjectMetricModel> projectMetricModelList = projectMetricMapper.toModelList(
                 projectMetricRepository.findAllByProjectId(id)
@@ -86,7 +86,6 @@ public class ProjectService {
         return projectMetricAggregator.aggregateProjectWithMetrics(projectEntity, projectMetricModelList);
     }
 
-    // NOTE: Это решение делает N+1 запрос. Подходит только для небольшого количества проектов.
     public List<ProjectModel> getProjectList() {
         List<ProjectEntity> projectEntityList = projectRepository.findAll();
         return buildProjectModelsWithMetrics(projectEntityList);

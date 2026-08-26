@@ -1,6 +1,7 @@
 package my.help.kanban.event;
 
 import lombok.RequiredArgsConstructor;
+import my.help.kanban.common.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,11 +23,11 @@ public class EventService {
     }
 
     public EventModel getEventById(Long id) {
-        return eventMapper.toModel(eventRepository.findById(id).get());
+        return eventMapper.toModel(eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Событие с id=" + id + " не найдено")));
     }
 
     public List<EventModel> getEventsByMonth(int year, int month) {
-        // Создаем начало и конец месяца
         LocalDateTime startOfMonth = LocalDateTime.of(year, month, 1, 0, 0, 0);
         LocalDateTime endOfMonth = startOfMonth
                 .withDayOfMonth(startOfMonth.toLocalDate().lengthOfMonth())

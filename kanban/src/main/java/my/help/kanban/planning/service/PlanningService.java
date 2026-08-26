@@ -1,6 +1,7 @@
 package my.help.kanban.planning.service;
 
 import lombok.RequiredArgsConstructor;
+import my.help.kanban.common.ResourceNotFoundException;
 import my.help.kanban.planning.dto.PlanRequestDto;
 import my.help.kanban.planning.dto.PlanResponseDto;
 import my.help.kanban.planning.entity.PlanType;
@@ -34,7 +35,8 @@ public class PlanningService {
     }
 
     public PlanResponseDto getPlan(Long id) {
-        StrategicPlan plan = planRepository.findById(id).orElseThrow();
+        StrategicPlan plan = planRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("План с id=" + id + " не найден"));
         return planningMapper.toResponseDto(plan);
     }
 
