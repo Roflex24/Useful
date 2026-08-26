@@ -1,6 +1,7 @@
 package my.help.kanban.metric;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,14 +15,14 @@ public class ProjectMetricController {
     private final ProjectMetricService projectMetricService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<List<ProjectMetricModel>> getProjectMetricListByProjectId(@PathVariable Long id) {
-        return ResponseEntity.ok(projectMetricService.getMetricByProjectId(id));
+    public List<ProjectMetricModel> getProjectMetricListByProjectId(@PathVariable Long id) {
+        return projectMetricService.getMetricByProjectId(id);
     }
 
     @PostMapping
-    public ResponseEntity<Void> createProjectMetric(@RequestBody ProjectMetricRq projectMetricRq) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public void createProjectMetric(@RequestBody ProjectMetricRq projectMetricRq) {
         projectMetricService.createProjectMetric(projectMetricRq);
-        return ResponseEntity.ok().build();
     }
 
     @PutMapping
@@ -38,8 +39,8 @@ public class ProjectMetricController {
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProjectMetricById(@PathVariable Long id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteProjectMetricById(@PathVariable Long id) {
         projectMetricService.deleteProjectById(id);
-        return ResponseEntity.ok().build();
     }
 }

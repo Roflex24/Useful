@@ -1,6 +1,7 @@
 package my.help.kanban.event;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,26 +15,26 @@ public class EventController {
     private final EventService eventService;
 
     @GetMapping()
-    public ResponseEntity<List<EventModel>> getEventList() {
-        return ResponseEntity.ok(eventService.getEventList());
+    public List<EventModel> getEventList() {
+        return eventService.getEventList();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EventModel> getEvent(@PathVariable Long id) {
-        return ResponseEntity.ok(eventService.getEventById(id));
+    public EventModel getEvent(@PathVariable Long id) {
+        return eventService.getEventById(id);
     }
 
     @GetMapping("/month")
-    public ResponseEntity<List<EventModel>> getEventsByMonth(
+    public List<EventModel> getEventsByMonth(
             @RequestParam int year,
             @RequestParam int month) {
-        return ResponseEntity.ok(eventService.getEventsByMonth(year, month));
+        return eventService.getEventsByMonth(year, month);
     }
 
     @PostMapping
-    public ResponseEntity<Void> createEvent(@RequestBody EventRq eventRq) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public void createEvent(@RequestBody EventRq eventRq) {
         eventService.createEvent(eventRq);
-        return ResponseEntity.ok().build();
     }
 
     @PutMapping
@@ -43,8 +44,8 @@ public class EventController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEventById(@PathVariable Long id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteEventById(@PathVariable Long id) {
         eventService.deleteEventById(id);
-        return ResponseEntity.ok().build();
     }
 }

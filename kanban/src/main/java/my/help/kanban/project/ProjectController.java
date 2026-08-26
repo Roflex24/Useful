@@ -1,6 +1,7 @@
 package my.help.kanban.project;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,18 +15,18 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
-    public ResponseEntity<List<ProjectModel>> getProjectList() {
-        return ResponseEntity.ok(projectService.getProjectList());
+    public List<ProjectModel> getProjectList() {
+        return projectService.getProjectList();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectModel> getProjectById(@PathVariable Long id) {
-        return ResponseEntity.ok(projectService.getProjectById(id));
+    public ProjectModel getProjectById(@PathVariable Long id) {
+        return projectService.getProjectById(id);
     }
 
     @PostMapping()
-    public ResponseEntity<ProjectModel> createProject(@RequestBody ProjectRq rq) {
-        return ResponseEntity.ok(projectService.createProject(rq));
+    public ProjectModel createProject(@RequestBody ProjectRq rq) {
+        return projectService.createProject(rq);
     }
 
     @PutMapping
@@ -47,8 +48,8 @@ public class ProjectController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProjectById(@PathVariable Long id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteProjectById(@PathVariable Long id) {
         projectService.deleteProjectById(id);
-        return ResponseEntity.ok().build();
     }
 }
