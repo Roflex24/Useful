@@ -16,41 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Бот-обходчик объявлений Авито — ВНЕШНИЙ вариант (отдельный процесс,
- * общается с backend по HTTP). Если backend и так работает на вашем
- * десктопе, удобнее встроенный вариант — {@code AvitoVisitorBotService} —
- * который запускается прямо кнопкой на странице avito.html. Этот класс
- * пригодится, если бот должен работать на другой машине, чем backend.
- * <p>
- * НЕ работает внутри Spring-контекста бэкенда и не рассчитан на сервер:
- * java.awt.Robot управляет НАСТОЯЩИМ курсором мыши и клавиатурой реальной
- * десктопной сессии, поэтому его нужно запускать локально, на машине с
- * монитором и установленным браузером (Chrome/Edge/Firefox), и НЕ трогать
- * мышь/клавиатуру самому, пока бот работает — иначе он собьётся.
- * <p>
- * Ничего не сохраняет на диск. По каждому объявлению:
- *   1. Открывает ссылку объявления в браузере по умолчанию (Desktop.browse).
- *   2. "Читает" страницу: пауза + случайные движения мыши и прокрутка.
- *   3. Жмёт Ctrl+U ("Просмотр кода страницы"), затем Ctrl+A, Ctrl+C —
- *      копирует исходник страницы в системный буфер обмена.
- *   4. Читает буфер обмена, закрывает обе вкладки (Ctrl+W, Ctrl+W).
- *   5. Отправляет скопированный HTML на backend
- *      (POST /api/apartments/{avitoId}/bot/visited) — парсинг и сохранение
- *      в БД делает сам backend ({@code AvitoDetailPageParserService}),
- *      чтобы логика парсинга не дублировалась в двух местах.
- *   6. Ждёт случайную "человеческую" паузу перед следующим объявлением.
- * <p>
- * Комбинации клавиш подобраны под Windows/Linux. На macOS замените
- * VK_CONTROL на VK_META в местах, отмеченных комментарием.
- */
 public class AvitoVisitorBot {
 
-    // ------------------------------------------------------------------
-    // Конфигурация — поправьте под себя перед запуском
-    // ------------------------------------------------------------------
-
-    /** Бэкенд с очередью объявлений. */
     private static final String BACKEND_BASE_URL = "http://localhost:8080";
 
     private static final int PAGE_LOAD_MIN_MS = 4_000;
@@ -68,8 +35,6 @@ public class AvitoVisitorBot {
 
     private static final int MIN_HTML_LENGTH = 2000;
     private static final int MAX_ATTEMPTS_PER_RUN = 3;
-
-    // ------------------------------------------------------------------
 
     private final Robot robot;
     private final HttpClient http = HttpClient.newHttpClient();
@@ -89,7 +54,7 @@ public class AvitoVisitorBot {
     public static void main(String[] args) throws Exception {
         System.out.println("Авито-бот запускается.");
         System.out.println("Не трогайте мышь и клавиатуру, пока бот работает. Остановить — Ctrl+C в консоли.");
-        sleep(3000); // время отойти от мыши после старта
+        sleep(3000);
 
         AvitoVisitorBot bot = new AvitoVisitorBot();
         bot.run();
@@ -127,18 +92,13 @@ public class AvitoVisitorBot {
         System.out.println("Готово. Обработано объявлений: " + done);
     }
 
-    // ------------------------------------------------------------------
-    // Один визит на страницу объявления
-    // ------------------------------------------------------------------
-
-    /** Открывает объявление, копирует исходник страницы через буфер обмена. Возвращает html либо null. */
     private String visitAndCapture(QueueItem item) throws Exception {
         Desktop.getDesktop().browse(new URI(item.url));
         sleep(randomBetween(PAGE_LOAD_MIN_MS, PAGE_LOAD_MAX_MS));
 
         humanizeReading();
 
-        chord(KeyEvent.VK_U); // "Просмотр кода страницы"
+        chord(KeyEvent.VK_U);
         sleep(randomBetween(VIEW_SOURCE_LOAD_MIN_MS, VIEW_SOURCE_LOAD_MAX_MS));
 
         chord(KeyEvent.VK_A);
@@ -169,7 +129,6 @@ public class AvitoVisitorBot {
         }
     }
 
-    /** Небольшая имитация "чтения" страницы: движения мыши + прокрутка. */
     private void humanizeReading() {
         int wiggles = randomBetween(2, 4);
         for (int i = 0; i < wiggles; i++) {
@@ -196,12 +155,8 @@ public class AvitoVisitorBot {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Клавиатурные комбинации
-    // ------------------------------------------------------------------
-
     private void closeTab() {
-        chord(KeyEvent.VK_W); // macOS: VK_META
+        chord(KeyEvent.VK_W);
     }
 
     private void chord(int key) {
@@ -219,10 +174,6 @@ public class AvitoVisitorBot {
         System.out.println("  … пауза " + (ms / 1000) + " сек" + (longBreak ? " (длинная)" : ""));
         sleep(ms);
     }
-
-    // ------------------------------------------------------------------
-    // Общение с бэкендом
-    // ------------------------------------------------------------------
 
     private List<QueueItem> fetchQueue() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
@@ -261,10 +212,6 @@ public class AvitoVisitorBot {
             System.out.println("  Не удалось отчитаться бэкенду по " + avitoId + ": " + e.getMessage());
         }
     }
-
-    // ------------------------------------------------------------------
-    // Мелкие утилиты и DTO
-    // ------------------------------------------------------------------
 
     private static int randomBetween(int minInclusive, int maxInclusive) {
         return ThreadLocalRandom.current().nextInt(minInclusive, maxInclusive + 1);

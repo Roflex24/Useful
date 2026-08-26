@@ -109,9 +109,6 @@ public class SecurityService {
         recalculateAccountAmount(accountId);
     }
 
-    /**
-     * Удалить все бумаги счёта (используется при удалении самого счёта)
-     */
     @Transactional
     public void deleteAllSecuritiesForAccount(Long accountId) {
         List<Security> securities = securityRepository.findByAccountId(accountId);
@@ -121,10 +118,6 @@ public class SecurityService {
         }
     }
 
-    /**
-     * Пересчитать Account.amount как сумму (quantity * currentPrice) по всем бумагам счёта.
-     * Вызывается после любого изменения состава бумаг.
-     */
     @Transactional
     public void recalculateAccountAmount(Long accountId) {
         BigDecimal total = securityRepository.getTotalValueByAccountId(accountId);

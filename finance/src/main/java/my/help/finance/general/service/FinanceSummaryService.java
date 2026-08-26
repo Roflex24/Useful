@@ -31,7 +31,6 @@ public class FinanceSummaryService {
         Map<String, BigDecimal> amountByBank = calculateAmountByBank();
         Map<AccountType, BigDecimal> amountByType = calculateAmountByType();
 
-        // Добавляем информацию о кешбеке
         List<BankCashbackSummaryDto> cashbackSummaries = cashbackService.getCashbackSummaryByBank();
         Map<String, BankCashbackSummaryDto> cashbackSummaryByBank = cashbackSummaries.stream()
                 .collect(Collectors.toMap(
@@ -74,7 +73,6 @@ public class FinanceSummaryService {
             result.put(type, amount);
         }
 
-        // Добавляем нулевые значения для отсутствующих типов
         for (AccountType type : AccountType.values()) {
             result.putIfAbsent(type, BigDecimal.ZERO);
         }

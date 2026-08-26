@@ -28,11 +28,9 @@ public class MonthlyFinanceSnapshot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Дата снимка (всегда последний день месяца, например 2026-01-31)
     @Column(nullable = false)
     private LocalDate snapshotDate;
 
-    // Данные счёта
     @Column(nullable = false)
     private Long accountId;
 
@@ -45,22 +43,19 @@ public class MonthlyFinanceSnapshot {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
-    // Кешбеки этого счёта (храним как JSON)
     @Column(columnDefinition = "TEXT")
     private String cashbacksJson;
 
-    // Метаданные
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     private String createdBy;
 
-    // Для быстрой агрегации (денормализованные поля)
-    private BigDecimal totalAmountByBank;  // Сумма всех счетов этого банка на момент снимка
+    private BigDecimal totalAmountByBank;
 
     @Column(columnDefinition = "TEXT")
-    private String depositJson;  // Информация о депозите в JSON
+    private String depositJson;
 
     @Column(columnDefinition = "TEXT")
-    private String securitiesJson; // Список бумаг в JSON (для INVESTMENT)
+    private String securitiesJson;
 }

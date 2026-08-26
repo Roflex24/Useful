@@ -20,20 +20,11 @@ public class HistoryController {
 
     private final FinanceSnapshotService snapshotService;
 
-    /**
-     * Получить список доступных снимков (месяцев с данными)
-     * GET /api/finance/history/snapshots
-     */
     @GetMapping("/snapshots")
     public List<SnapshotInfoDto> getAvailableSnapshots() {
         return snapshotService.getAvailableSnapshots();
     }
 
-    /**
-     * Получить данные за конкретный месяц
-     * GET /api/finance/history/data?year=2026&month=1
-     * GET /api/finance/history/data/2026-01
-     */
     @GetMapping("/data")
     public ResponseEntity<HistoricalDataResponseDto> getHistoricalData(
             @RequestParam int year,
@@ -67,10 +58,6 @@ public class HistoryController {
         }
     }
 
-    /**
-     * Принудительно создать снимок (для администрирования)
-     * POST /api/finance/history/snapshots/create
-     */
     @PostMapping("/snapshots/create")
     public ResponseEntity<String> createSnapshotManually() {
         try {
@@ -82,10 +69,6 @@ public class HistoryController {
         }
     }
 
-    /**
-     * Получить помесячную динамику
-     * GET /api/finance/history/dynamics/monthly
-     */
     @GetMapping("/dynamics/monthly")
     public List<MonthlyDynamicsDto> getMonthlyDynamics() {
         return snapshotService.getMonthlyDynamics();

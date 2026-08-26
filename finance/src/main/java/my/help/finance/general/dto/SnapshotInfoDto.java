@@ -8,7 +8,7 @@ public record SnapshotInfoDto(
         LocalDate snapshotDate,
         int accountsCount,
         int cashbacksCount,
-        String formattedDate // "Январь 2026"
+        String formattedDate
 ) {
     public int getYear() {
         return yearMonth != null ? yearMonth.getYear() : 0;

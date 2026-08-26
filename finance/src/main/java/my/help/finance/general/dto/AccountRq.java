@@ -13,8 +13,6 @@ public record AccountRq(
 
         @NotNull(message = "Сумма обязательна")
         @DecimalMin(value = "0.00", message = "Сумма не может быть отрицательной")
-        // Для INVESTMENT это поле игнорируется и пересчитывается автоматически
-        // на основе бумаг (см. AccountService/SecurityService)
         BigDecimal amount,
 
         @NotNull(message = "Тип счёта обязателен")
@@ -22,7 +20,6 @@ public record AccountRq(
 
         String comment,
 
-        // Для DEPOSIT и SAVINGS обязательно (для SAVINGS endDate можно не указывать), для CARD/INVESTMENT - null
         DepositInfoDto depositInfoDto
 ) {
 }

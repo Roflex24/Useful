@@ -29,7 +29,6 @@ public class SecurityMapper {
         existing.setQuantity(requestDto.quantity());
         existing.setCurrentPrice(requestDto.currentPrice());
 
-        // Сбрасываем bond-поля перед применением, на случай смены типа бумаги
         existing.setFaceValue(null);
         existing.setCouponRate(null);
         existing.setMaturityDate(null);

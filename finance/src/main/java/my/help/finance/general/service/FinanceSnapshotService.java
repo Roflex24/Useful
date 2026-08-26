@@ -30,9 +30,6 @@ public class FinanceSnapshotService {
     private final SecurityRepository securityRepository;
     private final ObjectMapper objectMapper;
 
-    /**
-     * Создать снимок за прошедший месяц (вызывать 1-го числа)
-     */
     public void createSnapshotForPreviousMonth() {
         LocalDate today = LocalDate.now();
         LocalDate firstOfCurrentMonth = today.withDayOfMonth(1);
@@ -40,7 +37,6 @@ public class FinanceSnapshotService {
 
         YearMonth snapshotYearMonth = YearMonth.from(snapshotDate);
 
-        // Проверяем, не создавали ли уже снимок за этот месяц
         if (snapshotRepository.existsBySnapshotDate(snapshotDate)) {
             log.info("Snapshot for {} already exists, skipping", snapshotYearMonth);
             return;
@@ -52,10 +48,8 @@ public class FinanceSnapshotService {
         int snapshotsCreated = 0;
 
         for (Account account : allAccounts) {
-            // Получаем кешбеки счёта
             List<Cashback> cashbacks = cashbackRepository.findByAccount(account);
 
-            // Конвертируем кешбеки в JSON
             List<CashbackSnapshotDto> cashbackDtos = cashbacks.stream()
                     .map(cb -> new CashbackSnapshotDto(
                             cb.getId(),
@@ -131,26 +125,20 @@ public class FinanceSnapshotService {
             snapshotsCreated++;
         }
 
-        // После создания всех снимков, обновляем денормализованные суммы по банкам
         updateDenormalizedBankTotals(snapshotDate);
 
         log.info("Snapshot for {} completed. Created {} snapshots", snapshotYearMonth, snapshotsCreated);
     }
 
-    /**
-     * Обновить денормализованные поля (суммы по банкам)
-     */
     private void updateDenormalizedBankTotals(LocalDate snapshotDate) {
         List<MonthlyFinanceSnapshot> snapshots = snapshotRepository.findBySnapshotDate(snapshotDate);
 
-        // Группируем по банку и считаем сумму
         Map<String, BigDecimal> totalsByBank = snapshots.stream()
                 .collect(Collectors.groupingBy(
                         MonthlyFinanceSnapshot::getBankName,
                         Collectors.reducing(BigDecimal.ZERO, MonthlyFinanceSnapshot::getAmount, BigDecimal::add)
                 ));
 
-        // Обновляем каждый снимок
         for (MonthlyFinanceSnapshot snapshot : snapshots) {
             snapshot.setTotalAmountByBank(totalsByBank.get(snapshot.getBankName()));
         }
@@ -158,9 +146,6 @@ public class FinanceSnapshotService {
         snapshotRepository.saveAll(snapshots);
     }
 
-    /**
-     * Получить все доступные даты снимков (для UI селектора)
-     */
     public List<SnapshotInfoDto> getAvailableSnapshots() {
         List<LocalDate> snapshotDates = snapshotRepository.findAllSnapshotDates();
 
@@ -184,9 +169,6 @@ public class FinanceSnapshotService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Получить данные за конкретный месяц (из снимка)
-     */
     public HistoricalDataResponseDto getHistoricalData(YearMonth yearMonth) {
         LocalDate snapshotDate = yearMonth.atEndOfMonth();
 
@@ -197,7 +179,6 @@ public class FinanceSnapshotService {
             return null;
         }
 
-        // Восстанавливаем счета из снимков
         List<AccountRs> accounts = new ArrayList<>();
 
         for (MonthlyFinanceSnapshot snapshot : snapshots) {
@@ -209,7 +190,6 @@ public class FinanceSnapshotService {
                     .comment(snapshot.getComment())
                     .build();
 
-            // Восстанавливаем кешбеки
             List<CashbackRs> cashbacks = parseCashbacksToRs(
                     snapshot.getCashbacksJson(),
                     snapshot.getAccountId(),
@@ -217,7 +197,6 @@ public class FinanceSnapshotService {
             );
             accountDto.setCashbacks(cashbacks);
 
-            // Восстанавливаем информацию о депозите/накопительном счёте, если есть
             if (snapshot.getType() == AccountType.DEPOSIT || snapshot.getType() == AccountType.SAVINGS) {
                 accountDto.setDepositInfo(parseDepositToDto(snapshot.getDepositJson()));
             }
@@ -234,10 +213,8 @@ public class FinanceSnapshotService {
             accounts.add(accountDto);
         }
 
-        // Формируем сводку
         FinanceSummaryDto summary = buildSummaryFromSnapshots(snapshots);
 
-        // Формируем сводку по кешбеку
         List<BankCashbackSummaryDto> cashbackSummary = buildCashbackSummaryFromSnapshots(snapshots);
 
         return new HistoricalDataResponseDto(
@@ -248,9 +225,6 @@ public class FinanceSnapshotService {
         );
     }
 
-    /**
-     * Построить сводку из снимков
-     */
     private FinanceSummaryDto buildSummaryFromSnapshots(List<MonthlyFinanceSnapshot> snapshots) {
         BigDecimal totalAmount = snapshots.stream()
                 .map(MonthlyFinanceSnapshot::getAmount)
@@ -269,12 +243,10 @@ public class FinanceSnapshotService {
                         Collectors.reducing(BigDecimal.ZERO, MonthlyFinanceSnapshot::getAmount, BigDecimal::add)
                 ));
 
-        // Добавляем нули для отсутствующих типов
         for (AccountType type : AccountType.values()) {
             amountByType.putIfAbsent(type, BigDecimal.ZERO);
         }
 
-        // Сводка по кешбеку (будет отдельно)
         return FinanceSummaryDto.builder()
                 .totalAmount(totalAmount)
                 .amountByBank(amountByBank)
@@ -284,9 +256,6 @@ public class FinanceSnapshotService {
                 .build();
     }
 
-    /**
-     * Построить сводку кешбека из снимков
-     */
     private List<BankCashbackSummaryDto> buildCashbackSummaryFromSnapshots(List<MonthlyFinanceSnapshot> snapshots) {
         Map<String, List<CashbackRs>> cashbacksByBank = new HashMap<>();
 
@@ -334,14 +303,10 @@ public class FinanceSnapshotService {
         return summary;
     }
 
-    /**
-     * Проверить, нужно ли создать снимок (для планировщика)
-     */
     public boolean shouldCreateSnapshot() {
         LocalDate today = LocalDate.now();
         LocalDate firstOfMonth = today.withDayOfMonth(1);
 
-        // Если сегодня 1-е число и ещё не создан снимок за прошлый месяц
         if (today.equals(firstOfMonth)) {
             LocalDate lastDayOfPreviousMonth = firstOfMonth.minusDays(1);
             return !snapshotRepository.existsBySnapshotDate(lastDayOfPreviousMonth);
@@ -350,19 +315,12 @@ public class FinanceSnapshotService {
         return false;
     }
 
-    /**
-     * Получить динамику по месяцам:
-     * - данные из снимков (за прошлые месяцы)
-     * - текущий месяц из живых данных (accounts)
-     */
     @Transactional(readOnly = true)
     public List<MonthlyDynamicsDto> getMonthlyDynamics() {
         List<MonthlyDynamicsDto> result = new ArrayList<>();
 
-        // 1. Получаем все даты снимков из истории
         List<LocalDate> snapshotDates = snapshotRepository.findAllSnapshotDates();
 
-        // 2. Добавляем данные из каждого снимка
         for (LocalDate snapshotDate : snapshotDates) {
             YearMonth yearMonth = YearMonth.from(snapshotDate);
             HistoricalDataResponseDto historicalData = getHistoricalData(yearMonth);
@@ -372,19 +330,14 @@ public class FinanceSnapshotService {
             }
         }
 
-        // 3. Добавляем текущий месяц (живые данные из БД)
         MonthlyDynamicsDto currentMonthDto = getCurrentMonthDynamics();
         result.add(currentMonthDto);
 
-        // 4. Сортируем по месяцу (от старых к новым)
         result.sort(Comparator.comparing(MonthlyDynamicsDto::month));
 
         return result;
     }
 
-    /**
-     * Получить данные за текущий месяц из живых счетов
-     */
     private MonthlyDynamicsDto getCurrentMonthDynamics() {
         List<Account> currentAccounts = accountRepository.findAll();
 
@@ -402,9 +355,6 @@ public class FinanceSnapshotService {
         return buildMonthlyDynamicsFromAccounts(accountDtos, currentMonth);
     }
 
-    /**
-     * Из списка счетов собираем статистику по типам
-     */
     private MonthlyDynamicsDto buildMonthlyDynamicsFromAccounts(List<AccountRs> accounts, YearMonth month) {
         BigDecimal total = BigDecimal.ZERO;
         BigDecimal cardTotal = BigDecimal.ZERO;
@@ -440,10 +390,6 @@ public class FinanceSnapshotService {
         );
     }
 
-    /**
-     * Преобразует JSON-строку с кешбеками в список CashbackRs.
-     * В случае ошибки возвращает пустой список.
-     */
     private List<CashbackRs> parseCashbacksToRs(String cashbacksJson, Long accountId, String bankName) {
         if (cashbacksJson == null) {
             return Collections.emptyList();
@@ -468,9 +414,6 @@ public class FinanceSnapshotService {
         }
     }
 
-    /**
-     * Подсчитывает количество кешбеков в JSON-строке (без создания полноценных DTO).
-     */
     private int parseCashbacksCount(String cashbacksJson) {
         if (cashbacksJson == null) {
             return 0;
@@ -486,10 +429,6 @@ public class FinanceSnapshotService {
         }
     }
 
-    /**
-     * Преобразует JSON-строку с информацией о депозите в DepositInfoDto.
-     * Если JSON равен null или произошла ошибка, возвращает null.
-     */
     private DepositInfoDto parseDepositToDto(String depositJson) {
         if (depositJson == null) {
             return null;
@@ -508,10 +447,6 @@ public class FinanceSnapshotService {
         }
     }
 
-    /**
-     * Преобразует JSON-строку с бумагами в список SecurityRs.
-     * В случае ошибки возвращает пустой список.
-     */
     private List<SecurityRs> parseSecuritiesToRs(String securitiesJson, Long accountId, String bankName) {
         if (securitiesJson == null) {
             return Collections.emptyList();

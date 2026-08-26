@@ -9,19 +9,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Критерии, по которым считается оценка квартиры. Каждый критерий:
- *   - имеет строковый {@link #key} — именно под этим ключом передаётся
- *     вес в запросе на ранжирование ({"pricePerMeter": 3, ...});
- *   - имеет {@link #direction} — как нормализовать значение в 0..100;
- *   - имеет {@link #extractor} — как достать "сырое" значение из Apartment
- *     (для LOWER_IS_BETTER/HIGHER_IS_BETTER — это метрика, которая потом
- *     превращается в процентиль относительно остальных квартир в подборке;
- *     для CUSTOM_0_100 — extractor уже возвращает готовую оценку 0..100).
- * <p>
- * Если extractor вернул null (данных нет), критерий не наказывает и не
- * поощряет квартиру — ей ставится нейтральная оценка 50.
- */
 public enum ScoringCriterion {
 
     PRICE_PER_METER(
@@ -149,16 +136,6 @@ public enum ScoringCriterion {
         return null;
     }
 
-    // ------------------------------------------------------------------
-    // CUSTOM_0_100 критерии — сами возвращают готовую оценку 0..100
-    // ------------------------------------------------------------------
-
-    /**
-     * Средние этажи считаются лучше: первый этаж менее желателен
-     * (шум подъезда, риск проникновения, влажность), последний — компромисс
-     * (вид, но риск течи крыши). Это осознанно упрощённая эвристика —
-     * поменяйте значения ниже, если ваши предпочтения другие.
-     */
     private static Double floorPositionScore(Apartment apt) {
         Integer floor = apt.getFloor();
         Integer total = apt.getTotalFloors();
@@ -188,11 +165,6 @@ public enum ScoringCriterion {
         return Math.min(100.0, score);
     }
 
-    /**
-     * Формулировка ремонта у Авито — свободный текст, не перечисление, поэтому
-     * матчим по ключевым словам. Формулировка не распознана или отсутствует —
-     * null, критерий не наказывает и не поощряет квартиру (нейтральные 50).
-     */
     private static Double renovationQualityScore(Apartment apt) {
         String renovation = apt.getRenovation();
         if (renovation == null || renovation.isBlank()) return null;
@@ -206,13 +178,6 @@ public enum ScoringCriterion {
         return 50.0; // формулировка не распознана — нейтрально
     }
 
-    /**
-     * Собирает {@link Apartment#getRosreestrDataMatches()} и
-     * {@link Apartment#getRosreestrHasRestrictions()} в единую оценку 0..100.
-     * Если проверки не было вовсе (оба флага null) — null, чтобы отдельно от
-     * этого критерия квартира получила нейтральную оценку, а не штраф за
-     * то, что бот ещё не обошёл объявление.
-     */
     private static Double rosreestrCheckScore(Apartment apt) {
         Boolean matches = apt.getRosreestrDataMatches();
         Boolean restrictions = apt.getRosreestrHasRestrictions();

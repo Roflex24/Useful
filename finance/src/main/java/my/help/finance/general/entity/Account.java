@@ -17,10 +17,10 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String bankName;          // Например: "Сбербанк", "Тинькофф"
-    private BigDecimal amount;        // Сумма
-    private String comment;           // Доп. описание
+    private String bankName;
+    private BigDecimal amount;
+    private String comment;
 
     @Enumerated(EnumType.STRING)
-    private AccountType type;         // CARD, DEPOSIT, SAVINGS или INVESTMENT
+    private AccountType type;
 }

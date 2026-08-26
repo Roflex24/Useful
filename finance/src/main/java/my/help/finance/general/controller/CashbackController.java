@@ -18,32 +18,27 @@ public class CashbackController {
 
     private final CashbackService cashbackService;
 
-    // Получить все кешбеки
     @GetMapping
     public List<CashbackRs> getAllCashbacks() {
         return cashbackService.getAllCashbacks();
     }
 
-    // Получить кешбеки по счёту
     @GetMapping("/account/{accountId}")
     public List<CashbackRs> getCashbacksByAccount(@PathVariable Long accountId) {
         return cashbackService.getCashbacksByAccount(accountId);
     }
 
-    // Получить сводку кешбека по банкам
     @GetMapping("/summary")
     public List<BankCashbackSummaryDto> getCashbackSummary() {
         return cashbackService.getCashbackSummaryByBank();
     }
 
-    // Создать кешбек
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CashbackRs createCashback(@Valid @RequestBody CashbackRq rq) {
         return cashbackService.createCashback(rq);
     }
 
-    // Обновить кешбек
     @PutMapping("/{id}")
     public CashbackRs updateCashback(
             @PathVariable Long id,
@@ -51,7 +46,6 @@ public class CashbackController {
         return cashbackService.updateCashback(id, rq);
     }
 
-    // Удалить кешбек
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCashback(@PathVariable Long id) {

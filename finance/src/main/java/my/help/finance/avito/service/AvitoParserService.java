@@ -19,23 +19,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Сервис парсинга HTML-страниц выдачи Авито.
- * <p>
- * Извлекает из каждой карточки [data-marker=item] максимум того, что
- * реально есть в разметке страницы поиска: структурные параметры из
- * заголовка (комнаты/площадь/этаж), полную цену и цену за м², адрес
- * по частям (улица, дом, метро/район с временем в пути), координаты,
- * полное описание, ВСЕ фотографии, бейджи объявления и продавца,
- * данные продавца, статус "новое"/"продвигается" и дату публикации.
- * <p>
- * Зависимости (Maven):
- * <dependency>
- *     <groupId>org.jsoup</groupId>
- *     <artifactId>jsoup</artifactId>
- *     <version>1.17.2</version>
- * </dependency>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -44,7 +27,6 @@ public class AvitoParserService {
     private static final String STOP_MARKER = "Похоже на то, что вы ищете";
     private static final String AVITO_BASE  = "https://www.avito.ru";
 
-    // Заголовок вида "3-к. квартира, 66,7 м², 9/9 эт." или "Студия, 25 м², 3/9 эт."
     private static final Pattern TITLE_ROOMS  = Pattern.compile("^(\\d+)-к\\.");
     private static final Pattern TITLE_STUDIO = Pattern.compile("(?i)студия");
     private static final Pattern TITLE_AREA   = Pattern.compile("([\\d]+(?:[.,]\\d+)?)\\s*м²");
@@ -55,10 +37,6 @@ public class AvitoParserService {
     private final ApartmentRepository repository;
     private final ApartmentImageRepository imageRepository;
     private final ApartmentBadgeRepository badgeRepository;
-
-    // ------------------------------------------------------------------
-    // Публичный API
-    // ------------------------------------------------------------------
 
     /**
      * Обрабатывает НЕСКОЛЬКО HTML-файлов за одну транзакцию.
@@ -93,15 +71,6 @@ public class AvitoParserService {
         return saved;
     }
 
-    /**
-     * Полностью очищает базу квартир (используется кнопкой "Очистить базу").
-     * Порядок важен: apartments — родитель для apartment_images и
-     * apartment_badges (FK apartment_id NOT NULL), поэтому детей удаляем
-     * первыми. deleteAllInBatch() — это прямой SQL DELETE, JPA-каскад при
-     * нём не срабатывает (он работает только при удалении через
-     * EntityManager/remove()), поэтому удалять родителя первым нельзя —
-     * упадёт с нарушением внешнего ключа.
-     */
     @Transactional
     public void deleteAllApartments() {
         imageRepository.deleteAllInBatch();
@@ -109,15 +78,6 @@ public class AvitoParserService {
         repository.deleteAllInBatch();
     }
 
-    /**
-     * Удаляет одну квартиру по её avitoId (вместе с фото и бейджами).
-     * В отличие от deleteAllApartments(), здесь используется обычный
-     * repository.delete() через EntityManager — он корректно каскадирует
-     * удаление images/badges (CascadeType.ALL + orphanRemoval на Apartment),
-     * так что отдельно чистить дочерние таблицы не нужно.
-     *
-     * @return true, если квартира была найдена и удалена; false, если её не было
-     */
     @Transactional
     public boolean deleteApartmentByAvitoId(String avitoId) {
         return repository.findByAvitoId(avitoId)
@@ -128,17 +88,10 @@ public class AvitoParserService {
                 .orElse(false);
     }
 
-    // ------------------------------------------------------------------
-    // Парсинг страницы
-    // ------------------------------------------------------------------
-
     private List<Apartment> parseHtml(String html) {
         int stopIdx = html.indexOf(STOP_MARKER);
         String cleanHtml = (stopIdx != -1) ? html.substring(0, stopIdx) : html;
 
-        // Реальные координаты (lat/lng) не выведены в видимую разметку,
-        // но встроены Авито в служебный JSON внутри <script> на той же
-        // странице — достаём их оттуда и сопоставляем с ID объявлений.
         Map<String, double[]> coordsByItemId = extractCoordinatesByItemId(cleanHtml);
 
         Document doc = Jsoup.parse(cleanHtml);
@@ -151,16 +104,6 @@ public class AvitoParserService {
         return result;
     }
 
-    /**
-     * Строит соответствие "ID объявления → [широта, долгота]", разбирая
-     * служебный JSON, который Авито встраивает в HTML страницы каталога
-     * (используется картой на самой Авито). Формат внутри JSON:
-     *   ...,"debug":{"id":8144067665}},...,"coords":{"lat":"56.23...","lng":"43.86..."...
-     * ID и координаты объявления всегда лежат в одном и том же вложенном
-     * объекте, поэтому для каждого найденного "coords" берём ближайший
-     * ПРЕДШЕСТВУЮЩИЙ по тексту "debug":{"id":...} — это и есть ID
-     * того объявления, которому эти координаты принадлежат.
-     */
     private Map<String, double[]> extractCoordinatesByItemId(String html) {
         Map<String, double[]> result = new HashMap<>();
 
@@ -179,7 +122,6 @@ public class AvitoParserService {
         while (coordsMatcher.find()) {
             int coordsPos = coordsMatcher.start();
 
-            // Бинарный поиск последней позиции id, которая меньше coordsPos
             int lo = 0, hi = idPositions.size() - 1, matchIdx = -1;
             while (lo <= hi) {
                 int mid = (lo + hi) / 2;
@@ -197,7 +139,6 @@ public class AvitoParserService {
                     double lng = Double.parseDouble(coordsMatcher.group(2));
                     result.put(idValues.get(matchIdx), new double[]{ lat, lng });
                 } catch (NumberFormatException ignored) {
-                    // если координата в неожиданном формате — просто пропускаем
                 }
             }
         }
@@ -205,11 +146,6 @@ public class AvitoParserService {
         return result;
     }
 
-    // ------------------------------------------------------------------
-    // Парсинг одной карточки
-    // ------------------------------------------------------------------
-
-    /** Парсит один элемент объявления в объект Apartment со всеми доступными полями. */
     private Optional<Apartment> parseItem(Element el, Map<String, double[]> coordsByItemId) {
         String avitoId = el.attr("data-item-id");
         if (avitoId.isBlank()) return Optional.empty();
@@ -239,11 +175,6 @@ public class AvitoParserService {
         return Optional.of(apt);
     }
 
-    /**
-     * Достаёт из заголовка ("3-к. квартира, 66,7 м², 9/9 эт." /
-     * "Студия, 25 м², 3/9 эт.") количество комнат (или флаг студии),
-     * площадь, этаж и этажность дома.
-     */
     private void parseTitleStructure(String title, Apartment apt) {
         if (title == null) return;
 
@@ -267,11 +198,6 @@ public class AvitoParserService {
         }
     }
 
-    /**
-     * Цена берётся из микроразметки schema.org (itemprop="price"/"priceCurrency"),
-     * это надёжнее, чем чистить видимый текст. Отдельно, если есть, достаётся
-     * цена за квадратный метр (блок ".price-inlineNormalizedPrice...").
-     */
     private void parsePrice(Element el, Apartment apt) {
         Element priceMeta = el.selectFirst("[data-marker=item-price] [itemprop=price]");
         if (priceMeta != null) {
@@ -283,21 +209,12 @@ public class AvitoParserService {
         }
         apt.setPriceRaw(text(el, "[data-marker=item-price-value]"));
 
-        // Класс у Авито хэшированный ("price-inlineNormalizedPrice-J8EYv"),
-        // поэтому ищем по префиксу через contains-селектор.
         Element pricePerMeterEl = el.selectFirst("[class*=inlineNormalizedPrice]");
         if (pricePerMeterEl != null) {
             apt.setPricePerMeter(parseLongDigits(pricePerMeterEl.text()));
         }
     }
 
-    /**
-     * Извлекает адрес по частям. Внутри [data-marker=item-address] есть
-     * вложенный [data-marker=item-location] с одним или двумя дочерними &lt;p&gt;:
-     *   - 1-я строка — улица (street_link) и дом (house_link);
-     *   - 2-я строка (не всегда есть) — метро (metro_link) с временем в пути,
-     *     либо просто название района, если метро в объявлении не указано.
-     */
     private void parseAddress(Element el, Apartment apt) {
         Element location = el.selectFirst("[data-marker=item-address] [data-marker=item-location]");
         if (location == null) return;
@@ -331,8 +248,6 @@ public class AvitoParserService {
                 apt.setMetroName(metroName);
                 apt.setMetroLink(absoluteUrl(metroEl.attr("href")));
 
-                // Остаток строки после названия станции — это время в пути,
-                // например "Горьковская, от 31 мин." -> "от 31 мин."
                 if (line2Text != null && metroName != null) {
                     int idx = line2Text.indexOf(metroName);
                     if (idx != -1) {
@@ -346,22 +261,11 @@ public class AvitoParserService {
                     }
                 }
             } else {
-                // Метро не указано — вторая строка это название района
                 apt.setDistrict(line2Text);
             }
         }
     }
 
-    /**
-     * Короткое описание — из meta itemprop="description" (Авито его обрезает).
-     * Полное описание — видимый текст в нижнем блоке карточки. У Авито
-     * там нет стабильного data-marker, поэтому используем префикс класса
-     * "iva-item-bottomBlock" (суффикс — хэш сборки, префикс стабилен) и
-     * явно исключаем дату публикации, которая лежит в том же блоке.
-     * Если разметка поменяется и селектор перестанет находить текст,
-     * остаётся хотя бы короткое description — полный текст просто не
-     * заполнится.
-     */
     private void parseDescription(Element el, Apartment apt) {
         Element descMeta = el.selectFirst("[itemprop=description]");
         if (descMeta != null) {
@@ -374,15 +278,6 @@ public class AvitoParserService {
         }
     }
 
-    /**
-     * Собирает ВСЕ фотографии объявления, а не только первую.
-     * Поддерживает два формата разметки Авито:
-     *   1) Актуальный: URL картинок закодирован в data-marker
-     *      слайдов фотослайдера — data-marker="slider-image/image-&lt;URL&gt;".
-     *      Тег &lt;img&gt; с src в статичном HTML часто отсутствует
-     *      (картинки лениво подгружаются JS).
-     *   2) Старый: элементы с itemprop="image" и атрибутом src.
-     */
     private void parseImages(Element el, Apartment apt) {
         List<String> urls = new ArrayList<>();
 
@@ -423,11 +318,6 @@ public class AvitoParserService {
         }
     }
 
-    /**
-     * Плашка "Новое объявление" на фото и признак платного продвижения
-     * (VAS). Класс продвижения хэширован ("...vas-icon_type-promoted-uOr_s"),
-     * поэтому используется contains-селектор по стабильной части имени.
-     */
     private void parseStatusFlags(Element el, Apartment apt) {
         boolean isNew = false;
         for (Element badge : el.select("[class*=textBadgeContent]")) {
@@ -444,11 +334,6 @@ public class AvitoParserService {
         apt.setPublishedDateRaw(text(el, "[data-marker=item-date]"));
     }
 
-    /**
-     * Данные продавца: имя/название агентства, ссылка на профиль и
-     * строка вида "3 завершённых объявления" (плюс число из неё, если
-     * формат строки совпал с ожидаемым).
-     */
     private void parseSeller(Element el, Apartment apt) {
         Element sellerBlock = el.selectFirst("[class^=iva-item-sellerInfo]");
         if (sellerBlock == null) return;
@@ -472,12 +357,6 @@ public class AvitoParserService {
         }
     }
 
-    /**
-     * Бейджи объявления (data-marker="iva-item/&lt;код&gt;", например
-     * "Собственник", "Проверено в Росреестре", "Кирпичный дом") и
-     * бейджи продавца (data-marker="badge-title-&lt;код&gt;", например
-     * "Документы проверены", "Реквизиты проверены").
-     */
     private void parseBadges(Element el, Apartment apt) {
         for (Element badgeEl : el.select("[data-marker^=iva-item/]")) {
             String label = cleanText(badgeEl.text());
@@ -500,7 +379,6 @@ public class AvitoParserService {
         }
     }
 
-    /** Upsert: обновляет существующую запись (включая фото и бейджи) или создаёт новую. */
     private Apartment upsert(Apartment incoming) {
         return repository.findByAvitoId(incoming.getAvitoId())
                 .map(existing -> {
@@ -552,34 +430,23 @@ public class AvitoParserService {
                 .orElseGet(() -> repository.save(incoming));
     }
 
-    // ------------------------------------------------------------------
-    // Вспомогательные методы
-    // ------------------------------------------------------------------
-
-    /** Возвращает очищенный текст первого найденного элемента. */
     private String text(Element parent, String cssSelector) {
         Element el = parent.selectFirst(cssSelector);
         if (el == null) return null;
         return cleanText(el.text());
     }
 
-    /** Убирает неразрывные пробелы и обрезает по краям; пустую строку превращает в null. */
     private String cleanText(String raw) {
         if (raw == null) return null;
         String t = raw.replace("\u00A0", " ").trim();
         return t.isEmpty() ? null : t;
     }
 
-    /** Достраивает относительную ссылку Авито до абсолютной. */
     private String absoluteUrl(String href) {
         if (href == null || href.isBlank()) return null;
         return href.startsWith("http") ? href : AVITO_BASE + href;
     }
 
-    /**
-     * Преобразует строку вида "13 146 300 ₽" или "133 581 ₽ за м²" в Long,
-     * удаляя все нецифровые символы.
-     */
     private Long parseLongDigits(String raw) {
         if (raw == null || raw.isBlank()) return null;
         String digits = raw.replaceAll("[^\\d]", "");
@@ -610,10 +477,6 @@ public class AvitoParserService {
         }
     }
 
-    /**
-     * Из строки вида "от 31 мин." / "21–30 мин." / "до 5 мин." достаёт
-     * последнее (то есть наибольшее, верхнюю границу) число.
-     */
     private Integer extractLastNumber(String raw) {
         if (raw == null) return null;
         Matcher m = DIGITS.matcher(raw);
