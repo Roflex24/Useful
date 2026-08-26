@@ -973,7 +973,7 @@
         periodTasksList.innerHTML = '<div class="loading">⏳ Загрузка задач за период...</div>';
 
         try {
-            const url = `/tasks/period?start=${startDate}&end=${endDate}`;
+            const url = `/api/tasks/period?start=${startDate}&end=${endDate}`;
             const response = await fetch(url);
 
             if (!response.ok) {

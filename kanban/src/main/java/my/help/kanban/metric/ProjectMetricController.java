@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/project/metric")
+@RequestMapping("api/project/metric")
 @RequiredArgsConstructor
 public class ProjectMetricController {
 

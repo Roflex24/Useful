@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/tasks")
+@RequestMapping("api/task")
 @RequiredArgsConstructor
 public class TaskController {
 
