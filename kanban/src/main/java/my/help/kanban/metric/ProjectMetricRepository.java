@@ -1,4 +1,4 @@
-package my.help.kanban.project.metric;
+package my.help.kanban.metric;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -10,5 +10,4 @@ public interface ProjectMetricRepository extends JpaRepository<ProjectMetricEnti
 
     List<ProjectMetricEntity> findAllByProjectId(Long projectId);
     void deleteByProjectId(Long projectId);
-    ProjectMetricEntity findByProjectIdAndIsMainTrue(Long ProjectId);
 }

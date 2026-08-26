@@ -1,4 +1,4 @@
-package my.help.kanban.project.metric;
+package my.help.kanban.metric;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

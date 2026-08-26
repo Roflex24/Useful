@@ -2,7 +2,7 @@ package my.help.kanban.project;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import my.help.kanban.project.metric.ProjectMetricModel;
+import my.help.kanban.metric.ProjectMetricModel;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

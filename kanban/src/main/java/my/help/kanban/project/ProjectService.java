@@ -2,7 +2,7 @@ package my.help.kanban.project;
 
 import lombok.RequiredArgsConstructor;
 import my.help.kanban.common.ResourceNotFoundException;
-import my.help.kanban.project.metric.*;
+import my.help.kanban.metric.*;
 import my.help.kanban.column.ColumnEntity;
 import my.help.kanban.column.ColumnRepository;
 import my.help.kanban.column.ColumnService;

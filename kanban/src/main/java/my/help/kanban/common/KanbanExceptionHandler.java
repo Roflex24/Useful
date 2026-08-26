@@ -15,7 +15,7 @@ import java.util.List;
 
 @Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class KanbanExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {

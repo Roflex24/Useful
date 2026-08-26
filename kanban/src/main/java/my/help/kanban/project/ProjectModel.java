@@ -3,7 +3,7 @@ package my.help.kanban.project;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import my.help.kanban.project.metric.ProjectMetricModel;
+import my.help.kanban.metric.ProjectMetricModel;
 
 import java.time.LocalDate;
 
