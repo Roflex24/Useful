@@ -31,10 +31,6 @@ public class ProjectService {
 
     public ProjectModel createProject(ProjectRq rq) {
         ProjectEntity projectEntity = projectMapper.projectRqToEntity(rq);
-        projectEntity.setArchived(rq.isArchived());
-        if (rq.isArchived()) {
-            projectEntity.setArchiveDate(LocalDate.now());
-        }
         ProjectEntity saved = projectRepository.save(projectEntity);
         columnService.createColumns(saved);
         projectMetricService.createProjectMetric(
@@ -43,8 +39,14 @@ public class ProjectService {
         return projectMapper.toModel(saved);
     }
 
-    public void updateProject(ProjectModel rq) {
-        projectRepository.save(projectMapper.toEntity(rq));
+    @Transactional
+    public ProjectModel updateProject(Long id, ProjectRq rq) {
+        ProjectEntity projectEntity = projectRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено"));
+        projectEntity.setName(rq.getName());
+        projectEntity.setDescription(rq.getDescription());
+
+        return projectMapper.toModel(projectEntity);
     }
 
     @Transactional

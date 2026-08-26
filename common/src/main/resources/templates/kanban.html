@@ -1514,15 +1514,12 @@
 
     async function updateProject(projectRq) {
         try {
-            const response = await fetch(`${PROJECT_API}`, {
+            const response = await fetch(`${PROJECT_API}/${PROJECT_ID}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    id: PROJECT_ID,
                     name: projectRq.name,
                     description: projectRq.description,
-                    createDate: projectData.createDate,
-                    archived: projectRq.archived ?? projectData.archived
                 })
             });
             if (!response.ok) throw new Error(`Ошибка обновления проекта: ${response.status}`);

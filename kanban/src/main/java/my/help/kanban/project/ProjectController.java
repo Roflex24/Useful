@@ -29,10 +29,9 @@ public class ProjectController {
         return projectService.createProject(rq);
     }
 
-    @PutMapping
-    public ResponseEntity<Void> updateProject(@RequestBody ProjectModel rq) {
-        projectService.updateProject(rq);
-        return ResponseEntity.ok().build();
+    @PutMapping("/{id}")
+    public ProjectModel updateProject(@PathVariable Long id, @RequestBody ProjectRq rq) {
+        return projectService.updateProject(id, rq);
     }
 
     @PutMapping("/{id}/archive")

@@ -1415,10 +1415,13 @@
 
     async function updateProject(proj) {
         try {
-            const res = await fetch(PROJECT_API, {
+            const res = await fetch(`${PROJECT_API}/${proj.id}`, {
                 method:'PUT',
                 headers:{'Content-Type':'application/json'},
-                body:JSON.stringify(proj)
+                body:JSON.stringify({
+                    name: proj.name,
+                    description: proj.description,
+                })
             });
             if (!res.ok) throw new Error();
             showToast(`✅ Проект обновлен`);
@@ -1694,7 +1697,6 @@
             await createProject({
                 name,
                 description: modal.querySelector('#projDesc').value || null,
-                archived: false
             });
             closeModal();
         };
