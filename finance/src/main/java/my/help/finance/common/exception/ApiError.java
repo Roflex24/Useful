@@ -1,4 +1,4 @@
-package my.help.finance.common;
+package my.help.finance.common.exception;
 
 import java.time.Instant;
 import java.util.List;

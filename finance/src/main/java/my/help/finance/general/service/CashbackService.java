@@ -2,8 +2,8 @@ package my.help.finance.general.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import my.help.finance.common.BusinessValidationException;
-import my.help.finance.common.ResourceNotFoundException;
+import my.help.finance.common.exception.BusinessValidationException;
+import my.help.finance.common.exception.ResourceNotFoundException;
 import my.help.finance.general.dto.BankCashbackSummaryDto;
 import my.help.finance.general.dto.CashbackRq;
 import my.help.finance.general.dto.CashbackRs;
