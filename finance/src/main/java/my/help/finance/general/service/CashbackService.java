@@ -2,6 +2,8 @@ package my.help.finance.general.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import my.help.finance.common.BusinessValidationException;
+import my.help.finance.common.ResourceNotFoundException;
 import my.help.finance.general.dto.BankCashbackSummaryDto;
 import my.help.finance.general.dto.CashbackRq;
 import my.help.finance.general.dto.CashbackRs;
@@ -40,7 +42,7 @@ public class CashbackService {
         log.debug("Fetching cashbacks for account: {}", accountId);
 
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + accountId));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
 
         if (account.getType() != AccountType.CARD) {
             log.warn("Attempt to get cashbacks for non-card account: {} (type: {})", accountId, account.getType());
@@ -58,10 +60,10 @@ public class CashbackService {
         log.info("Creating cashback for account: {}", rq.accountId());
 
         Account account = accountRepository.findById(rq.accountId())
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + rq.accountId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + rq.accountId()));
 
         if (account.getType() != AccountType.CARD) {
-            throw new RuntimeException("Cashback can only be added to CARD accounts. Current account type: " + account.getType());
+            throw new BusinessValidationException("Cashback can only be added to CARD accounts. Current account type: " + account.getType());
         }
 
         Cashback cashback = cashbackMapper.toEntity(rq, account);
@@ -76,11 +78,11 @@ public class CashbackService {
         log.info("Updating cashback with id: {}", id);
 
         Cashback existingCashback = cashbackRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cashback not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Cashback not found with id: " + id));
 
         Account account = existingCashback.getAccount();
         if (account.getType() != AccountType.CARD) {
-            throw new RuntimeException("Cannot update cashback for non-card account");
+            throw new BusinessValidationException("Cannot update cashback for non-card account");
         }
 
         existingCashback.setCategory(rq.category());
@@ -97,7 +99,7 @@ public class CashbackService {
         log.info("Deleting cashback with id: {}", id);
 
         if (!cashbackRepository.existsById(id)) {
-            throw new RuntimeException("Cashback not found with id: " + id);
+            throw new ResourceNotFoundException("Cashback not found with id: " + id);
         }
 
         cashbackRepository.deleteById(id);
@@ -175,7 +177,7 @@ public class CashbackService {
 
     public List<Cashback> getCashbacksByAccountEntity(Long accountId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
         if (account.getType() != AccountType.CARD) {
             return Collections.emptyList();
