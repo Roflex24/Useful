@@ -1,4 +1,4 @@
-package my.help.finance.key_rate;
+package my.help.finance.rate.key;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 @Table(name = "key_rates")
-public class KeyRateEntity {
+public class KeyRate {
 
     @Id
     private LocalDate date;

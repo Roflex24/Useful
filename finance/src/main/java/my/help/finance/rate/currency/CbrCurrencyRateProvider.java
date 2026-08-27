@@ -1,4 +1,4 @@
-package my.help.finance.exchange_rate;
+package my.help.finance.rate.currency;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -25,25 +25,25 @@ public class CbrCurrencyRateProvider {
     private final CurrencyRateRepository currencyRateRepository;
 
     public CurrencyRateModel getCurrencyRateModel() throws Exception {
-        Optional<CurrencyRateEntity> currencyRateEntityOptional = currencyRateRepository.findByActualDate(LocalDate.now());
+        Optional<CurrencyRate> currencyRateEntityOptional = currencyRateRepository.findByActualDate(LocalDate.now());
 
         if (currencyRateEntityOptional.isPresent()) {
-            CurrencyRateEntity currencyRateEntity = currencyRateEntityOptional.get();
-            return new CurrencyRateModel(currencyRateEntity.getUsdRate(), currencyRateEntity.getEurRate(), currencyRateEntity.getActualDate());
+            CurrencyRate currencyRate = currencyRateEntityOptional.get();
+            return new CurrencyRateModel(currencyRate.getUsdRate(), currencyRate.getEurRate(), currencyRate.getActualDate());
         } else {
             double usdRate = Math.round(getRateByCharCode("USD") * 100.0) / 100.0;
             double eurRate = Math.round(getRateByCharCode("EUR") * 100.0) / 100.0;
             LocalDate date = LocalDate.now();
-            currencyRateRepository.save(new CurrencyRateEntity(date, usdRate, eurRate));
+            currencyRateRepository.save(new CurrencyRate(date, usdRate, eurRate));
             return new CurrencyRateModel(usdRate, eurRate, date);
         }
     }
 
     public List<CurrencyRateModel> getCurrencyRateModels() throws Exception {
-        List<CurrencyRateEntity> currencyRateEntities = currencyRateRepository.findAll();
+        List<CurrencyRate> currencyRateEntities = currencyRateRepository.findAll();
         List<CurrencyRateModel> currencyRateModels = new ArrayList<>();
-        for (CurrencyRateEntity currencyRateEntity : currencyRateEntities) {
-            currencyRateModels.add(new CurrencyRateModel(currencyRateEntity.getUsdRate(), currencyRateEntity.getEurRate(), currencyRateEntity.getActualDate()));
+        for (CurrencyRate currencyRate : currencyRateEntities) {
+            currencyRateModels.add(new CurrencyRateModel(currencyRate.getUsdRate(), currencyRate.getEurRate(), currencyRate.getActualDate()));
         }
         return currencyRateModels;
     }

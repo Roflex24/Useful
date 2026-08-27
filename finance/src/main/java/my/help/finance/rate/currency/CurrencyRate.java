@@ -1,4 +1,4 @@
-package my.help.finance.exchange_rate;
+package my.help.finance.rate.currency;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -16,7 +16,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "currency_rates")
-public class CurrencyRateEntity {
+public class CurrencyRate {
 
     @Id
     private LocalDate actualDate;

@@ -1,4 +1,4 @@
-package my.help.finance.exchange_rate;
+package my.help.finance.rate.currency;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

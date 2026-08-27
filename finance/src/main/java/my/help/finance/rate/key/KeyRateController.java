@@ -1,4 +1,4 @@
-package my.help.finance.key_rate;
+package my.help.finance.rate.key;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

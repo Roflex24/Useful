@@ -1,4 +1,4 @@
-package my.help.finance.key_rate;
+package my.help.finance.rate.key;
 
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
@@ -29,11 +29,11 @@ public class KeyRateService {
             LocalDate currentDate = LocalDate.now();
             System.out.println("Запрашиваем ставку на дату: " + currentDate);
 
-            Optional<KeyRateEntity> existingEntity = keyRateRepository.findById(currentDate);
+            Optional<KeyRate> existingEntity = keyRateRepository.findById(currentDate);
 
             if (existingEntity.isPresent()) {
                 System.out.println("Найдена запись в БД за сегодня: ставка = " + existingEntity.get().getKeyRate());
-                KeyRateEntity entity = existingEntity.get();
+                KeyRate entity = existingEntity.get();
                 return new KeyRateModel(entity.getKeyRate(), entity.getDate());
             }
 
@@ -97,21 +97,21 @@ public class KeyRateService {
 
         System.out.println("Получена ПЕРВАЯ ставка с сайта ЦБ: дата=" + dateStr + ", ставка=" + rate);
 
-        KeyRateEntity entity = new KeyRateEntity();
+        KeyRate entity = new KeyRate();
         entity.setKeyRate(rate);
         entity.setDate(date);
 
-        KeyRateEntity saved = keyRateRepository.save(entity);
+        KeyRate saved = keyRateRepository.save(entity);
         System.out.println("Сохранена новая запись в БД: ставка = " + saved.getKeyRate());
 
         return new KeyRateModel(rate, date);
     }
 
     public List<KeyRateModel> getKeyRateModels() {
-        List<KeyRateEntity> entities = keyRateRepository.findAll();
+        List<KeyRate> entities = keyRateRepository.findAll();
         List<KeyRateModel> models = new ArrayList<>();
         double keyRate = 0;
-        for (KeyRateEntity entity : entities) {
+        for (KeyRate entity : entities) {
             if (entity.getKeyRate() != keyRate) {
                 models.add(new KeyRateModel(entity.getKeyRate(), entity.getDate()));
                 keyRate = entity.getKeyRate();
