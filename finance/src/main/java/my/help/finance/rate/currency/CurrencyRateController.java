@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/currency/rate")
+@RequestMapping("/api/currency/rate")
 public class CurrencyRateController {
 
     private final CbrCurrencyRateProvider cbrCurrencyRateProvider;

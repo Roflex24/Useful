@@ -604,7 +604,7 @@
         const container = document.getElementById('keyrateContent');
         container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка ставки...</div>';
         try {
-            const resp = await fetch('http://localhost:8080/key/rate');
+            const resp = await fetch('http://localhost:8080/api/key/rate');
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const data = await resp.json();
             if (data.keyRate !== undefined && data.date) {
@@ -629,7 +629,7 @@
         const container = document.getElementById('currencyContent');
         container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка курсов...</div>';
         try {
-            const resp = await fetch('/currency/rate');
+            const resp = await fetch('/api/currency/rate');
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const data = await resp.json();
             if (data.usdRate !== undefined && data.eurRate !== undefined) {

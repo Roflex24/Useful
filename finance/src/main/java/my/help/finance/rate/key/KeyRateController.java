@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/key/rate")
+@RequestMapping("/api/key/rate")
 public class KeyRateController {
 
     private final KeyRateService keyRateService;
