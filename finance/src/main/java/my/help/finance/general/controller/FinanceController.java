@@ -1,5 +1,6 @@
 package my.help.finance.general.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import my.help.finance.general.service.AccountService;
@@ -15,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/finance")
 @RequiredArgsConstructor
+@Tag(name = "Finance API", description = "Раздел финансов")
 public class FinanceController {
 
     private final AccountService accountService;

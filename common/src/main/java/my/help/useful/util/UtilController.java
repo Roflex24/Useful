@@ -1,5 +1,6 @@
 package my.help.useful.util;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,6 +10,7 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/util")
+@Tag(name = "Common API", description = "Общее")
 public class UtilController {
 
     @GetMapping("/base/backup")

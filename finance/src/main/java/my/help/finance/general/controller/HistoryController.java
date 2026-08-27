@@ -1,5 +1,6 @@
 package my.help.finance.general.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.help.finance.common.exception.ResourceNotFoundException;
@@ -16,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/finance/history")
 @RequiredArgsConstructor
+@Tag(name = "Finance API", description = "Раздел финансов")
 public class HistoryController {
 
     private final FinanceSnapshotService snapshotService;

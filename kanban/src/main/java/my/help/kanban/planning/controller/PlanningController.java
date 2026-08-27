@@ -1,5 +1,6 @@
 package my.help.kanban.planning.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import my.help.kanban.planning.dto.PlanRq;
 import my.help.kanban.planning.dto.PlanRs;
@@ -14,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/planning")
 @RequiredArgsConstructor
+@Tag(name = "Kanban API", description = "Раздел планировая")
 public class PlanningController {
 
     private final PlanningService planningService;

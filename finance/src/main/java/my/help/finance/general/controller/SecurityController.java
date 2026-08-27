@@ -1,5 +1,6 @@
 package my.help.finance.general.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import my.help.finance.general.dto.SecurityRq;
@@ -13,6 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/finance/securities")
 @RequiredArgsConstructor
+@Tag(name = "Finance API", description = "Раздел финансов")
 public class SecurityController {
 
     private final SecurityService securityService;

@@ -1,5 +1,6 @@
 package my.help.finance.avito.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import my.help.finance.avito.dto.*;
 import my.help.finance.avito.entity.Apartment;
@@ -21,6 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/apartments")
 @RequiredArgsConstructor
+@Tag(name = "Avito API", description = "Парсинг и работа с авито")
 public class ApartmentController {
 
     private final AvitoParserService parserService;

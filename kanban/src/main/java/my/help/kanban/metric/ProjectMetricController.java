@@ -1,5 +1,6 @@
 package my.help.kanban.metric;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import my.help.kanban.metric.dto.ProjectMetricRs;
 import my.help.kanban.metric.dto.ProjectMetricRq;
@@ -11,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/project/metric")
 @RequiredArgsConstructor
+@Tag(name = "Kanban API", description = "Раздел планировая")
 public class ProjectMetricController {
 
     private final ProjectMetricService projectMetricService;

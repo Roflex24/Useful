@@ -1,5 +1,6 @@
 package my.help.kanban.event;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import my.help.kanban.event.dto.EventRs;
 import my.help.kanban.event.dto.EventRq;
@@ -11,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/event")
 @RequiredArgsConstructor
+@Tag(name = "Kanban API", description = "Раздел планировая")
 public class EventController {
 
     private final EventService eventService;

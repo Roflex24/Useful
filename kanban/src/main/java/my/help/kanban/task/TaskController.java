@@ -1,5 +1,6 @@
 package my.help.kanban.task;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import my.help.kanban.task.dto.TaskRq;
 import my.help.kanban.task.dto.TaskRs;
@@ -12,6 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/task")
 @RequiredArgsConstructor
+@Tag(name = "Kanban API", description = "Раздел планировая")
 public class TaskController {
 
     private final TaskService taskService;

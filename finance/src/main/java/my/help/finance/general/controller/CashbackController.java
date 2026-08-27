@@ -1,5 +1,6 @@
 package my.help.finance.general.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import my.help.finance.general.dto.CashbackRq;
@@ -14,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/finance/cashbacks")
 @RequiredArgsConstructor
+@Tag(name = "Finance API", description = "Раздел финансов")
 public class CashbackController {
 
     private final CashbackService cashbackService;
