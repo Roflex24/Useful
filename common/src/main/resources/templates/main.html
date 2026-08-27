@@ -5,7 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎯 Информационный центр | Актуальные данные</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.75);
+            --accent-1: #6c5ce7;
+            --accent-2: #00cec9;
+            --accent-3: #fd79a8;
+            --accent-4: #fdcb6e;
+            --accent-5: #55efc4;
+            --shadow-soft: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,361 +31,491 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            color: var(--text-primary);
+        }
+
+        /* Декоративные плавающие элементы */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: floatShape 20s infinite ease-in-out;
+        }
+        .shape-1 { width: 500px; height: 500px; background: var(--accent-1); top: -150px; left: -100px; }
+        .shape-2 { width: 400px; height: 400px; background: var(--accent-2); bottom: -120px; right: -80px; animation-delay: 5s; }
+        .shape-3 { width: 300px; height: 300px; background: var(--accent-3); top: 50%; left: 50%; animation-delay: 10s; }
+        @keyframes floatShape {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -40px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
         }
 
         .dashboard {
-            max-width: 1400px;
-            width: 100%;
             display: flex;
-            gap: 30px;
+            gap: 25px;
+            max-width: 1200px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
             align-items: stretch;
         }
 
-        /* Основной контейнер (левый) */
-        .container {
-            flex: 2;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        /* Панель информации (правая) */
+        /* Стеклянные панели */
+        .container,
         .weather-panel {
-            flex: 1.2;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            box-shadow: var(--glass-shadow);
+            transition: var(--transition);
             overflow: hidden;
-            animation: fadeIn 0.8s ease-out 0.1s both;
-            display: flex;
-            flex-direction: column;
-            backdrop-filter: blur(2px);
+            animation: fadeInUp 0.6s ease-out;
+        }
+        .container {
+            flex: 2.2;
+        }
+        .weather-panel {
+            flex: 1.3;
+            animation-delay: 0.15s;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(30px); }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Заголовок */
         header {
-            background: linear-gradient(to right, #667eea, #764ba2);
-            color: white;
+            padding: 32px 32px 24px;
             text-align: center;
-            padding: 40px 20px;
+            background: linear-gradient(135deg, rgba(108, 92, 231, 0.2), rgba(0, 206, 201, 0.15));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
         }
-
-        h1 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            margin-top: 10px;
-        }
-
-        .main-content {
-            padding: 50px 40px;
-        }
-
-        /* Общий стиль для всех навигационных кнопок */
-        .projects-link-btn, .calorie-link-btn, .finance-link-btn {
+        header h1 {
+            font-size: 2.3rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff, #e0e0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            color: white;
+            gap: 14px;
+        }
+        header h1 i {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.6rem;
+        }
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        /* Кнопки-плитки */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 22px;
+            border-radius: 16px;
             text-decoration: none;
-            padding: 16px 28px;
-            border-radius: 60px;
-            font-weight: bold;
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 16px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: var(--shadow-soft);
+            letter-spacing: 0.3px;
+        }
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: 0.5s;
+        }
+        .nav-link:hover::before {
+            left: 100%;
+        }
+        .nav-link i:first-child {
+            font-size: 1.6rem;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+        }
+        .nav-link .arrow {
+            margin-left: auto;
             font-size: 1.1rem;
-            transition: all 0.3s ease;
-            margin-bottom: 20px;
-            border: none;
-            cursor: pointer;
+            opacity: 0.7;
+            transition: var(--transition);
+        }
+        .nav-link:hover .arrow {
+            transform: translateX(5px);
+            opacity: 1;
         }
 
         .projects-link-btn {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            box-shadow: 0 8px 20px rgba(59,130,246,0.3);
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
         }
-
-        .projects-link-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 28px rgba(59,130,246,0.4);
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        }
-
         .calorie-link-btn {
-            background: linear-gradient(135deg, #f97316, #ea580c);
-            box-shadow: 0 8px 20px rgba(249,115,22,0.3);
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, #f97316, #c2410c);
         }
-
-        .calorie-link-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 28px rgba(249,115,22,0.4);
-            background: linear-gradient(135deg, #ea580c, #c2410c);
-        }
-
-        /* Новая кнопка финансового менеджера (под кнопкой калорий) */
         .finance-link-btn {
-            background: linear-gradient(135deg, #10b981, #059669);
-            box-shadow: 0 8px 20px rgba(16,185,129,0.3);
-            margin-bottom: 30px;
+            background: linear-gradient(135deg, #10b981, #047857);
         }
 
-        .finance-link-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 28px rgba(16,185,129,0.4);
-            background: linear-gradient(135deg, #059669, #047857);
+        .nav-link:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.4);
         }
 
-        .projects-link-btn i, .calorie-link-btn i, .finance-link-btn i {
-            font-size: 1.3rem;
-        }
-
+        /* Мотивационный блок */
         .motivation-box {
-            background: linear-gradient(120deg, #f0f4ff 0%, #e9efff 100%);
-            border-radius: 20px;
-            padding: 30px;
-            margin: 30px 0 20px;
-            border: 2px solid rgba(102, 126, 234, 0.3);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03));
+            border-radius: 18px;
+            padding: 22px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: var(--shadow-soft);
+            transition: var(--transition);
         }
-
         .motivation-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            margin-bottom: 20px;
-            gap: 15px;
+            gap: 10px;
+            margin-bottom: 14px;
         }
-
         .motivation-header h3 {
-            font-size: 1.6rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .refresh-motivation {
-            background: rgba(102, 126, 234, 0.15);
-            border: none;
-            padding: 10px 18px;
-            border-radius: 50px;
-            font-size: 0.85rem;
+            font-size: 1.2rem;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #667eea;
+            color: var(--accent-4);
         }
-
-        .refresh-motivation:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .motivation-phrase {
-            font-size: 1.35rem;
-            line-height: 1.5;
-            color: #2d3748;
+        .refresh-motivation {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
             font-weight: 500;
-            padding: 15px 20px;
-            background: white;
-            border-radius: 18px;
-            border-left: 6px solid #667eea;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #fff;
+        }
+        .refresh-motivation:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .motivation-phrase {
+            font-size: 1.15rem;
+            line-height: 1.5;
+            padding: 16px 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            border-left: 4px solid var(--accent-4);
+            color: #fff;
+            font-weight: 400;
+            transition: var(--transition);
+            min-height: 70px;
+        }
+        .motivation-phrase i {
+            margin-right: 8px;
+            opacity: 0.7;
         }
 
-        /* астрокалендарь */
+        /* Астрокалендарь */
         .astro-date-card {
-            background: linear-gradient(145deg, #ffffff 0%, #fef9e8 100%);
-            border-radius: 20px;
-            padding: 20px 25px;
-            margin: 20px 0 20px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(255, 180, 70, 0.4);
-            transition: all 0.2s;
+            background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            border-radius: 18px;
+            padding: 20px 22px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: var(--shadow-soft);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        .astro-date-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px -10px rgba(0,0,0,0.4);
         }
         .astro-date-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #2c2c2c;
-            border-bottom: 2px dashed #ffc48a;
-            padding-bottom: 8px;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-2);
         }
         .astro-date-header i {
-            color: #ffa559;
-            font-size: 1.7rem;
+            font-size: 1.5rem;
+            color: var(--accent-2);
         }
         .astro-details {
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
-            align-items: baseline;
-            gap: 15px;
-            margin-top: 8px;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
         }
         .date-info-main {
-            font-size: 1.25rem;
-            background: #fff4e6;
-            padding: 8px 15px;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 14px;
             border-radius: 50px;
             display: inline-flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             font-weight: 500;
+            color: #fff;
         }
         .zodiac-badge {
-            background: linear-gradient(135deg, #ffb347, #ff8c42);
-            color: white;
+            background: linear-gradient(135deg, #fdcb6e, #e17055);
+            color: #2d3436;
             padding: 6px 18px;
             border-radius: 40px;
-            font-size: 1rem;
-            font-weight: bold;
+            font-size: 0.9rem;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            gap: 6px;
+            box-shadow: 0 5px 15px rgba(225, 112, 85, 0.3);
         }
 
         footer {
             text-align: center;
-            padding: 25px;
-            background: #f8f9fa;
-            color: #666;
-            border-top: 1px solid #eaeaea;
-            font-size: 0.85rem;
+            padding: 18px;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Блок вакансий с кнопкой подробнее */
+        /* Вакансии */
         .vacancy-card {
-            background: linear-gradient(135deg, #e8f0fe, #d9e6f7);
-            border-radius: 20px;
-            padding: 18px 20px;
-            margin: 20px 20px 20px 20px;
-            border: 1px solid #b8d0f0;
-            transition: all 0.2s ease;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03));
+            border-radius: 18px;
+            padding: 22px;
+            margin: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: var(--shadow-soft);
+            transition: var(--transition);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
         .vacancy-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
+            gap: 10px;
+            margin-bottom: 14px;
             font-size: 1.2rem;
-            font-weight: bold;
-            color: #1e3a8a;
-            border-bottom: 2px dashed #94a3b8;
-            padding-bottom: 8px;
+            font-weight: 600;
+            color: var(--accent-3);
+        }
+        .vacancy-header i {
+            font-size: 1.6rem;
+            color: var(--accent-3);
         }
         .vacancy-count {
-            font-size: 2.8rem;
+            font-size: 2.5rem;
             font-weight: 800;
-            color: #0f3b6f;
-            background: white;
-            padding: 5px 20px;
-            border-radius: 60px;
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 22px;
+            border-radius: 16px;
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            margin: 10px 0 8px;
+            gap: 10px;
+            margin: 10px 0;
+            letter-spacing: -1px;
         }
         .vacancy-date {
             font-size: 0.85rem;
-            color: #4b5563;
+            color: var(--text-secondary);
             margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .vacancy-refresh {
             background: none;
             border: none;
             cursor: pointer;
-            color: #2563eb;
+            color: #fff;
             font-size: 1.1rem;
             margin-left: auto;
-            transition: transform 0.2s;
+            transition: transform 0.3s ease;
+            opacity: 0.7;
         }
         .vacancy-refresh:hover {
-            transform: rotate(90deg);
+            transform: rotate(180deg);
+            opacity: 1;
         }
-        /* Новая кнопка "Подробнее о вакансиях" */
         .vacancy-detail-btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            background: #1e3a8a;
+            background: linear-gradient(135deg, #fd79a8, #e84393);
             color: white;
-            padding: 8px 20px;
+            padding: 12px 20px;
             border-radius: 40px;
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             font-weight: 600;
-            margin-top: 15px;
-            transition: all 0.2s ease;
+            margin-top: 18px;
+            transition: var(--transition);
             border: none;
             cursor: pointer;
             width: 100%;
-            justify-content: center;
+            letter-spacing: 0.3px;
+        }
+        .vacancy-detail-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px -8px rgba(232, 67, 147, 0.5);
         }
         .vacancy-detail-btn i {
             font-size: 1rem;
         }
-        .vacancy-detail-btn:hover {
-            background: #0f2b6d;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 14px rgba(0,0,0,0.1);
-        }
 
-        @media (max-width: 1000px) {
-            .dashboard { flex-direction: column; }
-        }
         .back-button {
             position: fixed;
             top: 20px;
             left: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            color: #667eea;
-            border: none;
-            padding: 10px 22px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px 20px;
             border-radius: 50px;
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 500;
             display: flex;
+            align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
             z-index: 1000;
+            transition: var(--transition);
+            font-size: 0.9rem;
         }
         .back-button:hover {
+            background: rgba(255, 255, 255, 0.25);
             transform: translateY(-3px);
-            background: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        /* Адаптивность */
+        @media (max-width: 1000px) {
+            .dashboard {
+                flex-direction: column;
+                max-width: 700px;
+            }
+            .container, .weather-panel {
+                flex: 1;
+            }
+            .main-content {
+                padding: 25px;
+            }
+            header {
+                padding: 28px 25px 20px;
+            }
+            header h1 {
+                font-size: 2rem;
+            }
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 8px;
+            }
+            .dashboard {
+                gap: 15px;
+            }
+            .nav-link {
+                padding: 14px 18px;
+                font-size: 0.95rem;
+            }
+            .nav-link i:first-child {
+                width: 38px;
+                height: 38px;
+                font-size: 1.3rem;
+            }
+            .motivation-phrase {
+                font-size: 1rem;
+            }
+            .vacancy-card {
+                margin: 15px;
+                padding: 18px;
+            }
+            .vacancy-count {
+                font-size: 2rem;
+                padding: 8px 16px;
+            }
         }
     </style>
 </head>
 <body>
+
+<div class="bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+</div>
 
 <a href="/" class="back-button">
     <i class="fas fa-home"></i> На главную
@@ -378,34 +526,33 @@
     <div class="container">
         <header>
             <h1><i class="fas fa-chart-line"></i> Информационный центр</h1>
-            <p class="subtitle">Актуальные данные и аналитика</p>
+            <p class="subtitle">Актуальные данные и аналитика в реальном времени</p>
         </header>
 
         <div class="main-content">
             <!-- КНОПКИ НАВИГАЦИИ -->
-            <a href="/page/projects" class="projects-link-btn">
+            <a href="/page/projects" class="nav-link projects-link-btn">
                 <i class="fas fa-tasks"></i>
-                <span>📊 Управление проектами</span>
-                <i class="fas fa-arrow-right"></i>
+                <span>Управление проектами</span>
+                <i class="fas fa-arrow-right arrow"></i>
             </a>
 
-            <a href="/page/food" class="calorie-link-btn">
+            <a href="/page/food" class="nav-link calorie-link-btn">
                 <i class="fas fa-apple-alt"></i>
-                <span>🥗 Калькулятор калорий</span>
-                <i class="fas fa-arrow-right"></i>
+                <span>Калькулятор калорий</span>
+                <i class="fas fa-arrow-right arrow"></i>
             </a>
 
-            <!-- НОВАЯ КНОПКА: Финансовый менеджер -->
-            <a href="http://localhost:8080/page/finance" class="finance-link-btn">
+            <a href="http://localhost:8080/page/finance" class="nav-link finance-link-btn">
                 <i class="fas fa-coins"></i>
-                <span>💰 Финансовый менеджер</span>
-                <i class="fas fa-arrow-right"></i>
+                <span>Финансовый менеджер</span>
+                <i class="fas fa-arrow-right arrow"></i>
             </a>
 
             <!-- БЛОК МОТИВАЦИИ -->
             <div class="motivation-box">
                 <div class="motivation-header">
-                    <h3><i class="fas fa-bolt"></i> Слово поддержки от системы</h3>
+                    <h3><i class="fas fa-bolt"></i> Слово поддержки</h3>
                     <button class="refresh-motivation" id="refreshMotivationBtn">
                         <i class="fas fa-sync-alt"></i> Другая фраза
                     </button>
@@ -417,7 +564,7 @@
             </div>
 
             <!-- Астрокалендарь -->
-            <div class="astro-date-card" id="astroDateCard">
+            <div class="astro-date-card" id="astroDateCard" title="Нажмите, чтобы обновить">
                 <div class="astro-date-header">
                     <i class="fas fa-moon-stars"></i>
                     <span>Астрокалендарь</span>
@@ -426,7 +573,7 @@
                     <div class="date-info-main">
                         <i class="far fa-calendar-alt"></i>
                         <span id="fullDateText">—</span>
-                        <span id="weekdayText" style="font-weight:400;">—</span>
+                        <span id="weekdayText" style="font-weight:300; opacity:0.8;">—</span>
                     </div>
                     <div class="zodiac-badge" id="zodiacBadge">
                         <i class="fas fa-star-of-life"></i>
@@ -440,14 +587,17 @@
 
     <!-- ПРАВАЯ ЧАСТЬ: ВАКАНСИИ -->
     <div class="weather-panel">
-        <!-- БЛОК: КОЛИЧЕСТВО ВАКАНСИЙ + КНОПКА ПОДРОБНЕЕ -->
         <div class="vacancy-card" id="vacancyCard">
             <div class="vacancy-header">
                 <i class="fas fa-briefcase"></i> <span>Вакансии сегодня</span>
-                <button id="refreshVacancyBtn" class="vacancy-refresh"><i class="fas fa-sync-alt"></i></button>
+                <button id="refreshVacancyBtn" class="vacancy-refresh" title="Обновить">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
             </div>
             <div id="vacancyContent">
-                <div style="padding:10px;"><i class="fas fa-spinner fa-pulse"></i> Загрузка количества вакансий...</div>
+                <div style="padding:10px; color: rgba(255,255,255,0.6);">
+                    <i class="fas fa-spinner fa-pulse"></i> Загрузка количества вакансий...
+                </div>
             </div>
             <a href="/page/vacancy" class="vacancy-detail-btn" id="vacancyDetailBtn">
                 <i class="fas fa-arrow-right"></i> Подробнее о вакансиях
@@ -461,10 +611,10 @@
     const vacancyContainer = document.getElementById('vacancyContent');
     async function loadVacancyCount() {
         if (vacancyContainer) {
-            vacancyContainer.innerHTML = '<div style="padding:10px;"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных о вакансиях...</div>';
+            vacancyContainer.innerHTML = '<div style="padding:10px; color: rgba(255,255,255,0.6);"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных о вакансиях...</div>';
         }
         try {
-            const response = await fetch('http://localhost:8080/vacancy/count');
+            const response = await fetch('http://localhost:8080/api/vacancy/count');
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
             if (data && typeof data.vacancyCount === 'number' && data.date) {
@@ -482,9 +632,9 @@
         } catch (error) {
             console.error('Ошибка загрузки количества вакансий:', error);
             vacancyContainer.innerHTML = `
-                <div style="padding:10px; color:#c00;">
+                <div style="padding:10px; color:#ff7675;">
                     <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки
-                    <button id="retryVacancyBtn" style="margin-left:10px; background:#2563eb; border:none; padding:2px 12px; border-radius:20px; color:white;">Повторить</button>
+                    <button id="retryVacancyBtn" style="margin-left:10px; background:#fd79a8; border:none; padding:2px 12px; border-radius:20px; color:white; cursor:pointer;">Повторить</button>
                 </div>
             `;
             const retryVacancy = document.getElementById('retryVacancyBtn');
@@ -495,19 +645,21 @@
     document.getElementById('refreshVacancyBtn')?.addEventListener('click', loadVacancyCount);
     loadVacancyCount();
 
-    // --------------------------- 4. Мотивация ---------------------------------
+    // --------------------------- 2. Мотивация ---------------------------------
     const motivationSpan = document.getElementById('motivationText');
     async function loadMotivation() {
         try {
             const resp = await fetch('/motivate');
             const data = await resp.json();
             motivationSpan.textContent = data.motivateWords || "Доверьте моменту! Решение уже близко.";
-        } catch(e) { motivationSpan.textContent = "Доверьте моменту! Решение уже близко."; }
+        } catch(e) {
+            motivationSpan.textContent = "Доверьте моменту! Решение уже близко.";
+        }
     }
     document.getElementById('refreshMotivationBtn')?.addEventListener('click', loadMotivation);
     loadMotivation();
 
-    // --------------------------- 5. Дата + знак зодиака ---------------------------------
+    // --------------------------- 3. Дата + знак зодиака ---------------------------------
     function getMonthName(monthIndex) {
         const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
             'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];

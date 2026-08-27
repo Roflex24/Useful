@@ -16,7 +16,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "vacancies_per_day")
-public class VacancyEntity {
+public class Vacancy {
 
     @Id
     LocalDate date;
