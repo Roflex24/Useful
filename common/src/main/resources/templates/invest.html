@@ -130,6 +130,131 @@
         .toast { display:flex;align-items:center;gap:9px;padding:10px 15px;border-radius:var(--r);border:1px solid var(--border);background:rgba(11,19,38,0.95);backdrop-filter:blur(18px);font-size:0.8rem;font-weight:500;animation:tin 0.25s ease; }
         @keyframes tin { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         .toast.e { border-color:rgba(244,63,94,0.3);color:var(--rose); }
+
+        /* =============== СТИЛИ ДЛЯ ВИДЖЕТОВ КЛЮЧЕВОЙ СТАВКИ И ВАЛЮТ =============== */
+        .widget-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-radius: var(--rl);
+            padding: 18px 20px;
+            margin-bottom: 18px;
+        }
+        .widget-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--fd);
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 14px;
+        }
+        .widget-header i {
+            color: var(--violet);
+            font-size: 0.85rem;
+        }
+        .widget-refresh {
+            background: none;
+            border: none;
+            color: var(--text-3);
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-left: auto;
+            transition: color 0.2s, transform 0.2s;
+        }
+        .widget-refresh:hover {
+            color: var(--text);
+            transform: rotate(45deg);
+        }
+        .widget-value {
+            font-family: var(--fn);
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #fff 30%, var(--violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        .widget-date {
+            font-size: 0.72rem;
+            color: var(--text-3);
+            margin-top: 4px;
+        }
+        .widget-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-2);
+            padding: 7px 14px;
+            border-radius: 9px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.18s;
+            margin-top: 12px;
+            width: 100%;
+            justify-content: center;
+        }
+        .widget-link:hover {
+            background: var(--s-hover);
+            border-color: var(--border-lit);
+            color: var(--text);
+        }
+        .currency-rates-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 10px 0 12px;
+        }
+        .currency-item-widget {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 12px;
+            text-align: center;
+        }
+        .currency-symbol {
+            font-size: 1.2rem;
+            margin-bottom: 6px;
+        }
+        .currency-rate-widget {
+            font-family: var(--fn);
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--emerald);
+        }
+        .currency-name-widget {
+            font-size: 0.7rem;
+            color: var(--text-3);
+            margin-top: 4px;
+        }
+        .loading-widget {
+            color: var(--text-3);
+            font-size: 0.85rem;
+            padding: 8px 0;
+        }
+        .error-widget {
+            color: var(--rose);
+            font-size: 0.85rem;
+            padding: 8px 0;
+        }
+        .error-widget button {
+            background: var(--violet);
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -148,7 +273,7 @@
                 <div class="nav-sub">На основе ваших реальных данных</div>
             </div>
         </div>
-        <a href="finance.html" class="btn-ghost"><i class="fas fa-arrow-left"></i> Назад к финансам</a>
+        <a href="finance" class="btn-ghost"><i class="fas fa-arrow-left"></i> Назад к финансам</a>
     </nav>
 
     <!-- Hero: 3 главных числа -->
@@ -206,6 +331,34 @@
             <div class="panel glass">
                 <div class="panel-title"><i class="fas fa-sliders"></i> Показатели</div>
                 <div id="scoreList"></div>
+            </div>
+
+            <!-- ВИДЖЕТ: КЛЮЧЕВАЯ СТАВКА ЦБ РФ -->
+            <div class="widget-panel">
+                <div class="widget-header">
+                    <i class="fas fa-percent"></i> Ключевая ставка ЦБ РФ
+                    <button class="widget-refresh" id="refreshKeyrateBtn" title="Обновить"><i class="fas fa-sync-alt"></i></button>
+                </div>
+                <div id="keyrateContent">
+                    <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка...</div>
+                </div>
+                <a href="/page/key/rate" class="widget-link" id="keyrateDetailLink">
+                    <i class="fas fa-chart-line"></i> Подробнее о ставке →
+                </a>
+            </div>
+
+            <!-- ВИДЖЕТ: КУРСЫ ВАЛЮТ ЦБ РФ -->
+            <div class="widget-panel">
+                <div class="widget-header">
+                    <i class="fas fa-chart-line"></i> Курсы валют ЦБ РФ
+                    <button class="widget-refresh" id="refreshCurrencyBtn" title="Обновить"><i class="fas fa-sync-alt"></i></button>
+                </div>
+                <div id="currencyContent">
+                    <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка курсов...</div>
+                </div>
+                <a href="/page/currency/rate" class="widget-link" id="currencyDetailLink">
+                    <i class="fas fa-chart-line"></i> Подробнее о курсах валют →
+                </a>
             </div>
 
         </div>
@@ -445,7 +598,76 @@
         return many;
     }
 
+    // =============== ФУНКЦИИ ДЛЯ КЛЮЧЕВОЙ СТАВКИ И ВАЛЮТ ===============
+
+    async function loadKeyRate() {
+        const container = document.getElementById('keyrateContent');
+        container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка ставки...</div>';
+        try {
+            const resp = await fetch('http://localhost:8080/key/rate');
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            if (data.keyRate !== undefined && data.date) {
+                container.innerHTML = `
+                    <div class="widget-value">${data.keyRate.toFixed(2)}%</div>
+                    <div class="widget-date"><i class="far fa-calendar-check"></i> Актуальна на ${data.date}</div>
+                `;
+            } else {
+                throw new Error('Неверный формат ответа');
+            }
+        } catch(e) {
+            container.innerHTML = `
+                <div class="error-widget">
+                    <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки
+                    <button onclick="loadKeyRate()">Повторить</button>
+                </div>
+            `;
+        }
+    }
+
+    async function loadCurrencyRates() {
+        const container = document.getElementById('currencyContent');
+        container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка курсов...</div>';
+        try {
+            const resp = await fetch('/currency/rate');
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            if (data.usdRate !== undefined && data.eurRate !== undefined) {
+                container.innerHTML = `
+                    <div class="currency-rates-grid">
+                        <div class="currency-item-widget">
+                            <div class="currency-symbol">💰 USD</div>
+                            <div class="currency-rate-widget">${data.usdRate.toFixed(2)} ₽</div>
+                            <div class="currency-name-widget">Доллар США</div>
+                        </div>
+                        <div class="currency-item-widget">
+                            <div class="currency-symbol">💶 EUR</div>
+                            <div class="currency-rate-widget">${data.eurRate.toFixed(2)} ₽</div>
+                            <div class="currency-name-widget">Евро</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                throw new Error('Неверный формат ответа');
+            }
+        } catch(e) {
+            container.innerHTML = `
+                <div class="error-widget">
+                    <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки
+                    <button onclick="loadCurrencyRates()">Повторить</button>
+                </div>
+            `;
+        }
+    }
+
+    // Привязка кнопок обновления
+    document.getElementById('refreshKeyrateBtn')?.addEventListener('click', loadKeyRate);
+    document.getElementById('refreshCurrencyBtn')?.addEventListener('click', loadCurrencyRates);
+
+    // Первичная загрузка
     load();
+    loadKeyRate();
+    loadCurrencyRates();
 </script>
 </body>
 </html>
