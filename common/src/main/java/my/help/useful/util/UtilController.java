@@ -14,10 +14,10 @@ public class UtilController {
     @GetMapping("/base/backup")
     ResponseEntity<Void> baseBackUp() throws IOException, InterruptedException {
         PgDumpWrapper.dumpDatabase(
-                "postgres",     // dbName (из spring.datasource.url)
-                "postgres",     // user (из spring.datasource.username)
-                "123456",       // password (из spring.datasource.password)
-                "backup.sql"    // выходной файл
+                "postgres",
+                "postgres",
+                "123456",
+                "backup.sql"
         );
         return ResponseEntity.ok().build();
     }

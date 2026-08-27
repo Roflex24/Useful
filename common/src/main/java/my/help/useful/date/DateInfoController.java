@@ -1,6 +1,5 @@
 package my.help.useful.date;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -12,24 +11,15 @@ import java.util.Locale;
 @RestController
 public class DateInfoController {
 
-    @GetMapping("/date/info")
-    public ResponseEntity<DateInfo> getDateInfo() {
+    @GetMapping("/api/date/info")
+    public DateInfo getDateInfo() {
 
-        // Берем текущую системную дату
         LocalDate date = LocalDate.now();
-
-        // 1. Дата в читаемом формате
         String formattedDate = date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"));
-
-        // 2. День недели (на русском)
-        String dayOfWeek = date.getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("ru"));
-
-        // 3. Знак зодиака
+        String dayOfWeek = date.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.forLanguageTag("ru"));
         String zodiac = getZodiacSign(date);
 
-        return ResponseEntity.ok(
-                new DateInfo(formattedDate, dayOfWeek, zodiac)
-        );
+        return new DateInfo(formattedDate, dayOfWeek, zodiac);
     }
 
     private static String getZodiacSign(LocalDate date) {

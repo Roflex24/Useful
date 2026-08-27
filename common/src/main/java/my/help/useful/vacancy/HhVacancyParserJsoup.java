@@ -16,14 +16,11 @@ public class HhVacancyParserJsoup {
 
         int vacancyCount = 0;
         try {
-            // Подключаемся с таймаутом и корректным User-Agent
             Document doc = Jsoup.connect(URL)
                     .userAgent(USER_AGENT)
                     .timeout(10000)
                     .get();
 
-            // Ищем элемент с количеством вакансий
-            // Способ 1: через data-qa атрибут
             Elements titleElement = doc.select("[data-qa=title]");
             String titleText = titleElement.text();
 
@@ -39,7 +36,6 @@ public class HhVacancyParserJsoup {
     }
 
     private static int extractNumberFromText(String text) {
-        // Ищем паттерн "Найдено X вакансий"
         Pattern pattern = Pattern.compile("(?:Найдена|Найдено)\\s*([\\d\\s]+)\\s+ваканс");
         java.util.regex.Matcher matcher = pattern.matcher(text);
 

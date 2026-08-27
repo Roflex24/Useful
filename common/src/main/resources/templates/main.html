@@ -671,7 +671,7 @@
         const weekdaySpan = document.getElementById('weekdayText');
         const zodiacSpan = document.getElementById('zodiacSign');
         try {
-            const resp = await fetch('/date/info');
+            const resp = await fetch('/api/date/info');
             if (!resp.ok) throw new Error();
             const data = await resp.json();
             if (data.date) fullDateSpan.textContent = data.date;

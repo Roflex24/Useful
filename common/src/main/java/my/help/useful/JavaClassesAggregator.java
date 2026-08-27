@@ -1,4 +1,4 @@
-package my.help.finance.general;
+package my.help.useful;
 
 import java.io.*;
 import java.nio.file.*;
