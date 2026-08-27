@@ -16,12 +16,12 @@ public class CurrencyRateController {
     private final CbrCurrencyRateProvider cbrCurrencyRateProvider;
 
     @GetMapping()
-    public ResponseEntity<CurrencyRateRs> getCurrencyRate() throws Exception {
+    public ResponseEntity<CurrencyRateRs> get() throws Exception {
         return ResponseEntity.ok(cbrCurrencyRateProvider.getCurrencyRateModel());
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<CurrencyRateRs>> getAllCurrencyRate() throws Exception {
+    public ResponseEntity<List<CurrencyRateRs>> getList() throws Exception {
         return ResponseEntity.ok(cbrCurrencyRateProvider.getCurrencyRateModels());
     }
 }
