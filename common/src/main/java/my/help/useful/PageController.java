@@ -31,18 +31,6 @@ public class PageController {
         return "weather";
     }
 
-    @GetMapping("/page/key/rate")
-    public String keyratePage() {
-        logger.info("Открыта страница с ключевой ставкой");
-        return "keyrate";
-    }
-
-    @GetMapping("/page/currency/rate")
-    public String currencyRatePage() {
-        logger.info("Открыта страница с курсами валют");
-        return "currencyrate";
-    }
-
     @GetMapping("/page/vacancy")
     public String vacancyPage() {
         logger.info("Открыта страница с вакансиями");
@@ -79,21 +67,33 @@ public class PageController {
 
     @GetMapping("/page/finance")
     public String financePage() {
-        return "finance";
+        return "/finance/finance";
     }
 
     @GetMapping("/page/runway")
     public String runwayPage() {
-        return "runway";
+        return "/finance/runway";
     }
 
     @GetMapping("/page/invest")
     public String investPage() {
-        return "invest";
+        return "/finance/invest";
     }
 
     @GetMapping("/page/avito")
     public String avitoPage() {
-        return "avito";
+        return "/finance/avito";
+    }
+
+    @GetMapping("/page/key/rate")
+    public String keyratePage() {
+        logger.info("Открыта страница с ключевой ставкой");
+        return "/finance/keyrate";
+    }
+
+    @GetMapping("/page/currency/rate")
+    public String currencyRatePage() {
+        logger.info("Открыта страница с курсами валют");
+        return "/finance/currencyrate";
     }
 }
