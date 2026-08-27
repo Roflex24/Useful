@@ -38,18 +38,18 @@ public class EventService {
                 .withMinute(59)
                 .withSecond(59);
 
-        List<EventEntity> events = eventRepository.findByDateTimeBetween(startOfMonth, endOfMonth);
+        List<Event> events = eventRepository.findByDateTimeBetween(startOfMonth, endOfMonth);
         return eventMapper.toModelList(events);
     }
 
     @Transactional
     public EventRs update(Long id, EventRq rq) {
-        EventEntity eventEntity = eventRepository.findById(id)
+        Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Событие с id=" + id + " не найдено"));
-        eventEntity.setName(rq.name());
-        eventEntity.setDateTime(rq.dateTime());
-        eventEntity.setDescription(rq.description());
-        return eventMapper.toModel(eventEntity);
+        event.setName(rq.name());
+        event.setDateTime(rq.dateTime());
+        event.setDescription(rq.description());
+        return eventMapper.toModel(event);
     }
 
     public void delete(Long id) {

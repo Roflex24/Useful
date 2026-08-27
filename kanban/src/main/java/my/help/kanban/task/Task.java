@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import my.help.kanban.column.ColumnEntity;
+import my.help.kanban.column.Column;
 
 import java.time.LocalDate;
 
@@ -15,14 +15,15 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @Table(name = "tasks")
-public class TaskEntity {
+public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String title;
-    @Column(columnDefinition = "TEXT")
+
+    @jakarta.persistence.Column(columnDefinition = "TEXT")
     private String description;
     private int orderIndex;
 
@@ -34,7 +35,7 @@ public class TaskEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "column_id")
-    private ColumnEntity column;
+    private Column column;
 
 
     @PrePersist

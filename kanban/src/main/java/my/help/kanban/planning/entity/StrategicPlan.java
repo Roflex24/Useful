@@ -1,11 +1,14 @@
 package my.help.kanban.planning.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import java.time.LocalDate;
 
 @Entity
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class StrategicPlan {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -10,7 +10,7 @@ import java.util.List;
 public interface ColumnMapper {
 
     @Mapping(source = "project.id", target = "projectId")
-    ColumnModel toModel(ColumnEntity entity);
+    ColumnModel toModel(Column entity);
 
-    List<ColumnModel> toModelList(List<ColumnEntity> entities);
+    List<ColumnModel> toModelList(List<Column> entities);
 }

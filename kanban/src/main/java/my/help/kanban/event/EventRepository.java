@@ -6,6 +6,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface EventRepository extends JpaRepository<EventEntity, Long> {
-    List<EventEntity> findByDateTimeBetween(LocalDateTime start, LocalDateTime end);
+public interface EventRepository extends JpaRepository<Event, Long> {
+    List<Event> findByDateTimeBetween(LocalDateTime start, LocalDateTime end);
 }

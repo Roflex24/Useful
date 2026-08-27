@@ -11,8 +11,8 @@ import java.util.List;
 public interface EventMapper {
 
     @Mapping(target = "id", ignore = true)
-    EventEntity rqToEntity(EventRq rq);
+    Event rqToEntity(EventRq rq);
 
-    EventRs toModel(EventEntity eventEntity);
-    List<EventRs> toModelList(List<EventEntity> eventEntityList);
+    EventRs toModel(Event event);
+    List<EventRs> toModelList(List<Event> eventList);
 }

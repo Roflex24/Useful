@@ -16,7 +16,7 @@ public class ProjectMetricAggregator {
     /**
      * Создает базовый объект ProjectWithMetricModel из ProjectEntity
      */
-    public ProjectRs buildBasicProjectWithMetric(ProjectEntity entity) {
+    public ProjectRs buildBasicProjectWithMetric(Project entity) {
         return new ProjectRs(
                 entity.getId(),
                 entity.getName(),
@@ -58,9 +58,9 @@ public class ProjectMetricAggregator {
     /**
      * Полностью собирает объект ProjectWithMetricModel из сущности и метрик
      */
-    public ProjectRs aggregateProjectWithMetrics(ProjectEntity projectEntity,
+    public ProjectRs aggregateProjectWithMetrics(Project project,
                                                  List<ProjectMetricRs> metrics) {
-        ProjectRs result = buildBasicProjectWithMetric(projectEntity);
+        ProjectRs result = buildBasicProjectWithMetric(project);
         processMetrics(metrics, result);
         return result;
     }

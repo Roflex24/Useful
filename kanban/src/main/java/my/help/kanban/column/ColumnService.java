@@ -1,7 +1,7 @@
 package my.help.kanban.column;
 
 import lombok.RequiredArgsConstructor;
-import my.help.kanban.project.ProjectEntity;
+import my.help.kanban.project.Project;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,16 +18,16 @@ public class ColumnService {
         return columnMapper.toModelList(columnRepository.findAllByProjectId(projectId));
     }
 
-    public List<ColumnModel> getAll() {
+    public List<ColumnModel> getList() {
         return columnMapper.toModelList(columnRepository.findAll());
     }
 
-    public void createColumns(ProjectEntity projectEntity) {
+    public void createColumns(Project project) {
         List<String> columnNameList = List.of("Бэклог", "На ближайшие дни", "В процессе", "Готово");
-        List<ColumnEntity> columnEntityList = new ArrayList<>();
+        List<Column> columnList = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
-            columnEntityList.add(new ColumnEntity(null, columnNameList.get(i), i, projectEntity));
+            columnList.add(new Column(null, columnNameList.get(i), i, project));
         }
-        columnRepository.saveAll(columnEntityList);
+        columnRepository.saveAll(columnList);
     }
 }

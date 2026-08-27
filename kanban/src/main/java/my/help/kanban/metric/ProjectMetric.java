@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import my.help.kanban.project.ProjectEntity;
+import my.help.kanban.project.Project;
 
 @Entity
 @NoArgsConstructor
@@ -13,7 +13,7 @@ import my.help.kanban.project.ProjectEntity;
 @Getter
 @Setter
 @Table(name = "project_metric")
-public class ProjectMetricEntity {
+public class ProjectMetric {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,5 +26,5 @@ public class ProjectMetricEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
-    private ProjectEntity project;
+    private Project project;
 }

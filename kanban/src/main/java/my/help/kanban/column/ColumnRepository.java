@@ -6,10 +6,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ColumnRepository extends JpaRepository<ColumnEntity, Long> {
+public interface ColumnRepository extends JpaRepository<Column, Long> {
 
-    List<ColumnEntity> findAllByProjectId(Long id);
-    ColumnEntity findByProjectIdAndOrderIndex(Long project_id, int orderIndex);
+    List<Column> findAllByProjectId(Long id);
+    Column findByProjectIdAndOrderIndex(Long project_id, int orderIndex);
     void deleteByProjectId(Long id);
 
 }

@@ -14,15 +14,15 @@ public interface ProjectMetricMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "main", source = "isMain")
     @Mapping(target = "complete", source = "isComplete")
-    ProjectMetricEntity projectMetricRqToEntity(ProjectMetricRq projectMetricRq);
+    ProjectMetric projectMetricRqToEntity(ProjectMetricRq projectMetricRq);
 
     @Mapping(target = "project", ignore = true)
-    ProjectMetricEntity toEntity(ProjectMetricRs projectMetricRs);
+    ProjectMetric toEntity(ProjectMetricRs projectMetricRs);
 
     @Mapping(target = "projectId", ignore = true)
-    ProjectMetricRs toModel(ProjectMetricEntity projectMetricEntity);
+    ProjectMetricRs toModel(ProjectMetric projectMetric);
 
-    List<ProjectMetricEntity> toEntityList(List<ProjectMetricRs> projectMetricRsList);
-    List<ProjectMetricRs> toModelList(List<ProjectMetricEntity> projectMetricEntityList);
+    List<ProjectMetric> toEntityList(List<ProjectMetricRs> projectMetricRsList);
+    List<ProjectMetricRs> toModelList(List<ProjectMetric> projectMetricList);
 
 }

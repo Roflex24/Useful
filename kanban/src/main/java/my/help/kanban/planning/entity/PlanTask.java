@@ -1,13 +1,16 @@
 package my.help.kanban.planning.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "plan_tasks")
 public class PlanTask {
     @Id
@@ -29,7 +32,7 @@ public class PlanTask {
     @Column(length = 2000)
     private String comment;
 
-    private Integer orderIndex; // для сортировки задач
+    private Integer orderIndex;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

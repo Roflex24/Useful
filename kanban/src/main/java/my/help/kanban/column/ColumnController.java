@@ -18,7 +18,7 @@ public class ColumnController {
     }
 
     @GetMapping
-    List<ColumnModel> getAll() {
-        return columnService.getAll();
+    List<ColumnModel> getList() {
+        return columnService.getList();
     }
 }

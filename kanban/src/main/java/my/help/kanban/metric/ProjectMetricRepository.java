@@ -6,8 +6,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ProjectMetricRepository extends JpaRepository<ProjectMetricEntity, Long> {
+public interface ProjectMetricRepository extends JpaRepository<ProjectMetric, Long> {
 
-    List<ProjectMetricEntity> findAllByProjectId(Long projectId);
+    List<ProjectMetric> findAllByProjectId(Long projectId);
     void deleteByProjectId(Long projectId);
 }

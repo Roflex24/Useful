@@ -20,10 +20,10 @@ public class ProjectMetricService {
 
     @Transactional
     public void create(ProjectMetricRq rq) {
-        ProjectMetricEntity projectMetricEntity = projectMetricMapper.projectMetricRqToEntity(rq);
-        projectMetricEntity.setProject(projectRepository.findById(rq.projectId())
+        ProjectMetric projectMetric = projectMetricMapper.projectMetricRqToEntity(rq);
+        projectMetric.setProject(projectRepository.findById(rq.projectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + rq.projectId() + " не найдено")));
-        projectMetricRepository.save(projectMetricEntity);
+        projectMetricRepository.save(projectMetric);
     }
 
     public List<ProjectMetricRs> getListByProjectId(Long projectId) {
@@ -36,25 +36,25 @@ public class ProjectMetricService {
 
     @Transactional
     public void updateList(List<ProjectMetricRs> rq) {
-        List<ProjectMetricEntity> projectMetricEntityList = projectMetricMapper.toEntityList(rq);
+        List<ProjectMetric> projectMetricList = projectMetricMapper.toEntityList(rq);
         Long id = rq.getFirst().getProjectId();
-        for (ProjectMetricEntity projectMetricEntity: projectMetricEntityList) {
-            projectMetricEntity.setProject(projectRepository.findById(id)
+        for (ProjectMetric projectMetric : projectMetricList) {
+            projectMetric.setProject(projectRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено")));
         }
-        projectMetricRepository.saveAll(projectMetricEntityList);
+        projectMetricRepository.saveAll(projectMetricList);
     }
 
     @Transactional
     public ProjectMetricRs update(Long id, ProjectMetricRq rq) {
-        ProjectMetricEntity projectMetricEntity = projectMetricRepository.findById(id)
+        ProjectMetric projectMetric = projectMetricRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Метрика проекта с id=" + id + " не найдено"));
-        projectMetricEntity.setName(rq.name());
-        projectMetricEntity.setComplete(rq.isComplete());
-        projectMetricEntity.setMain(rq.isMain());
-        projectMetricEntity.setOrderIndex(rq.orderIndex());
+        projectMetric.setName(rq.name());
+        projectMetric.setComplete(rq.isComplete());
+        projectMetric.setMain(rq.isMain());
+        projectMetric.setOrderIndex(rq.orderIndex());
 
-        return projectMetricMapper.toModel(projectMetricEntity);
+        return projectMetricMapper.toModel(projectMetric);
     }
 
 

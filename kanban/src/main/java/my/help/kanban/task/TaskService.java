@@ -1,7 +1,7 @@
 package my.help.kanban.task;
 
 import lombok.RequiredArgsConstructor;
-import my.help.kanban.column.ColumnEntity;
+import my.help.kanban.column.Column;
 import my.help.kanban.column.ColumnRepository;
 import my.help.kanban.common.ResourceNotFoundException;
 import my.help.kanban.task.dto.TaskRq;
@@ -24,7 +24,7 @@ public class TaskService {
     private static final int DAYS_LIMIT_FOR_ARCHIVE = 7;
 
     public List<TaskRs> getByColumn(Long columnId) {
-        ColumnEntity column = columnRepository.findById(columnId).orElseThrow(() -> new ResourceNotFoundException(
+        Column column = columnRepository.findById(columnId).orElseThrow(() -> new ResourceNotFoundException(
                 String.format("Колонка с id %d не найдена", columnId)));
 
         List<TaskRs> list = taskMapper.toModelList(
@@ -42,32 +42,32 @@ public class TaskService {
     }
 
     public void create(TaskRq rq) {
-        TaskEntity taskEntity = taskMapper.toEntity(rq);
-        if (taskEntity.getDifficulty() == null) {
-            taskEntity.setDifficulty(Difficulty.BASE);
+        Task task = taskMapper.toEntity(rq);
+        if (task.getDifficulty() == null) {
+            task.setDifficulty(Difficulty.BASE);
         }
-        taskEntity.setColumn(columnRepository.findById(rq.columnId())
+        task.setColumn(columnRepository.findById(rq.columnId())
                 .orElseThrow(() -> new ResourceNotFoundException(String.format("Колонка с id %d не найдена", rq.columnId()))));
-        taskRepository.save(taskEntity);
+        taskRepository.save(task);
     }
 
     public List<TaskRs> updateList(List<TaskRs> rq) {
-        List<TaskEntity> taskEntityList = taskMapper.toEntityList(rq);
-        for (int i = 0; i < taskEntityList.size(); i++) {
-            TaskEntity taskEntity = taskEntityList.get(i);
+        List<Task> taskList = taskMapper.toEntityList(rq);
+        for (int i = 0; i < taskList.size(); i++) {
+            Task task = taskList.get(i);
             Long id = rq.get(i).columnId();
-            ColumnEntity column = columnRepository.findById(id)
+            Column column = columnRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException(String.format("Колонка с id %d не найдена", id)));
             if (column.getOrderIndex() == 3) {
-                if (taskEntity.getCloseDate() == null) {
-                    taskEntity.setCloseDate(LocalDate.now());
+                if (task.getCloseDate() == null) {
+                    task.setCloseDate(LocalDate.now());
                 }
             } else {
-                taskEntity.setCloseDate(null);
+                task.setCloseDate(null);
             }
-            taskEntity.setColumn(column);
+            task.setColumn(column);
         }
-        List<TaskEntity> saved = taskRepository.saveAll(taskEntityList);
+        List<Task> saved = taskRepository.saveAll(taskList);
         return taskMapper.toModelList(saved);
     }
 
@@ -76,10 +76,10 @@ public class TaskService {
     }
 
     public long getCountForPeriod(LocalDate start, LocalDate end, Long projectId) {
-        List<TaskEntity> taskEntityList = taskRepository.findByCloseDateBetweenAndColumnId(
+        List<Task> taskList = taskRepository.findByCloseDateBetweenAndColumnId(
                 start, end, columnRepository.findByProjectIdAndOrderIndex(projectId, 3).getId());
 
-        return taskEntityList.size();
+        return taskList.size();
     }
 
     public List<TaskRs> getListForPeriod(LocalDate start, LocalDate end) {

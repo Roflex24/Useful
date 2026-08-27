@@ -1,9 +1,9 @@
 package my.help.kanban.project;
 
 import lombok.RequiredArgsConstructor;
+import my.help.kanban.column.Column;
 import my.help.kanban.common.ResourceNotFoundException;
 import my.help.kanban.metric.*;
-import my.help.kanban.column.ColumnEntity;
 import my.help.kanban.column.ColumnRepository;
 import my.help.kanban.column.ColumnService;
 import my.help.kanban.metric.dto.ProjectMetricRs;
@@ -34,8 +34,8 @@ public class ProjectService {
 
     @Transactional
     public ProjectRs create(ProjectRq rq) {
-        ProjectEntity projectEntity = projectMapper.projectRqToEntity(rq);
-        ProjectEntity saved = projectRepository.save(projectEntity);
+        Project project = projectMapper.projectRqToEntity(rq);
+        Project saved = projectRepository.save(project);
         columnService.createColumns(saved);
         projectMetricService.create(
                 new ProjectMetricRq("Метрика завершения проекта", false, true, null, saved.getId())
@@ -45,17 +45,17 @@ public class ProjectService {
 
     @Transactional
     public ProjectRs update(Long id, ProjectRq rq) {
-        ProjectEntity projectEntity = projectRepository.findById(id)
+        Project project = projectRepository.findById(id)
                         .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено"));
-        projectEntity.setName(rq.name());
-        projectEntity.setDescription(rq.description());
+        project.setName(rq.name());
+        project.setDescription(rq.description());
 
-        return projectMapper.toModel(projectEntity);
+        return projectMapper.toModel(project);
     }
 
     @Transactional
     public void archiveProject(Long id) {
-        ProjectEntity project = projectRepository.findById(id)
+        Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено"));
         project.setArchived(true);
         project.setArchiveDate(LocalDate.now());
@@ -64,7 +64,7 @@ public class ProjectService {
 
     @Transactional
     public void unarchiveProject(Long id) {
-        ProjectEntity project = projectRepository.findById(id)
+        Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено"));
         project.setArchived(false);
         project.setArchiveDate(null);
@@ -73,8 +73,8 @@ public class ProjectService {
 
     @Transactional
     public void delete(Long id) {
-        for(ColumnEntity columnEntity: columnRepository.findAllByProjectId(id)) {
-            taskRepository.deleteByColumnId(columnEntity.getId());
+        for(Column column : columnRepository.findAllByProjectId(id)) {
+            taskRepository.deleteByColumnId(column.getId());
         }
         columnRepository.deleteByProjectId(id);
         projectMetricRepository.deleteByProjectId(id);
@@ -82,30 +82,30 @@ public class ProjectService {
     }
 
     public ProjectRs getProjectById(Long id) {
-        ProjectEntity projectEntity = projectRepository.findById(id)
+        Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Проект с id=" + id + " не найдено"));
 
         List<ProjectMetricRs> projectMetricRsList = projectMetricMapper.toModelList(
                 projectMetricRepository.findAllByProjectId(id)
         );
 
-        return projectMetricAggregator.aggregateProjectWithMetrics(projectEntity, projectMetricRsList);
+        return projectMetricAggregator.aggregateProjectWithMetrics(project, projectMetricRsList);
     }
 
     public List<ProjectRs> getList() {
-        List<ProjectEntity> projectEntityList = projectRepository.findAll();
-        return buildProjectModelsWithMetrics(projectEntityList);
+        List<Project> projectList = projectRepository.findAll();
+        return buildProjectModelsWithMetrics(projectList);
     }
 
-    private List<ProjectRs> buildProjectModelsWithMetrics(List<ProjectEntity> projects) {
+    private List<ProjectRs> buildProjectModelsWithMetrics(List<Project> projects) {
         List<ProjectRs> projectWithMetricModelList = new ArrayList<>();
 
-        for (ProjectEntity projectEntity : projects) {
+        for (Project project : projects) {
             projectWithMetricModelList.add(
                     projectMetricAggregator.aggregateProjectWithMetrics(
-                            projectEntity, projectMetricMapper.toModelList(
+                            project, projectMetricMapper.toModelList(
                                     projectMetricRepository.findAllByProjectId(
-                                            projectEntity.getId()))));
+                                            project.getId()))));
         }
         return projectWithMetricModelList;
     }
