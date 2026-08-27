@@ -10,10 +10,6 @@ public class RedisService {
 
     private final StringRedisTemplate redisTemplate;
 
-    public void saveData(Integer key, String value) {
-        redisTemplate.opsForValue().set(String.valueOf(key), value);
-    }
-
     public String getValue(Integer key) {
         return redisTemplate.opsForValue().get(String.valueOf(key));
     }
