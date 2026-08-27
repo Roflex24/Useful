@@ -24,7 +24,7 @@ public class CbrCurrencyRateProvider {
     private static final String CBR_URL = "http://www.cbr.ru/scripts/XML_daily.asp";
     private final CurrencyRateRepository currencyRateRepository;
 
-    public CurrencyRateRs getCurrencyRateModel() throws Exception {
+    public CurrencyRateRs get() throws Exception {
         Optional<CurrencyRate> currencyRateEntityOptional = currencyRateRepository.findByActualDate(LocalDate.now());
 
         if (currencyRateEntityOptional.isPresent()) {
@@ -39,7 +39,7 @@ public class CbrCurrencyRateProvider {
         }
     }
 
-    public List<CurrencyRateRs> getCurrencyRateModels() throws Exception {
+    public List<CurrencyRateRs> getList() {
         List<CurrencyRate> currencyRateEntities = currencyRateRepository.findAll();
         List<CurrencyRateRs> currencyRateRs = new ArrayList<>();
         for (CurrencyRate currencyRate : currencyRateEntities) {

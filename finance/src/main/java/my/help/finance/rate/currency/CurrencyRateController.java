@@ -1,7 +1,6 @@
 package my.help.finance.rate.currency;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,12 +15,12 @@ public class CurrencyRateController {
     private final CbrCurrencyRateProvider cbrCurrencyRateProvider;
 
     @GetMapping()
-    public ResponseEntity<CurrencyRateRs> get() throws Exception {
-        return ResponseEntity.ok(cbrCurrencyRateProvider.getCurrencyRateModel());
+    public CurrencyRateRs get() throws Exception {
+        return cbrCurrencyRateProvider.get();
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<CurrencyRateRs>> getList() throws Exception {
-        return ResponseEntity.ok(cbrCurrencyRateProvider.getCurrencyRateModels());
+    public List<CurrencyRateRs> getList() {
+        return cbrCurrencyRateProvider.getList();
     }
 }
