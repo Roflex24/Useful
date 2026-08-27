@@ -24,28 +24,28 @@ public class CbrCurrencyRateProvider {
     private static final String CBR_URL = "http://www.cbr.ru/scripts/XML_daily.asp";
     private final CurrencyRateRepository currencyRateRepository;
 
-    public CurrencyRateModel getCurrencyRateModel() throws Exception {
+    public CurrencyRateRs getCurrencyRateModel() throws Exception {
         Optional<CurrencyRate> currencyRateEntityOptional = currencyRateRepository.findByActualDate(LocalDate.now());
 
         if (currencyRateEntityOptional.isPresent()) {
             CurrencyRate currencyRate = currencyRateEntityOptional.get();
-            return new CurrencyRateModel(currencyRate.getUsdRate(), currencyRate.getEurRate(), currencyRate.getActualDate());
+            return new CurrencyRateRs(currencyRate.getUsdRate(), currencyRate.getEurRate(), currencyRate.getActualDate());
         } else {
             double usdRate = Math.round(getRateByCharCode("USD") * 100.0) / 100.0;
             double eurRate = Math.round(getRateByCharCode("EUR") * 100.0) / 100.0;
             LocalDate date = LocalDate.now();
             currencyRateRepository.save(new CurrencyRate(date, usdRate, eurRate));
-            return new CurrencyRateModel(usdRate, eurRate, date);
+            return new CurrencyRateRs(usdRate, eurRate, date);
         }
     }
 
-    public List<CurrencyRateModel> getCurrencyRateModels() throws Exception {
+    public List<CurrencyRateRs> getCurrencyRateModels() throws Exception {
         List<CurrencyRate> currencyRateEntities = currencyRateRepository.findAll();
-        List<CurrencyRateModel> currencyRateModels = new ArrayList<>();
+        List<CurrencyRateRs> currencyRateRs = new ArrayList<>();
         for (CurrencyRate currencyRate : currencyRateEntities) {
-            currencyRateModels.add(new CurrencyRateModel(currencyRate.getUsdRate(), currencyRate.getEurRate(), currencyRate.getActualDate()));
+            currencyRateRs.add(new CurrencyRateRs(currencyRate.getUsdRate(), currencyRate.getEurRate(), currencyRate.getActualDate()));
         }
-        return currencyRateModels;
+        return currencyRateRs;
     }
 
     private double getRateByCharCode(String charCode) throws Exception {

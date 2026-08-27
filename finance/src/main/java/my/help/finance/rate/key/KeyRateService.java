@@ -24,7 +24,7 @@ public class KeyRateService {
 
     private final KeyRateRepository keyRateRepository;
 
-    public KeyRateModel getKeyRateModel() {
+    public KeyRateRs getKeyRateModel() {
         try {
             LocalDate currentDate = LocalDate.now();
             System.out.println("Запрашиваем ставку на дату: " + currentDate);
@@ -34,7 +34,7 @@ public class KeyRateService {
             if (existingEntity.isPresent()) {
                 System.out.println("Найдена запись в БД за сегодня: ставка = " + existingEntity.get().getKeyRate());
                 KeyRate entity = existingEntity.get();
-                return new KeyRateModel(entity.getKeyRate(), entity.getDate());
+                return new KeyRateRs(entity.getKeyRate(), entity.getDate());
             }
 
             System.out.println("Данных в БД нет, парсим сайт ЦБ РФ...");
@@ -45,10 +45,10 @@ public class KeyRateService {
             e.printStackTrace();
         }
 
-        return new KeyRateModel(0, null);
+        return new KeyRateRs(0, null);
     }
 
-    private KeyRateModel fetchFromCbrAndSave(LocalDate date) throws Exception {
+    private KeyRateRs fetchFromCbrAndSave(LocalDate date) throws Exception {
         System.out.println("Загрузка страницы: " + CBR_URL);
 
         // === ВАРИАНТ 1: Отключение проверки SSL (только для разработки) ===
@@ -104,16 +104,16 @@ public class KeyRateService {
         KeyRate saved = keyRateRepository.save(entity);
         System.out.println("Сохранена новая запись в БД: ставка = " + saved.getKeyRate());
 
-        return new KeyRateModel(rate, date);
+        return new KeyRateRs(rate, date);
     }
 
-    public List<KeyRateModel> getKeyRateModels() {
+    public List<KeyRateRs> getKeyRateModels() {
         List<KeyRate> entities = keyRateRepository.findAll();
-        List<KeyRateModel> models = new ArrayList<>();
+        List<KeyRateRs> models = new ArrayList<>();
         double keyRate = 0;
         for (KeyRate entity : entities) {
             if (entity.getKeyRate() != keyRate) {
-                models.add(new KeyRateModel(entity.getKeyRate(), entity.getDate()));
+                models.add(new KeyRateRs(entity.getKeyRate(), entity.getDate()));
                 keyRate = entity.getKeyRate();
             }
         }

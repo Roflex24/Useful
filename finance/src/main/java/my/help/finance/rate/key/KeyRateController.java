@@ -16,14 +16,14 @@ public class KeyRateController {
     private final KeyRateService keyRateService;
 
     @GetMapping()
-    public ResponseEntity<KeyRateModel> getKeyRate() {
-        KeyRateModel rate = keyRateService.getKeyRateModel();
+    public ResponseEntity<KeyRateRs> getKeyRate() {
+        KeyRateRs rate = keyRateService.getKeyRateModel();
         return ResponseEntity.ok(rate);
     }
 
 
     @GetMapping("/all")
-    public ResponseEntity<List<KeyRateModel>> getAllKeyRate() {
+    public ResponseEntity<List<KeyRateRs>> getAllKeyRate() {
         return ResponseEntity.ok(keyRateService.getKeyRateModels());
     }
 }
