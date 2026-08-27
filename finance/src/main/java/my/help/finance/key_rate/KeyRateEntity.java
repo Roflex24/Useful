@@ -1,4 +1,4 @@
-package my.help.useful.key_rate;
+package my.help.finance.key_rate;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

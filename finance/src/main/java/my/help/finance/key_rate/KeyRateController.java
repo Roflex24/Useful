@@ -1,4 +1,4 @@
-package my.help.useful.key_rate;
+package my.help.finance.key_rate;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,15 +15,12 @@ public class KeyRateController {
 
     private final KeyRateService keyRateService;
 
-    //TODO на выходных ключевая ставка не обнолвяется поэтому работает не корректно.
-    /*
-
     @GetMapping()
     public ResponseEntity<KeyRateModel> getKeyRate() {
         KeyRateModel rate = keyRateService.getKeyRateModel();
         return ResponseEntity.ok(rate);
     }
-*/
+
 
     @GetMapping("/all")
     public ResponseEntity<List<KeyRateModel>> getAllKeyRate() {

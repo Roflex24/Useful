@@ -1,4 +1,4 @@
-package my.help.useful.exchange_rate;
+package my.help.finance.exchange_rate;
 
 import java.net.URI;
 import java.net.http.HttpClient;

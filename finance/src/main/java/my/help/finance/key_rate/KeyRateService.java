@@ -1,10 +1,4 @@
-package my.help.useful.key_rate;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+package my.help.finance.key_rate;
 
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
@@ -12,6 +6,15 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
+
+import javax.net.ssl.*;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -23,11 +26,9 @@ public class KeyRateService {
 
     public KeyRateModel getKeyRateModel() {
         try {
-            // 1. Получаем сегодняшнюю дату
             LocalDate currentDate = LocalDate.now();
             System.out.println("Запрашиваем ставку на дату: " + currentDate);
 
-            // 2. Пытаемся найти запись в БД за сегодня
             Optional<KeyRateEntity> existingEntity = keyRateRepository.findById(currentDate);
 
             if (existingEntity.isPresent()) {
@@ -36,9 +37,8 @@ public class KeyRateService {
                 return new KeyRateModel(entity.getKeyRate(), entity.getDate());
             }
 
-            // 3. Если в БД нет - парсим сайт ЦБ РФ
             System.out.println("Данных в БД нет, парсим сайт ЦБ РФ...");
-            return fetchFromCbrAndSave();
+            return fetchFromCbrAndSave(currentDate);
 
         } catch (Exception e) {
             System.err.println("Ошибка при получении ставки: " + e.getMessage());
@@ -48,22 +48,39 @@ public class KeyRateService {
         return new KeyRateModel(0, null);
     }
 
-    private KeyRateModel fetchFromCbrAndSave() throws Exception {
+    private KeyRateModel fetchFromCbrAndSave(LocalDate date) throws Exception {
         System.out.println("Загрузка страницы: " + CBR_URL);
 
+        // === ВАРИАНТ 1: Отключение проверки SSL (только для разработки) ===
+        TrustManager[] trustAllCerts = new TrustManager[] {
+                new X509TrustManager() {
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+                    public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                    }
+                    public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                    }
+                }
+        };
+
+        SSLContext sc = SSLContext.getInstance("SSL");
+        sc.init(null, trustAllCerts, new SecureRandom());
+
+        // Применяем созданный SSLContext только для этого Jsoup-соединения
         Document doc = Jsoup.connect(CBR_URL)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                 .timeout(15000)
+                .sslSocketFactory(sc.getSocketFactory())
                 .get();
+        // ================================================================
 
-        // БЕРЁМ ПЕРВУЮ СТРОКУ ТАБЛИЦЫ (после заголовка)
         Elements rows = doc.select("table.data tr");
 
         if (rows.size() < 2) {
             throw new RuntimeException("Не найдено строк с данными в таблице");
         }
 
-        // Индекс 1 — это первая строка с данными (индекс 0 — это заголовок <th>)
         Element firstDataRow = rows.get(1);
 
         String dateStr = firstDataRow.select("td").first().text();
@@ -82,12 +99,12 @@ public class KeyRateService {
 
         KeyRateEntity entity = new KeyRateEntity();
         entity.setKeyRate(rate);
-        entity.setDate(rateDate);
+        entity.setDate(date);
 
         KeyRateEntity saved = keyRateRepository.save(entity);
         System.out.println("Сохранена новая запись в БД: ставка = " + saved.getKeyRate());
 
-        return new KeyRateModel(rate, rateDate);
+        return new KeyRateModel(rate, date);
     }
 
     public List<KeyRateModel> getKeyRateModels() {

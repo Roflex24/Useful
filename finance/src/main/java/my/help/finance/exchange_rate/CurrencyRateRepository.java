@@ -1,4 +1,4 @@
-package my.help.useful.exchange_rate;
+package my.help.finance.exchange_rate;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
