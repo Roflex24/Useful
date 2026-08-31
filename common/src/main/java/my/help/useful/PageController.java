@@ -56,6 +56,11 @@ public class PageController {
         return "/planning/tasks";
     }
 
+    @GetMapping("/page/ideas")
+    public String ideasPage() {
+        return "/planning/ideas";
+    }
+
 
     /*Finance*/
 

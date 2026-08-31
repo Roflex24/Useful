@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Идеи | NeoProject Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at 0% 0%, #0f0c2a 0%, #1a1747 50%, #0f0c2a 100%);
+            min-height: 100vh;
+            padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+            color: #fff;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(79, 70, 229, 0.15));
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+            filter: blur(12px);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.2; }
+            25% { transform: translateY(-40px) translateX(30px) rotate(90deg); opacity: 0.4; }
+            50% { transform: translateY(0) translateX(50px) rotate(180deg); opacity: 0.2; }
+            75% { transform: translateY(40px) translateX(30px) rotate(270deg); opacity: 0.4; }
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .top-navbar {
+            backdrop-filter: blur(20px);
+            background: rgba(15, 12, 42, 0.6);
+            border-radius: 1.5rem;
+            padding: 1rem 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            animation: slideInDown 0.6s ease;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-radius: 2rem;
+            padding: 0.6rem 1.4rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-button--purple {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+        }
+        .nav-button--purple:hover {
+            background: rgba(139, 92, 246, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .nav-button--blue {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+        }
+        .nav-button--blue:hover {
+            background: rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .header {
+            backdrop-filter: blur(20px);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(79, 70, 229, 0.1));
+            border-radius: 1.5rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            text-align: center;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 50%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .ideas-toolbar {
+            backdrop-filter: blur(20px);
+            background: rgba(15, 12, 42, 0.5);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            animation: fadeInUp 0.6s ease 0.1s both;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 2.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-radius: 2rem;
+            color: white;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        .search-box input:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+            background: rgba(0, 0, 0, 0.6);
+        }
+        .search-box .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .filter-btn:hover {
+            background: rgba(139, 92, 246, 0.3);
+            transform: translateY(-1px);
+        }
+        .filter-btn.active {
+            background: rgba(139, 92, 246, 0.5);
+            border-color: rgba(139, 92, 246, 0.8);
+            color: white;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .priority-filter {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .priority-filter select {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: white;
+            cursor: pointer;
+            outline: none;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        .priority-filter select:focus {
+            border-color: #8b5cf6;
+        }
+        .priority-filter select option {
+            background: #1a1747;
+            color: white;
+        }
+
+        .sort-btn {
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .sort-btn:hover {
+            background: rgba(139, 92, 246, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .ideas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.5rem;
+            animation: fadeInUp 0.6s ease 0.2s both;
+        }
+
+        .idea-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 220px;
+            position: relative;
+        }
+        .idea-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            border-color: rgba(139, 92, 246, 0.6);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .idea-card.archived {
+            opacity: 0.6;
+            background: rgba(0, 0, 0, 0.3);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        .idea-card.archived:hover {
+            opacity: 0.8;
+            border-color: rgba(239, 68, 68, 0.6);
+        }
+        .idea-card.done .idea-title {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .idea-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        .idea-priority {
+            font-size: 1.8rem;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+        }
+        .idea-actions {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .idea-action-btn {
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            border: none;
+        }
+        .edit-btn {
+            background: rgba(139, 92, 246, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #c4b5fd;
+        }
+        .edit-btn:hover { background: rgba(139, 92, 246, 0.6); transform: scale(1.05); }
+        .delete-btn {
+            background: rgba(239, 68, 68, 0.3);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+        .delete-btn:hover { background: rgba(239, 68, 68, 0.6); transform: scale(1.05); }
+        .archive-btn {
+            background: rgba(245, 158, 11, 0.3);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: #fcd34d;
+        }
+        .archive-btn:hover { background: rgba(245, 158, 11, 0.6); transform: scale(1.05); }
+        .unarchive-btn {
+            background: rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
+        }
+        .unarchive-btn:hover { background: rgba(16, 185, 129, 0.6); transform: scale(1.05); }
+        .done-btn {
+            background: rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
+        }
+        .done-btn:hover { background: rgba(16, 185, 129, 0.6); transform: scale(1.05); }
+        .undone-btn {
+            background: rgba(156, 163, 175, 0.3);
+            border: 1px solid rgba(156, 163, 175, 0.4);
+            color: #d1d5db;
+        }
+        .undone-btn:hover { background: rgba(156, 163, 175, 0.6); transform: scale(1.05); }
+
+        .idea-content { flex: 1; display: flex; flex-direction: column; }
+        .idea-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            word-break: break-word;
+        }
+        .idea-description {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+        }
+        .idea-description.empty { color: rgba(255, 255, 255, 0.45); font-style: italic; }
+
+        .idea-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 0.8rem;
+        }
+        .idea-tag {
+            background: rgba(139, 92, 246, 0.25);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.7rem;
+            color: #c4b5fd;
+            font-weight: 500;
+        }
+
+        .idea-footer {
+            margin-top: auto;
+            padding-top: 0.8rem;
+            border-top: 1px solid rgba(139, 92, 246, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .idea-date {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .idea-status {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-new {
+            background: rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.5);
+        }
+        .status-in-progress {
+            background: rgba(245, 158, 11, 0.3);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.5);
+        }
+        .status-done {
+            background: rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.5);
+        }
+        .status-archived {
+            background: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.6);
+            grid-column: 1 / -1;
+        }
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        }
+
+        .create-idea-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            padding: 0.7rem 1.6rem;
+            border-radius: 2rem;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+        .create-idea-btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.5);
+            background: linear-gradient(135deg, #1acf91, #0a7a50);
+        }
+
+        /* Модальные окна */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeInModal 0.3s ease;
+            padding: 1rem;
+        }
+        @keyframes fadeInModal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1747, #0f0c2a);
+            border-radius: 2rem;
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            animation: scaleIn 0.3s ease;
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
+        }
+        .modal-header h2 {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #ffffff, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.5);
+            transform: rotate(90deg);
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.5rem;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 0.8rem;
+            font-size: 0.95rem;
+            color: white;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .form-group select option {
+            background: #1a1747;
+            color: white;
+        }
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .form-row .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-save {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .toast-message {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            z-index: 3000;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            animation: slideInRight 0.3s ease;
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes slideInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .ideas-grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.8rem; }
+            .ideas-toolbar { flex-direction: column; align-items: stretch; }
+            .search-box { width: 100%; }
+            .filter-group { justify-content: center; }
+            .priority-filter { justify-content: center; }
+            .create-idea-btn { justify-content: center; }
+            .modal-content { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+<div class="app-container">
+    <div class="top-navbar">
+        <div class="logo"><span>✨</span> NeoProject Manager</div>
+        <div class="nav-buttons">
+            <a href="/page/projects" class="nav-button nav-button--purple">
+                <span>📁</span> Проекты
+            </a>
+            <a href="/" class="nav-button nav-button--blue">
+                <span>🏠</span> На главную
+            </a>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1><span>💡</span> Мои идеи <span>🌟</span></h1>
+        <p>Записывайте, развивайте и воплощайте свои идеи в жизнь</p>
+    </div>
+
+    <div class="ideas-toolbar">
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Поиск идей...">
+        </div>
+        <div class="filter-group" id="statusFilters">
+            <button class="filter-btn active" data-status="all">Все</button>
+            <button class="filter-btn" data-status="new">Новые</button>
+            <button class="filter-btn" data-status="in-progress">В работе</button>
+            <button class="filter-btn" data-status="done">Завершённые</button>
+            <button class="filter-btn" data-status="archived">Архив</button>
+        </div>
+        <div class="priority-filter">
+            <select id="priorityFilter">
+                <option value="all">Все приоритеты</option>
+                <option value="high">🔴 Высокий</option>
+                <option value="medium">🟡 Средний</option>
+                <option value="low">🟢 Низкий</option>
+            </select>
+        </div>
+        <button class="sort-btn" id="sortBtn">📅 Сортировка: новые</button>
+        <button class="create-idea-btn" id="createIdeaBtn">➕ Новая идея</button>
+    </div>
+
+    <div class="ideas-grid" id="ideasGrid">
+        <div class="empty-state">
+            <div class="empty-state-icon">💭</div>
+            <div>Загрузка идей...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = '/api/ideas';
+    let currentStatusFilter = 'all';
+    let currentPriorityFilter = 'all';
+    let currentSearch = '';
+    let sortDirection = 'desc';
+
+    // Создание частиц
+    function createParticles() {
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 20; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const s = Math.random() * 150 + 50;
+            p.style.width = s + 'px';
+            p.style.height = s + 'px';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.top = Math.random() * 100 + '%';
+            p.style.animationDelay = Math.random() * 15 + 's';
+            p.style.animationDuration = Math.random() * 10 + 15 + 's';
+            container.appendChild(p);
+        }
+    }
+    createParticles();
+
+    function showToast(msg, isError = false) {
+        const existing = document.querySelector('.toast-message');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'toast-message';
+        toast.textContent = msg;
+        toast.style.background = isError ? 'rgba(185, 28, 28, 0.95)' : 'rgba(16, 185, 129, 0.95)';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const d = new Date(dateString);
+        return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function getPriorityEmoji(priority) {
+        switch (priority) {
+            case 'high': return '🔴';
+            case 'medium': return '🟡';
+            case 'low': return '🟢';
+            default: return '⚪';
+        }
+    }
+
+    function getStatusClass(status) {
+        switch (status) {
+            case 'new': return 'status-new';
+            case 'in-progress': return 'status-in-progress';
+            case 'done': return 'status-done';
+            case 'archived': return 'status-archived';
+            default: return 'status-new';
+        }
+    }
+
+    function getStatusLabel(status) {
+        switch (status) {
+            case 'new': return 'Новая';
+            case 'in-progress': return 'В работе';
+            case 'done': return 'Завершена';
+            case 'archived': return 'Архив';
+            default: return 'Новая';
+        }
+    }
+
+    // API запросы
+    async function fetchIdeas() {
+        try {
+            const params = new URLSearchParams();
+            if (currentStatusFilter !== 'all') params.append('status', currentStatusFilter);
+            if (currentPriorityFilter !== 'all') params.append('priority', currentPriorityFilter);
+            if (currentSearch.trim()) params.append('search', currentSearch.trim());
+            params.append('sortDirection', sortDirection);
+
+            const response = await fetch(`${API_BASE}?${params.toString()}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const ideas = await response.json();
+            renderIdeas(ideas);
+        } catch (error) {
+            console.error('Ошибка загрузки идей:', error);
+            showToast('Ошибка загрузки идей', true);
+            document.getElementById('ideasGrid').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">❌</div>
+                    <div>Ошибка загрузки</div>
+                </div>
+            `;
+        }
+    }
+
+    async function createIdea(data) {
+        try {
+            const response = await fetch(API_BASE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            showToast('✨ Идея добавлена');
+            await fetchIdeas();
+        } catch (error) {
+            console.error('Ошибка создания:', error);
+            showToast('Ошибка создания идеи', true);
+        }
+    }
+
+    async function updateIdea(id, data) {
+        try {
+            const response = await fetch(`${API_BASE}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            showToast('✅ Идея обновлена');
+            await fetchIdeas();
+        } catch (error) {
+            console.error('Ошибка обновления:', error);
+            showToast('Ошибка обновления идеи', true);
+        }
+    }
+
+    async function deleteIdeaRequest(id) {
+        try {
+            const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            showToast('🗑 Идея удалена');
+            await fetchIdeas();
+        } catch (error) {
+            console.error('Ошибка удаления:', error);
+            showToast('Ошибка удаления идеи', true);
+        }
+    }
+
+    async function updateStatus(id, status) {
+        try {
+            const response = await fetch(`${API_BASE}/${id}/status?status=${status}`, {
+                method: 'PATCH'
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            showToast('✅ Статус обновлён');
+            await fetchIdeas();
+        } catch (error) {
+            console.error('Ошибка обновления статуса:', error);
+            showToast('Ошибка обновления статуса', true);
+        }
+    }
+
+    // Рендеринг
+    function renderIdeas(ideas) {
+        const grid = document.getElementById('ideasGrid');
+        if (!ideas || ideas.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">💭</div>
+                    <div>Идей не найдено</div>
+                    <div style="font-size:0.85rem; margin-top:0.5rem;">Нажмите "Новая идея" или измените фильтры</div>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = ideas.map(idea => {
+            const statusClass = getStatusClass(idea.status);
+            const statusLabel = getStatusLabel(idea.status);
+            const priorityEmoji = getPriorityEmoji(idea.priority);
+            const isArchived = idea.status === 'ARCHIVED';
+            const isDone = idea.status === 'DONE';
+
+            const tagsHtml = (idea.tags && idea.tags.length > 0)
+                ? `<div class="idea-tags">${idea.tags.map(t => `<span class="idea-tag">#${escapeHtml(t)}</span>`).join('')}</div>`
+                : '';
+
+            return `
+                <div class="idea-card ${isArchived ? 'archived' : ''} ${isDone ? 'done' : ''}" data-id="${idea.id}">
+                    <div class="idea-card-header">
+                        <div class="idea-priority">${priorityEmoji}</div>
+                        <div class="idea-actions">
+                            ${isArchived
+                                ? `<button class="idea-action-btn unarchive-btn" data-action="unarchive" title="Восстановить">📤</button>`
+                                : `<button class="idea-action-btn archive-btn" data-action="archive" title="Архивировать">📦</button>`
+                            }
+                            ${isDone
+                                ? `<button class="idea-action-btn undone-btn" data-action="undone" title="Вернуть в работу">↩️</button>`
+                                : `<button class="idea-action-btn done-btn" data-action="done" title="Завершить">✅</button>`
+                            }
+                            <button class="idea-action-btn edit-btn" data-action="edit" title="Редактировать">✎</button>
+                            <button class="idea-action-btn delete-btn" data-action="delete" title="Удалить">🗑</button>
+                        </div>
+                    </div>
+                    <div class="idea-content">
+                        <div class="idea-title">${escapeHtml(idea.title)}</div>
+                        <div class="idea-description ${!idea.description?.trim() ? 'empty' : ''}">
+                            ${idea.description?.trim() ? escapeHtml(idea.description) : 'Нет описания'}
+                        </div>
+                        ${tagsHtml}
+                        <div class="idea-footer">
+                            <span class="idea-date">📅 ${formatDate(idea.createdAt)}</span>
+                            <span class="idea-status ${statusClass}">${statusLabel}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        grid.querySelectorAll('.idea-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.idea-actions')) return;
+                const id = card.dataset.id;
+                showIdeaViewModal(id);
+            });
+        });
+
+        grid.querySelectorAll('[data-action]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.closest('.idea-card').dataset.id;
+                const action = btn.dataset.action;
+                handleAction(action, id);
+            });
+        });
+    }
+
+    function handleAction(action, id) {
+        switch (action) {
+            case 'edit':
+                showEditIdeaModal(id);
+                break;
+            case 'delete':
+                if (confirm('Удалить идею? Это действие необратимо.')) {
+                    deleteIdeaRequest(id);
+                }
+                break;
+            case 'archive':
+                updateStatus(id, 'archived');
+                break;
+            case 'unarchive':
+                updateStatus(id, 'new');
+                break;
+            case 'done':
+                updateStatus(id, 'done');
+                break;
+            case 'undone':
+                updateStatus(id, 'new');
+                break;
+        }
+    }
+
+    // Модальные окна
+    function openModal(html) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = html;
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+
+    function closeModal(overlay) {
+        overlay.remove();
+    }
+
+    function showCreateIdeaModal() {
+        const overlay = openModal(`
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>💡 Новая идея</h2>
+                    <button class="close-btn">✕</button>
+                </div>
+                <div class="form-group">
+                    <label>Название идеи *</label>
+                    <input type="text" id="ideaTitle" placeholder="Введите название...">
+                </div>
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea id="ideaDescription" rows="4" placeholder="Подробнее об идее..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Приоритет</label>
+                        <select id="ideaPriority">
+                            <option value="medium" selected>🟡 Средний</option>
+                            <option value="high">🔴 Высокий</option>
+                            <option value="low">🟢 Низкий</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Статус</label>
+                        <select id="ideaStatus">
+                            <option value="new" selected>Новая</option>
+                            <option value="in-progress">В работе</option>
+                            <option value="done">Завершена</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Теги (через запятую)</label>
+                    <input type="text" id="ideaTags" placeholder="например: обучение, frontend, идея">
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-cancel">Отмена</button>
+                    <button class="btn-save">✨ Сохранить</button>
+                </div>
+            </div>
+        `);
+
+        overlay.querySelector('.close-btn').onclick = () => closeModal(overlay);
+        overlay.querySelector('.btn-cancel').onclick = () => closeModal(overlay);
+        overlay.querySelector('.btn-save').onclick = () => {
+            const title = overlay.querySelector('#ideaTitle').value.trim();
+            if (!title) {
+                showToast('Введите название идеи', true);
+                return;
+            }
+            const tagsInput = overlay.querySelector('#ideaTags').value.trim();
+            const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [];
+
+            const newIdea = {
+                title: title,
+                description: overlay.querySelector('#ideaDescription').value.trim(),
+                tags: tags,
+                priority: overlay.querySelector('#ideaPriority').value,
+                status: overlay.querySelector('#ideaStatus').value
+            };
+
+            createIdea(newIdea);
+            closeModal(overlay);
+        };
+
+        overlay.querySelector('#ideaTitle').focus();
+    }
+
+    function showEditIdeaModal(id) {
+        fetch(`${API_BASE}/${id}`)
+            .then(res => res.json())
+            .then(idea => {
+                const overlay = openModal(`
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>✏️ Редактирование</h2>
+                            <button class="close-btn">✕</button>
+                        </div>
+                        <div class="form-group">
+                            <label>Название идеи *</label>
+                            <input type="text" id="ideaTitle" value="${escapeHtml(idea.title)}">
+                        </div>
+                        <div class="form-group">
+                            <label>Описание</label>
+                            <textarea id="ideaDescription" rows="4">${escapeHtml(idea.description || '')}</textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Приоритет</label>
+                                <select id="ideaPriority">
+                                    <option value="high" ${idea.priority === 'high' ? 'selected' : ''}>🔴 Высокий</option>
+                                    <option value="medium" ${idea.priority === 'medium' ? 'selected' : ''}>🟡 Средний</option>
+                                    <option value="low" ${idea.priority === 'low' ? 'selected' : ''}>🟢 Низкий</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Статус</label>
+                                <select id="ideaStatus">
+                                    <option value="new" ${idea.status === 'new' ? 'selected' : ''}>Новая</option>
+                                    <option value="in-progress" ${idea.status === 'in-progress' ? 'selected' : ''}>В работе</option>
+                                    <option value="done" ${idea.status === 'done' ? 'selected' : ''}>Завершена</option>
+                                    <option value="archived" ${idea.status === 'archived' ? 'selected' : ''}>Архив</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Теги (через запятую)</label>
+                            <input type="text" id="ideaTags" value="${escapeHtml((idea.tags || []).join(', '))}">
+                        </div>
+                        <div class="modal-buttons">
+                            <button class="btn-cancel">Отмена</button>
+                            <button class="btn-save">💾 Сохранить</button>
+                        </div>
+                    </div>
+                `);
+
+                overlay.querySelector('.close-btn').onclick = () => closeModal(overlay);
+                overlay.querySelector('.btn-cancel').onclick = () => closeModal(overlay);
+                overlay.querySelector('.btn-save').onclick = () => {
+                    const title = overlay.querySelector('#ideaTitle').value.trim();
+                    if (!title) {
+                        showToast('Введите название идеи', true);
+                        return;
+                    }
+                    const tagsInput = overlay.querySelector('#ideaTags').value.trim();
+                    const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [];
+
+                    const updatedIdea = {
+                        title: title,
+                        description: overlay.querySelector('#ideaDescription').value.trim(),
+                        tags: tags,
+                        priority: overlay.querySelector('#ideaPriority').value,
+                        status: overlay.querySelector('#ideaStatus').value
+                    };
+
+                    updateIdea(id, updatedIdea);
+                    closeModal(overlay);
+                };
+            })
+            .catch(err => {
+                console.error('Ошибка загрузки идеи:', err);
+                showToast('Ошибка загрузки идеи', true);
+            });
+    }
+
+    function showIdeaViewModal(id) {
+        fetch(`${API_BASE}/${id}`)
+            .then(res => res.json())
+            .then(idea => {
+                const overlay = openModal(`
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>${getPriorityEmoji(idea.priority)} ${escapeHtml(idea.title)}</h2>
+                            <button class="close-btn">✕</button>
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <span class="idea-status ${getStatusClass(idea.status)}">${getStatusLabel(idea.status)}</span>
+                        </div>
+                        <div style="color:rgba(255,255,255,0.85); line-height:1.6; margin-bottom:1rem;">
+                            ${idea.description ? escapeHtml(idea.description) : '<em style="color:rgba(255,255,255,0.5);">Нет описания</em>'}
+                        </div>
+                        ${idea.tags && idea.tags.length > 0 ? `
+                            <div class="idea-tags" style="margin-bottom:1rem;">
+                                ${idea.tags.map(t => `<span class="idea-tag">#${escapeHtml(t)}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        <div style="font-size:0.8rem; color:rgba(255,255,255,0.6); margin-bottom:1.5rem;">
+                            📅 Создана: ${formatDate(idea.createdAt)}<br>
+                            🔄 Обновлена: ${formatDate(idea.updatedAt)}
+                        </div>
+                        <div class="modal-buttons">
+                            <button class="btn-cancel">Закрыть</button>
+                            <button class="btn-save" id="editFromView">✏️ Редактировать</button>
+                        </div>
+                    </div>
+                `);
+
+                overlay.querySelector('.close-btn').onclick = () => closeModal(overlay);
+                overlay.querySelector('.btn-cancel').onclick = () => closeModal(overlay);
+                overlay.querySelector('#editFromView').onclick = () => {
+                    closeModal(overlay);
+                    showEditIdeaModal(id);
+                };
+            })
+            .catch(err => {
+                console.error('Ошибка загрузки идеи:', err);
+                showToast('Ошибка загрузки идеи', true);
+            });
+    }
+
+    // Обработчики событий
+    function initEventListeners() {
+        document.getElementById('createIdeaBtn').addEventListener('click', showCreateIdeaModal);
+
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentSearch = e.target.value;
+                fetchIdeas();
+            }, 400);
+        });
+
+        document.getElementById('statusFilters').addEventListener('click', (e) => {
+            const btn = e.target.closest('.filter-btn');
+            if (!btn) return;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentStatusFilter = btn.dataset.status;
+            fetchIdeas();
+        });
+
+        document.getElementById('priorityFilter').addEventListener('change', (e) => {
+            currentPriorityFilter = e.target.value;
+            fetchIdeas();
+        });
+
+        document.getElementById('sortBtn').addEventListener('click', () => {
+            sortDirection = sortDirection === 'desc' ? 'asc' : 'desc';
+            document.getElementById('sortBtn').textContent = sortDirection === 'desc'
+                ? '📅 Сортировка: новые'
+                : '📅 Сортировка: старые';
+            fetchIdeas();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeModal(e.target);
+            }
+        });
+    }
+
+    function init() {
+        initEventListeners();
+        fetchIdeas();
+    }
+
+    init();
+</script>
+</body>
+</html>
