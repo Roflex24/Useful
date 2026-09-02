@@ -2,14 +2,9 @@ package my.help.finance.invest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.ParseException;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -24,13 +19,11 @@ public class MoexService {
 
     private static final Logger logger = LoggerFactory.getLogger(MoexService.class);
 
-    private static final String MOEX_ISS_URL = "https://iss.moex.com/iss/engines/stock/markets/bonds/boards/TQOB/securities.json";
     private static final int FACE_VALUE = 1000;
     private static final double YTM_TOLERANCE = 1e-7;
     private static final int MAX_ITERATIONS = 1000;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final int DEFAULT_COUPON_FREQUENCY = 2;
 
-    // Списки полей, которые реально нужны
     private static final Set<String> MARKETDATA_FIELDS = Set.of(
             "LAST", "LCURRENTPRICE", "CLOSEPRICE", "MARKETPRICE", "WAPRICE",
             "ACCRUEDINT", "YIELD", "CLOSEYIELD", "YIELDATWAPRICE"
@@ -40,257 +33,261 @@ public class MoexService {
             "EFFECTIVEYIELD", "EFFECTIVEYIELDWAPRICE", "YIELDTOOFFER"
     );
 
-    public List<OFZBondSummary> fetchOFZDataWithStats() throws IOException, ParseException {
-        List<OFZBond> bonds = new ArrayList<>();
+    private static final Set<String> SECURITIES_FIELDS = Set.of(
+            "SECID", "SHORTNAME", "ISIN", "MATDATE", "COUPONVALUE", "COUPONPERCENT",
+            "COUPONPERIOD", "ACCRUEDINT", "PREVPRICE", "PREVWAPRICE", "FACEVALUE",
+            "BONDTYPE", "BONDSUBTYPE"
+    );
 
-        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            HttpGet request = new HttpGet(MOEX_ISS_URL);
-            try (CloseableHttpResponse response = httpClient.execute(request)) {
-                String jsonResponse = EntityUtils.toString(response.getEntity());
-                bonds = parseAndEnrichBonds(jsonResponse);
-            }
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private final BondDailyDataRepository bondDailyDataRepository;
+    private final BondMapper bondMapper;
+    private final MoexApiClient moexApiClient;
+
+    @Autowired
+    public MoexService(BondDailyDataRepository bondDailyDataRepository,
+                       BondMapper bondMapper,
+                       MoexApiClient moexApiClient) {
+        this.bondDailyDataRepository = bondDailyDataRepository;
+        this.bondMapper = bondMapper;
+        this.moexApiClient = moexApiClient;
+    }
+
+    public List<OFZBondSummary> fetchOFZDataWithStats() throws IOException {
+        LocalDate today = LocalDate.now();
+
+        // 1. Проверяем наличие данных за сегодня в БД
+        List<BondDailyData> existingData = bondDailyDataRepository.findByDate(today);
+        if (!existingData.isEmpty()) {
+            logger.info("Returning {} bond records from database for date {}", existingData.size(), today);
+            return existingData.stream()
+                    .map(bondMapper::entityToSummary)
+                    .collect(Collectors.toList());
         }
 
+        // 2. Если данных нет — получаем с MOEX через API-клиент
+        logger.info("No data in database for {}, fetching from MOEX", today);
+        String jsonResponse = moexApiClient.fetchRawBondsJson();
+        if (jsonResponse == null) {
+            logger.error("Empty response entity from MOEX ISS");
+            return Collections.emptyList();
+        }
+
+        // 3. Парсим и обогащаем данные
+        List<OFZBond> bonds = parseAndEnrichBonds(jsonResponse);
+
+        // 4. Сохраняем полученные записи в БД
+        List<BondDailyData> entitiesToSave = bonds.stream()
+                .map(bond -> bondMapper.toEntity(bond, today))
+                .collect(Collectors.toList());
+        bondDailyDataRepository.saveAll(entitiesToSave);
+        logger.info("Saved {} bond records to database for date {}", entitiesToSave.size(), today);
+
+        // 5. Возвращаем результат
         return bonds.stream()
-                .map(this::toSummary)
+                .map(bondMapper::toSummary)
                 .collect(Collectors.toList());
     }
 
-    private OFZBondSummary toSummary(OFZBond bond) {
-        OFZBondSummary summary = new OFZBondSummary();
-        summary.setShortname(bond.getShortname());
-        summary.setFaceValue(bond.getFaceValue());
-        summary.setCouponValue(bond.getCouponValue());
-        summary.setBondTypeDisplay(bond.getBondTypeDisplay());
-        summary.setMaturityDate(bond.getMaturityDate());
-        summary.setPrice(bond.getPrice());
-        summary.setYield(bond.getYield());
-        return summary;
-    }
-
     private List<OFZBond> parseAndEnrichBonds(String json) throws IOException {
-        List<OFZBond> bonds = new ArrayList<>();
         JsonNode root = objectMapper.readTree(json);
 
-        // Парсим securities
-        JsonNode securitiesData = root.path("securities").path("data");
-        JsonNode securitiesColumns = root.path("securities").path("columns");
-
-        // Парсим marketdata – только нужные поля
         Map<String, Map<String, Object>> marketDataMap = parseMarketData(
                 root.path("marketdata").path("data"),
                 root.path("marketdata").path("columns"),
                 MARKETDATA_FIELDS
         );
 
-        // Парсим marketdata_yields – только нужные поля
         Map<String, Map<String, Object>> yieldsMap = parseMarketData(
                 root.path("marketdata_yields").path("data"),
                 root.path("marketdata_yields").path("columns"),
                 YIELDS_FIELDS
         );
 
-        if (securitiesData.isArray() && securitiesColumns.isArray()) {
-            for (JsonNode row : securitiesData) {
-                OFZBond bond = new OFZBond();
-                String secid = null;
-                Double pricePercent = null;
-                Double couponValue = null;
-                Integer couponFrequency = null;
-                Double couponPercent = null;
-                Double accruedInterest = null;
-                String maturityDateStr = null;
-                Double faceValue = (double) FACE_VALUE;
-                String bondType = null;
-
-                for (int i = 0; i < securitiesColumns.size(); i++) {
-                    String columnName = securitiesColumns.get(i).asText();
-                    JsonNode value = row.get(i);
-
-                    if (value == null || value.isNull()) continue;
-
-                    switch (columnName) {
-                        case "SECID" -> {
-                            secid = value.asText();
-                            bond.setSecid(secid);
-                        }
-                        case "SHORTNAME" -> bond.setShortname(value.asText());
-                        case "ISIN" -> bond.setIsin(value.asText());
-                        case "MATDATE" -> {
-                            maturityDateStr = value.asText();
-                            bond.setMaturityDate(maturityDateStr);
-                        }
-                        case "COUPONVALUE" -> {
-                            couponValue = value.asDouble();
-                            bond.setCouponValue(couponValue);
-                        }
-                        case "COUPONPERCENT" -> {
-                            couponPercent = value.asDouble();
-                            bond.setCouponPercent(couponPercent);
-                        }
-                        case "COUPONPERIOD" -> {
-                            int periodDays = value.asInt();
-                            if (periodDays > 0) {
-                                couponFrequency = 365 / periodDays;
-                                bond.setCouponFrequency(couponFrequency);
-                            }
-                        }
-                        case "ACCRUEDINT" -> {
-                            accruedInterest = value.asDouble();
-                            bond.setAccruedInterest(accruedInterest);
-                        }
-                        case "PREVPRICE" -> {
-                            pricePercent = value.asDouble();
-                            bond.setPricePercent(pricePercent);
-                        }
-                        case "PREVWAPRICE" -> {
-                            if (pricePercent == null && value.asDouble() > 0) {
-                                pricePercent = value.asDouble();
-                                bond.setPricePercent(pricePercent);
-                            }
-                        }
-                        case "FACEVALUE" -> {
-                            faceValue = value.asDouble();
-                            bond.setFaceValue(value.asInt());
-                        }
-                        case "BONDTYPE" -> {
-                            bondType = value.asText();
-                            bond.setBondType(bondType);
-                        }
-                        case "BONDSUBTYPE" -> bond.setBondSubType(value.asText());
-                    }
-                }
-
-                // Фильтр по ISIN
-                if (bond.getIsin() == null || !bond.getIsin().startsWith("RU")) {
-                    continue;
-                }
-
-                // Определяем тип, если не задан
-                if (bondType == null) {
-                    bondType = determineBondTypeByCoupon(couponPercent, couponValue, bond);
-                    bond.setBondType(bondType);
-                }
-
-                Map<String, Object> market = marketDataMap.get(secid);
-                Map<String, Object> yields = yieldsMap.get(secid);
-
-                // Цена
-                if (pricePercent == null || Double.isNaN(pricePercent) || pricePercent <= 0) {
-                    if (market != null) {
-                        Double last = getDouble(market, "LAST");
-                        Double current = getDouble(market, "LCURRENTPRICE");
-                        Double close = getDouble(market, "CLOSEPRICE");
-                        Double mktPrice = getDouble(market, "MARKETPRICE");
-                        Double waprice = getDouble(market, "WAPRICE");
-                        if (last != null && last > 0) pricePercent = last;
-                        else if (current != null && current > 0) pricePercent = current;
-                        else if (mktPrice != null && mktPrice > 0) pricePercent = mktPrice;
-                        else if (waprice != null && waprice > 0) pricePercent = waprice;
-                        else if (close != null && close > 0) pricePercent = close;
-                    }
-                }
-
-                // НКД
-                if ((accruedInterest == null || accruedInterest <= 0) && market != null) {
-                    Double ai = getDouble(market, "ACCRUEDINT");
-                    if (ai != null && ai > 0) {
-                        accruedInterest = ai;
-                        bond.setAccruedInterest(ai);
-                    }
-                }
-
-                // Частота купона по умолчанию
-                if (couponFrequency == null) {
-                    couponFrequency = 2;
-                    bond.setCouponFrequency(2);
-                }
-
-                // Если цены нет – пропускаем
-                if (pricePercent == null || Double.isNaN(pricePercent) || pricePercent <= 0) {
-                    logger.warn("No price for bond: secid={}, isin={}", secid, bond.getIsin());
-                    bond.setPrice(0.0);
-                    bond.setYield(0.0);
-                    bonds.add(bond);
-                    continue;
-                }
-
-                bond.setPrice(pricePercent * 10.0);
-
-                // Доходность
-                Double ytm = null;
-
-                // 1) из marketdata_yields
-                if (yields != null) {
-                    Double effYield = getDouble(yields, "EFFECTIVEYIELD");
-                    Double effYieldWaprice = getDouble(yields, "EFFECTIVEYIELDWAPRICE");
-                    Double yieldToOffer = getDouble(yields, "YIELDTOOFFER");
-                    if (effYield != null && effYield > 0) ytm = effYield;
-                    else if (effYieldWaprice != null && effYieldWaprice > 0) ytm = effYieldWaprice;
-                    else if (yieldToOffer != null && yieldToOffer > 0) ytm = yieldToOffer;
-                }
-
-                // 2) из marketdata
-                if ((ytm == null || ytm <= 0) && market != null) {
-                    Double yield = getDouble(market, "YIELD");
-                    Double closeYield = getDouble(market, "CLOSEYIELD");
-                    Double yieldAtWaprice = getDouble(market, "YIELDATWAPRICE");
-                    if (yield != null && yield > 0) ytm = yield;
-                    else if (closeYield != null && closeYield > 0) ytm = closeYield;
-                    else if (yieldAtWaprice != null && yieldAtWaprice > 0) ytm = yieldAtWaprice;
-                }
-
-                // 3) расчёт YTM
-                if (ytm == null || ytm <= 0) {
-                    if (bondType != null && !bondType.toLowerCase().contains("флоатер") &&
-                            !bondType.toLowerCase().contains("перемен") &&
-                            !bondType.toLowerCase().contains("floating")) {
-                        if (couponValue != null && couponValue > 0 && maturityDateStr != null && !maturityDateStr.isEmpty()) {
-                            try {
-                                ytm = calculateYTMWithBisection(
-                                        pricePercent, couponValue, couponFrequency,
-                                        faceValue, accruedInterest != null ? accruedInterest : 0.0,
-                                        maturityDateStr, LocalDate.now()
-                                );
-                            } catch (Exception e) {
-                                logger.warn("Failed to calculate YTM for {}: {}", secid, e.getMessage());
-                            }
-                        }
-                    } else {
-                        logger.debug("Floating rate bond, skipping YTM calculation: {}", secid);
-                    }
-                }
-
-                bond.setYield(ytm != null && ytm > 0 ? ytm : 0.0);
-                bonds.add(bond);
-            }
+        JsonNode securitiesData = root.path("securities").path("data");
+        JsonNode securitiesColumns = root.path("securities").path("columns");
+        Map<String, Integer> securitiesColumnIndexes = buildColumnIndexMap(securitiesColumns, SECURITIES_FIELDS);
+        if (securitiesData.isArray() && !securitiesColumnIndexes.isEmpty()) {
+            return processSecuritiesRows(securitiesData, securitiesColumnIndexes, marketDataMap, yieldsMap);
+        } else {
+            logger.warn("No securities data or missing required columns");
+            return Collections.emptyList();
         }
+    }
 
+    private List<OFZBond> processSecuritiesRows(
+            JsonNode securitiesData,
+            Map<String, Integer> colIndexes,
+            Map<String, Map<String, Object>> marketDataMap,
+            Map<String, Map<String, Object>> yieldsMap) {
+
+        List<OFZBond> bonds = new ArrayList<>();
+        for (JsonNode row : securitiesData) {
+            OFZBond bond = parseSecuritiesRow(row, colIndexes);
+            if (bond.getIsin() == null || !bond.getIsin().startsWith("RU")) {
+                continue;
+            }
+
+            if (bond.getBondType() == null) {
+                bond.setBondType(determineBondTypeByCoupon(bond.getCouponPercent(), bond.getCouponValue(), bond));
+            }
+
+            String secid = bond.getSecid();
+            Map<String, Object> market = marketDataMap.get(secid);
+            Map<String, Object> yields = yieldsMap.get(secid);
+
+            Double pricePercent = bond.getPricePercent();
+            if (isInvalidPrice(pricePercent)) {
+                pricePercent = extractPriceFromMarketData(market);
+                bond.setPricePercent(pricePercent);
+            }
+
+            Double accruedInterest = bond.getAccruedInterest();
+            if ((accruedInterest == null || accruedInterest <= 0) && market != null) {
+                Double ai = getDouble(market, "ACCRUEDINT");
+                if (ai != null && ai > 0) {
+                    bond.setAccruedInterest(ai);
+                    accruedInterest = ai;
+                }
+            }
+
+            if (bond.getCouponFrequency() == null) {
+                bond.setCouponFrequency(DEFAULT_COUPON_FREQUENCY);
+            }
+
+            if (isInvalidPrice(pricePercent)) {
+                logger.warn("No price for bond: secid={}, isin={}", secid, bond.getIsin());
+                bond.setPrice(0.0);
+                bond.setYield(0.0);
+                bonds.add(bond);
+                continue;
+            }
+
+            bond.setPrice(pricePercent * 10.0);
+
+            Double ytm = extractYield(yields, market);
+            if ((ytm == null || ytm <= 0) && canCalculateYtm(bond)) {
+                ytm = calculateYTMWithBisection(
+                        pricePercent, bond.getCouponValue(), bond.getCouponFrequency(),
+                        bond.getFaceValue(), accruedInterest != null ? accruedInterest : 0.0,
+                        bond.getMaturityDate(), LocalDate.now()
+                );
+            }
+            bond.setYield(ytm != null && ytm > 0 ? ytm : 0.0);
+            bonds.add(bond);
+        }
         logger.info("Total bonds parsed: {}", bonds.size());
         return bonds;
     }
 
-    /**
-     * Универсальный парсер для marketdata и marketdata_yields.
-     * Извлекает только нужные поля (переданные в requiredFields) и складывает в Map по SECID.
-     */
+    private OFZBond parseSecuritiesRow(JsonNode row, Map<String, Integer> colIndexes) {
+        OFZBond bond = new OFZBond();
+        Double pricePercent = null;
+
+        for (Map.Entry<String, Integer> entry : colIndexes.entrySet()) {
+            String column = entry.getKey();
+            int index = entry.getValue();
+            JsonNode value = row.get(index);
+            if (value == null || value.isNull()) continue;
+
+            switch (column) {
+                case "SECID" -> bond.setSecid(value.asText());
+                case "SHORTNAME" -> bond.setShortname(value.asText());
+                case "ISIN" -> bond.setIsin(value.asText());
+                case "MATDATE" -> bond.setMaturityDate(value.asText());
+                case "COUPONVALUE" -> bond.setCouponValue(value.asDouble());
+                case "COUPONPERCENT" -> bond.setCouponPercent(value.asDouble());
+                case "COUPONPERIOD" -> {
+                    int periodDays = value.asInt();
+                    if (periodDays > 0) {
+                        bond.setCouponFrequency(365 / periodDays);
+                    }
+                }
+                case "ACCRUEDINT" -> bond.setAccruedInterest(value.asDouble());
+                case "PREVPRICE" -> {
+                    pricePercent = value.asDouble();
+                    bond.setPricePercent(pricePercent);
+                }
+                case "PREVWAPRICE" -> {
+                    if (isInvalidPrice(pricePercent) && value.asDouble() > 0) {
+                        pricePercent = value.asDouble();
+                        bond.setPricePercent(pricePercent);
+                    }
+                }
+                case "FACEVALUE" -> bond.setFaceValue(value.asInt());
+                case "BONDTYPE" -> bond.setBondType(value.asText());
+                case "BONDSUBTYPE" -> bond.setBondSubType(value.asText());
+            }
+        }
+        if (bond.getFaceValue() == null) bond.setFaceValue(FACE_VALUE);
+        return bond;
+    }
+
+    private boolean isInvalidPrice(Double price) {
+        return price == null || price.isNaN() || price <= 0;
+    }
+
+    private Double extractPriceFromMarketData(Map<String, Object> market) {
+        if (market == null) return null;
+        Double[] candidates = {
+                getDouble(market, "LAST"),
+                getDouble(market, "LCURRENTPRICE"),
+                getDouble(market, "MARKETPRICE"),
+                getDouble(market, "WAPRICE"),
+                getDouble(market, "CLOSEPRICE")
+        };
+        for (Double candidate : candidates) {
+            if (candidate != null && candidate > 0) return candidate;
+        }
+        return null;
+    }
+
+    private Double extractYield(Map<String, Object> yields, Map<String, Object> market) {
+        if (yields != null) {
+            Double[] yieldCandidates = {
+                    getDouble(yields, "EFFECTIVEYIELD"),
+                    getDouble(yields, "EFFECTIVEYIELDWAPRICE"),
+                    getDouble(yields, "YIELDTOOFFER")
+            };
+            for (Double y : yieldCandidates) {
+                if (y != null && y > 0) return y;
+            }
+        }
+        if (market != null) {
+            Double[] marketYieldCandidates = {
+                    getDouble(market, "YIELD"),
+                    getDouble(market, "CLOSEYIELD"),
+                    getDouble(market, "YIELDATWAPRICE")
+            };
+            for (Double y : marketYieldCandidates) {
+                if (y != null && y > 0) return y;
+            }
+        }
+        return null;
+    }
+
+    private boolean canCalculateYtm(OFZBond bond) {
+        String type = bond.getBondType();
+        if (type == null) return false;
+        String lowerType = type.toLowerCase();
+        boolean isFloating = lowerType.contains("флоатер") ||
+                lowerType.contains("перемен") ||
+                lowerType.contains("floating");
+        return !isFloating &&
+                bond.getCouponValue() != null && bond.getCouponValue() > 0 &&
+                bond.getMaturityDate() != null && !bond.getMaturityDate().isEmpty();
+    }
+
     private Map<String, Map<String, Object>> parseMarketData(JsonNode data, JsonNode columns, Set<String> requiredFields) {
         Map<String, Map<String, Object>> result = new HashMap<>();
         if (!data.isArray() || !columns.isArray()) return result;
 
-        // Индексы нужных колонок
-        Map<String, Integer> columnIndexes = new HashMap<>();
-        for (int i = 0; i < columns.size(); i++) {
-            String col = columns.get(i).asText();
-            if (requiredFields.contains(col)) {
-                columnIndexes.put(col, i);
-            }
-        }
-        // Если нет ни одного нужного поля – выходим
+        Map<String, Integer> columnIndexes = buildColumnIndexMap(columns, requiredFields);
         if (columnIndexes.isEmpty()) return result;
 
         for (JsonNode row : data) {
-            String secid = row.get(0).asText(); // SECID всегда первая колонка
+            String secid = row.get(0).asText();
             Map<String, Object> rowMap = new HashMap<>();
             for (Map.Entry<String, Integer> entry : columnIndexes.entrySet()) {
                 JsonNode value = row.get(entry.getValue());
@@ -305,11 +302,22 @@ public class MoexService {
         return result;
     }
 
-    private String determineBondTypeByCoupon(Double couponPercent, Double couponValue, OFZBond bond) {
-        if (couponPercent == null || couponPercent == 0) {
-            if (couponValue == null || couponValue == 0) {
-                return "Дисконтные (бескупонные)";
+    private Map<String, Integer> buildColumnIndexMap(JsonNode columns, Set<String> fields) {
+        Map<String, Integer> map = new HashMap<>();
+        if (columns == null || !columns.isArray()) return map;
+        for (int i = 0; i < columns.size(); i++) {
+            String col = columns.get(i).asText();
+            if (fields.contains(col)) {
+                map.put(col, i);
             }
+        }
+        return map;
+    }
+
+    private String determineBondTypeByCoupon(Double couponPercent, Double couponValue, OFZBond bond) {
+        if ((couponPercent == null || couponPercent == 0.0) &&
+                (couponValue == null || couponValue == 0.0)) {
+            return "Дисконтные (бескупонные)";
         }
         if (bond.getBondSubType() != null && bond.getBondSubType().equals("Флоатер")) {
             return "С переменным (плавающим) купоном";
@@ -328,21 +336,20 @@ public class MoexService {
 
     private Double getDouble(Map<String, Object> map, String key) {
         Object value = map.get(key);
-        if (value == null) return null;
-        if (value instanceof Double) return (Double) value;
-        if (value instanceof Integer) return ((Integer) value).doubleValue();
-        if (value instanceof Long) return ((Long) value).doubleValue();
-        if (value instanceof String) {
+        if (value instanceof Double d) return d;
+        if (value instanceof Integer i) return i.doubleValue();
+        if (value instanceof Long l) return l.doubleValue();
+        if (value instanceof String s) {
             try {
-                return Double.parseDouble((String) value);
+                return Double.parseDouble(s);
             } catch (NumberFormatException e) {
+                logger.debug("Cannot parse double from string: {}", s);
                 return null;
             }
         }
         return null;
     }
 
-    // ===== Методы расчёта YTM (без изменений) =====
     private double calculateYTMWithBisection(double pricePercent, double couponValue, int couponFrequency,
                                              double faceValue, double accruedInterest,
                                              String maturityDateStr, LocalDate settlementDate) {
