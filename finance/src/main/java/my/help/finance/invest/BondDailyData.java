@@ -16,10 +16,10 @@ public class BondDailyData {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private LocalDate date;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String isin;
 
     @Column(nullable = false)
