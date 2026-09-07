@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ключевая ставка, курсы валют и облигации ОФЗ</title>
+    <title>Ключевая ставка, курсы валют, облигации ОФЗ и депозиты</title>
     <!-- Шрифты и иконки -->
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -189,7 +189,7 @@
             margin-left: 8px;
         }
 
-        /* Стили для таблицы облигаций */
+        /* Стили для таблицы облигаций и депозитов */
         .bonds-table-container {
             max-height: 400px;
             overflow-y: auto;
@@ -260,7 +260,7 @@
             <div class="nav-icon"><i class="fas fa-chart-line"></i></div>
             <div>
                 <div class="nav-title">Финансовые индикаторы</div>
-                <div class="nav-sub">Ключевая ставка, валюты и облигации ОФЗ</div>
+                <div class="nav-sub">Ключевая ставка, валюты, облигации ОФЗ и депозиты</div>
             </div>
         </div>
         <a href="/page/finance" class="btn-ghost"><i class="fas fa-arrow-left"></i> Назад к финансам</a>
@@ -294,7 +294,7 @@
         </a>
     </div>
 
-    <!-- НОВЫЙ ВИДЖЕТ: ОБЛИГАЦИИ ОФЗ -->
+    <!-- ВИДЖЕТ: ОБЛИГАЦИИ ОФЗ -->
     <div class="widget-panel">
         <div class="widget-header">
             <i class="fas fa-file-invoice-dollar"></i> Облигации ОФЗ
@@ -302,6 +302,17 @@
         </div>
         <div id="bondsContent">
             <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по облигациям...</div>
+        </div>
+    </div>
+
+    <!-- ВИДЖЕТ: ДЕПОЗИТЫ -->
+    <div class="widget-panel">
+        <div class="widget-header">
+            <i class="fas fa-piggy-bank"></i> Депозиты
+            <button class="widget-refresh" id="refreshDepositsBtn" title="Обновить"><i class="fas fa-sync-alt"></i></button>
+        </div>
+        <div id="depositsContent">
+            <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по депозитам...</div>
         </div>
     </div>
 
@@ -314,7 +325,6 @@
         const container = document.getElementById('keyrateContent');
         container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка ставки...</div>';
         try {
-            // Предполагаемый API endpoint для получения ключевой ставки
             const resp = await fetch('/api/key/rate');
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const data = await resp.json();
@@ -371,7 +381,7 @@
         }
     }
 
-    // =============== НОВАЯ ФУНКЦИЯ ДЛЯ ОБЛИГАЦИЙ ===============
+    // =============== ФУНКЦИЯ ДЛЯ ОБЛИГАЦИЙ ===============
 
     async function loadBonds() {
         const container = document.getElementById('bondsContent');
@@ -385,7 +395,6 @@
                     container.innerHTML = '<div class="loading-widget">Нет данных по облигациям</div>';
                     return;
                 }
-                // Строим таблицу
                 let tableHtml = `
                     <div class="bonds-table-container">
                         <table class="bonds-table">
@@ -428,15 +437,69 @@
         }
     }
 
+    // =============== ФУНКЦИЯ ДЛЯ ДЕПОЗИТОВ ===============
+
+    async function loadDeposits() {
+        const container = document.getElementById('depositsContent');
+        container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по депозитам...</div>';
+        try {
+            const resp = await fetch('/api/deposits/rates');
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            if (data && data.rates && Array.isArray(data.rates)) {
+                const totalBanks = data.totalBanks || 0;
+                if (data.rates.length === 0) {
+                    container.innerHTML = `<div class="loading-widget">Нет данных по депозитам</div>`;
+                    return;
+                }
+                let tableHtml = `
+                    <div style="margin-bottom:8px;font-size:0.8rem;color:var(--text-2);">
+                        <i class="fas fa-university"></i> Найдено банков: ${totalBanks}
+                    </div>
+                    <div class="bonds-table-container">
+                        <table class="bonds-table">
+                            <thead>
+                                <tr>
+                                    <th>Банк</th>
+                                    <th>Ставка, %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                data.rates.forEach(item => {
+                    tableHtml += `
+                        <tr>
+                            <td>${item.bankName || '—'}</td>
+                            <td class="yield-col">${item.rateMin != null ? item.rateMin.toFixed(2) : '—'}</td>
+                        </tr>
+                    `;
+                });
+                tableHtml += '</tbody></table></div>';
+                container.innerHTML = tableHtml;
+            } else {
+                throw new Error('Неверный формат ответа');
+            }
+        } catch(e) {
+            container.innerHTML = `
+                <div class="error-widget">
+                    <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки данных по депозитам
+                    <button onclick="loadDeposits()">Повторить</button>
+                </div>
+            `;
+        }
+    }
+
     // Привязка кнопок обновления
     document.getElementById('refreshKeyrateBtn')?.addEventListener('click', loadKeyRate);
     document.getElementById('refreshCurrencyBtn')?.addEventListener('click', loadCurrencyRates);
     document.getElementById('refreshBondsBtn')?.addEventListener('click', loadBonds);
+    document.getElementById('refreshDepositsBtn')?.addEventListener('click', loadDeposits);
 
     // Первичная загрузка данных
     loadKeyRate();
     loadCurrencyRates();
     loadBonds();
+    loadDeposits();
 </script>
 </body>
 </html>
