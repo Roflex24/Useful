@@ -14,6 +14,6 @@ public class DepositController {
 
     @GetMapping("/rates")
     public DepositRatesResponse getDepositRates() {
-        return parserService.fetchDepositRates();
+        return parserService.getDepositRatesForToday();
     }
 }

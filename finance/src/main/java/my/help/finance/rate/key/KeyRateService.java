@@ -34,7 +34,7 @@ public class KeyRateService {
             Optional<KeyRate> existingEntity = keyRateRepository.findById(currentDate);
 
             if (existingEntity.isPresent()) {
-                System.out.println("Найдена запись в БД за сегодня: ставка = " + existingEntity.get().getKeyRate());
+                log.info("Найдена запись в БД за сегодня: ставка = {}", existingEntity.get().getKeyRate());
                 KeyRate entity = existingEntity.get();
                 return new KeyRateRs(entity.getKeyRate(), entity.getDate());
             }
@@ -43,8 +43,7 @@ public class KeyRateService {
             return fetchFromCbrAndSave(currentDate);
 
         } catch (Exception e) {
-            System.err.println("Ошибка при получении ставки: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Ошибка при получении ставки: {}", e.getMessage());
         }
 
         return new KeyRateRs(0, null);
@@ -64,7 +63,7 @@ public class KeyRateService {
     }
 
     private KeyRateRs fetchFromCbrAndSave(LocalDate date) throws Exception {
-        System.out.println("Загрузка страницы: " + CBR_URL);
+        log.info("Загрузка страницы: {}", CBR_URL);
 
         // === ВАРИАНТ 1: Отключение проверки SSL (только для разработки) ===
         TrustManager[] trustAllCerts = new TrustManager[] {
@@ -107,14 +106,14 @@ public class KeyRateService {
 
         double rate = Double.parseDouble(rateStr.replace(",", "."));
 
-        System.out.println("Получена ПЕРВАЯ ставка с сайта ЦБ: дата=" + dateStr + ", ставка=" + rate);
+        log.info("Получена ПЕРВАЯ ставка с сайта ЦБ: дата={}, ставка={}", dateStr, rate);
 
         KeyRate entity = new KeyRate();
         entity.setKeyRate(rate);
         entity.setDate(date);
 
         KeyRate saved = keyRateRepository.save(entity);
-        System.out.println("Сохранена новая запись в БД: ставка = " + saved.getKeyRate());
+        log.info("Сохранена новая запись в БД: ставка = {}", saved.getKeyRate());
 
         return new KeyRateRs(rate, date);
     }

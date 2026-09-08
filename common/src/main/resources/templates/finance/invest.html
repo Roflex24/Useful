@@ -462,15 +462,33 @@
                                 <tr>
                                     <th>Банк</th>
                                     <th>Ставка, %</th>
+                                    <th>Начисление процентов</th>
                                 </tr>
                             </thead>
                             <tbody>
                 `;
                 data.rates.forEach(item => {
+                    let calcIcon = '';
+                    let calcText = item.percentCalculation || '—';
+
+                    if (calcText.includes('ежедневный')) {
+                        calcIcon = '<i class="fas fa-sun" style="color:var(--amber);"></i>';
+                    } else if (calcText.includes('минимальный')) {
+                        calcIcon = '<i class="fas fa-moon" style="color:var(--sky);"></i>';
+                    } else {
+                        calcIcon = '<i class="fas fa-question-circle" style="color:var(--text-3);"></i>';
+                    }
+
                     tableHtml += `
                         <tr>
                             <td>${item.bankName || '—'}</td>
                             <td class="yield-col">${item.rateMin != null ? item.rateMin.toFixed(2) : '—'}</td>
+                            <td>
+                                <span style="display:inline-flex;align-items:center;gap:6px;">
+                                    ${calcIcon}
+                                    <span>${calcText}</span>
+                                </span>
+                            </td>
                         </tr>
                     `;
                 });
