@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,25 +46,25 @@ public class DepositParserService {
      * Если данные ещё не собраны, выполняет парсинг API и сохраняет в БД.
      */
     @Transactional()
-    public DepositRatesResponse getDepositRatesForToday() {
+    public DepositRatesResponse getDepositRatesForToday(Pageable pageable) {
         LocalDate today = LocalDate.now();
         logger.info("Getting deposit rates for date: {}", today);
 
-        List<DepositRateEntity> entities = depositRateRepository.findByParseDate(today);
+        List<DepositRateEntity> entities = depositRateRepository.findByParseDate(today, pageable);
         if (!entities.isEmpty()) {
             logger.info("Found {} existing deposit rate entities for today, returning cached data.", entities.size());
             return buildResponseFromEntities(entities);
         }
 
         logger.info("No data found for today, starting parsing from API.");
-        return parseAndSave(today);
+        return parseAndSave(today, pageable);
     }
 
     /**
      * Выполняет парсинг API и сохраняет результаты в БД.
      */
     @Transactional
-    protected DepositRatesResponse parseAndSave(LocalDate parseDate) {
+    protected DepositRatesResponse parseAndSave(LocalDate parseDate, Pageable pageable) {
         logger.info("Starting deposit rate parsing for date: {}", parseDate);
         List<DepositRateDto> rates = new ArrayList<>();
 
@@ -104,7 +105,8 @@ public class DepositParserService {
             saveAll(rates, parseDate);
             logger.info("Successfully saved {} entries to database for date {}", rates.size(), parseDate);
 
-            return new DepositRatesResponse(totalBanks, rates);
+            List<DepositRateEntity> entities = depositRateRepository.findByParseDate(parseDate, pageable);
+            return buildResponseFromEntities(entities);
 
         } catch (Exception e) {
             logger.error("Failed to fetch data from banki.ru for date {}", parseDate, e);

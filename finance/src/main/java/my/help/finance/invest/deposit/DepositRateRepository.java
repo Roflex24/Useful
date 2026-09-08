@@ -1,5 +1,6 @@
 package my.help.finance.invest.deposit;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,5 +10,5 @@ import java.util.List;
 @Repository
 public interface DepositRateRepository extends JpaRepository<DepositRateEntity, Long> {
 
-    List<DepositRateEntity> findByParseDate(LocalDate parseDate);
+    List<DepositRateEntity> findByParseDate(LocalDate parseDate, Pageable pageable);
 }

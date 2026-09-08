@@ -79,6 +79,16 @@ public class PageController {
         return "/finance/invest";
     }
 
+    @GetMapping("/page/ofz")
+    public String ofzPage() {
+        return "/finance/ofz";
+    }
+
+    @GetMapping("/page/deposits")
+    public String depositsPage() {
+        return "/finance/deposits";
+    }
+
     @GetMapping("/page/avito")
     public String avitoPage() {
         return "/finance/avito";

@@ -1,6 +1,7 @@
 package my.help.finance.invest.bond;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,7 +17,7 @@ public class OFZController {
     private final MoexService moexService;
 
     @GetMapping
-    public List<OFZBondSummary> getAllOFZ() throws IOException {
-        return moexService.fetchOFZDataWithStats();
+    public List<OFZBondSummary> getAllOFZ(Pageable pageable) throws IOException {
+        return moexService.fetchOFZDataWithStats(pageable);
     }
 }

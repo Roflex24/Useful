@@ -303,6 +303,9 @@
         <div id="bondsContent">
             <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по облигациям...</div>
         </div>
+        <a href="/page/ofz" class="widget-link" id="bondsDetailLink">
+            <i class="fas fa-chart-line"></i> Подробнее об облигациях →
+        </a>
     </div>
 
     <!-- ВИДЖЕТ: ДЕПОЗИТЫ -->
@@ -314,6 +317,9 @@
         <div id="depositsContent">
             <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по депозитам...</div>
         </div>
+        <a href="/page/deposits" class="widget-link" id="depositsDetailLink">
+            <i class="fas fa-chart-line"></i> Подробнее о депозитах →
+        </a>
     </div>
 
 </div>
@@ -387,7 +393,8 @@
         const container = document.getElementById('bondsContent');
         container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по облигациям...</div>';
         try {
-            const resp = await fetch('/api/ofz');
+            // Обновлённый запрос с параметрами пагинации и сортировки
+            const resp = await fetch('/api/ofz?page=0&size=3&sort=yield,desc');
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const bonds = await resp.json();
             if (Array.isArray(bonds)) {
@@ -443,7 +450,8 @@
         const container = document.getElementById('depositsContent');
         container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по депозитам...</div>';
         try {
-            const resp = await fetch('/api/deposits/rates');
+            // Обновлённый запрос с параметрами пагинации и сортировки
+            const resp = await fetch('/api/deposits/rates?page=0&size=3&sort=rateMin,desc');
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const data = await resp.json();
             if (data && data.rates && Array.isArray(data.rates)) {
