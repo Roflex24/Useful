@@ -1,4 +1,4 @@
-package my.help.finance.invest;
+package my.help.finance.invest.bond;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

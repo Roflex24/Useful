@@ -1,4 +1,4 @@
-package my.help.finance.rate.currency;
+package my.help.finance.invest.rate.currency;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

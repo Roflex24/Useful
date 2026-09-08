@@ -1,4 +1,4 @@
-package my.help.finance.invest;
+package my.help.finance.invest.bond;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

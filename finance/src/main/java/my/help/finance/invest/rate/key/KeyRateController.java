@@ -1,4 +1,4 @@
-package my.help.finance.rate.currency;
+package my.help.finance.invest.rate.key;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -10,19 +10,20 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/currency/rate")
+@RequestMapping("/api/key/rate")
 @Tag(name = "Finance API", description = "Раздел финансов")
-public class CurrencyRateController {
+public class KeyRateController {
 
-    private final CbrCurrencyRateProvider cbrCurrencyRateProvider;
+    private final KeyRateService keyRateService;
 
     @GetMapping()
-    public CurrencyRateRs get() throws Exception {
-        return cbrCurrencyRateProvider.get();
+    public KeyRateRs get() {
+        return keyRateService.get();
     }
 
+
     @GetMapping("/all")
-    public List<CurrencyRateRs> getList() {
-        return cbrCurrencyRateProvider.getList();
+    public List<KeyRateRs> getList() {
+        return keyRateService.getList();
     }
 }

@@ -1,4 +1,4 @@
-package my.help.finance.rate.currency;
+package my.help.finance.invest.rate.currency;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

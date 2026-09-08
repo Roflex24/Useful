@@ -1,4 +1,4 @@
-package my.help.finance.rate.key;
+package my.help.finance.invest.rate.key;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

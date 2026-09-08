@@ -1,7 +1,8 @@
-package my.help.finance.invest;
+package my.help.finance.invest.bond;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 @Table(name = "bond_daily_data")
 @Getter
 @Setter
+@NoArgsConstructor
 public class BondDailyData {
 
     @Id
@@ -38,8 +40,4 @@ public class BondDailyData {
     private Double price;
 
     private Double yield;
-
-    // Конструкторы, геттеры и сеттеры генерируются Lombok
-    public BondDailyData() {
-    }
 }

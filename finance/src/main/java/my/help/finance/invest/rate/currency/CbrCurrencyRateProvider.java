@@ -1,4 +1,4 @@
-package my.help.finance.rate.currency;
+package my.help.finance.invest.rate.currency;
 
 import java.net.URI;
 import java.net.http.HttpClient;

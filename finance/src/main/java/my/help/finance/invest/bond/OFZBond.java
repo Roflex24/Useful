@@ -1,4 +1,4 @@
-package my.help.finance.invest;
+package my.help.finance.invest.bond;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;

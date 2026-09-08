@@ -1,4 +1,4 @@
-package my.help.finance.invest;
+package my.help.finance.invest.bond;
 
 public record OFZBondSummary (
      String shortname,

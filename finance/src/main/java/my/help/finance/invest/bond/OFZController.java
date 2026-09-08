@@ -1,5 +1,6 @@
-package my.help.finance.invest;
+package my.help.finance.invest.bond;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,13 +10,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/ofz")
+@RequiredArgsConstructor
 public class OFZController {
 
     private final MoexService moexService;
-
-    public OFZController(MoexService moexService) {
-        this.moexService = moexService;
-    }
 
     @GetMapping
     public List<OFZBondSummary> getAllOFZ() throws IOException {

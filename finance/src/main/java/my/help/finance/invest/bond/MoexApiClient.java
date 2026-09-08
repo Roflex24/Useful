@@ -1,4 +1,4 @@
-package my.help.finance.invest;
+package my.help.finance.invest.bond;
 
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
