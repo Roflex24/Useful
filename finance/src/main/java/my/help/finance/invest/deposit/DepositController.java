@@ -4,7 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/deposits")
@@ -14,7 +17,7 @@ public class DepositController {
     private final DepositParserService parserService;
 
     @GetMapping("/rates")
-    public DepositRatesResponse getDepositRates(Pageable pageable) {
-        return parserService.getDepositRatesForToday(pageable);
+    public DepositRatesResponse getDepositRates(@RequestParam(required = false) List<String> types, Pageable pageable) {
+        return parserService.getDepositRatesForToday(pageable, types);
     }
 }

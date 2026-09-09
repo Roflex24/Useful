@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Депозиты — все данные</title>
-    <!-- Шрифты и иконки -->
+    <title>Депозиты — единый дизайн с ОФЗ</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -72,37 +71,164 @@
         }
         .panel-header i { color: var(--violet); }
 
+        .filter-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+        }
+        .filter-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-2);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .filter-label i {
+            color: var(--violet);
+            font-size: 0.9rem;
+        }
+        .filter-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+        .filter-chip {
+            padding: 7px 14px;
+            border-radius: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-2);
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            white-space: nowrap;
+            position: relative;
+        }
+        .filter-chip:hover {
+            background: var(--s-hover);
+            border-color: var(--border-lit);
+            color: var(--text);
+        }
+        .filter-chip.active {
+            background: var(--violet);
+            border-color: var(--violet);
+            color: white;
+            box-shadow: 0 0 12px rgba(139,92,246,0.4);
+        }
+        .filter-chip .fa-check {
+            margin-left: 5px;
+            font-size: 0.65rem;
+        }
+        .filter-chip.all-active {
+            background: var(--indigo);
+            border-color: var(--indigo);
+            color: white;
+            box-shadow: 0 0 12px rgba(99,102,241,0.4);
+        }
+        .filter-chip[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #f0f4ff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 400;
+            line-height: 1.4;
+            white-space: normal;
+            width: 220px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 100;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+        .filter-chip[data-tooltip]:hover::after {
+            opacity: 1;
+        }
+
         .bonds-table-container {
             max-height: 70vh;
             overflow-y: auto;
             border: 1px solid var(--border);
             border-radius: var(--r);
             background: rgba(0,0,0,0.2);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
         }
+        .bonds-table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+        .bonds-table-container::-webkit-scrollbar-track { background: transparent; }
+        .bonds-table-container::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.2); border-radius: 20px; }
+
         .bonds-table {
             width: 100%;
+            table-layout: fixed;        /* фиксированная ширина колонок */
             border-collapse: collapse;
             font-size: 0.8rem;
         }
+        /* Ширина колонок */
+        .bonds-table th:nth-child(1),
+        .bonds-table td:nth-child(1) {
+            width: 45%;
+        }
+        .bonds-table th:nth-child(2),
+        .bonds-table td:nth-child(2) {
+            width: 20%;
+        }
+        .bonds-table th:nth-child(3),
+        .bonds-table td:nth-child(3) {
+            width: 35%;
+        }
+
         .bonds-table th {
             position: sticky;
             top: 0;
-            background: rgba(10,18,36,0.95);
+            background: rgba(10,18,36,0.97);
             color: var(--text-2);
             font-weight: 600;
             text-align: left;
             padding: 10px 12px;
             border-bottom: 1px solid var(--border);
             backdrop-filter: blur(4px);
-            z-index: 1;
+            z-index: 2;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+        .bonds-table th:hover {
+            background: rgba(24,34,56,0.98);
+            color: #FFFFFF;
+        }
+        .bonds-table th i {
+            margin-left: 5px;
+            font-size: 0.7rem;
+            opacity: 0.7;
         }
         .bonds-table td {
             padding: 8px 12px;
             border-bottom: 1px solid rgba(255,255,255,0.04);
             color: var(--text-2);
+            transition: background 0.1s;
+            word-break: break-word;    /* перенос длинных названий */
         }
         .bonds-table tr:hover td {
-            background: rgba(255,255,255,0.02);
+            background: rgba(255,255,255,0.025);
         }
         .bonds-table .yield-col { font-family: var(--fn); font-weight: 600; color: var(--emerald); }
 
@@ -112,6 +238,8 @@
 
         @media(max-width:600px) {
             .bonds-table th, .bonds-table td { padding: 6px 8px; }
+            .filter-section { flex-direction: column; align-items: flex-start; }
+            .filter-options { width: 100%; }
         }
     </style>
 </head>
@@ -133,8 +261,30 @@
 
     <div class="content-panel">
         <div class="panel-header">
-            <i class="fas fa-table"></i> Все депозиты (отсортированы по ставке)
+            <i class="fas fa-table"></i> Все депозиты
         </div>
+
+        <!-- Фильтр по типу начисления -->
+        <div class="filter-section">
+            <div class="filter-label">
+                <i class="fas fa-filter"></i> Тип начисления:
+            </div>
+            <div class="filter-options" id="filterOptions">
+                <button class="filter-chip all-active" data-type="all"
+                        data-tooltip="Показать все депозиты без ограничений">
+                    Все типы <i class="fas fa-check"></i>
+                </button>
+                <button class="filter-chip" data-type="на ежедневный остаток"
+                        data-tooltip="Проценты начисляются на сумму, которая была на счёте каждый день.">
+                    Ежедневный остаток <i class="fas fa-check"></i>
+                </button>
+                <button class="filter-chip" data-type="на минимальный остаток"
+                        data-tooltip="Проценты начисляются на минимальную сумму за период (защита от снятия).">
+                    Минимальный остаток <i class="fas fa-check"></i>
+                </button>
+            </div>
+        </div>
+
         <div id="depositsContent">
             <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по депозитам...</div>
         </div>
@@ -142,24 +292,56 @@
 </div>
 
 <script>
-    async function loadAllDeposits() {
+    (function() {
+        let allRates = [];
+        let sortField = 'rateMin';
+        let sortDirection = 'desc';
+        let isDataLoaded = false;
+        let selectedTypes = new Set();
+        let showAllTypes = true;
+        let currentFilterTypes = null;
+
         const container = document.getElementById('depositsContent');
-        container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по депозитам...</div>';
-        try {
-            // Запрашиваем большое количество записей (например, 1000) с сортировкой по ставке
-            const resp = await fetch('/api/deposits/rates?page=0&size=1000&sort=rateMin,desc');
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const data = await resp.json();
-            if (data && data.rates && Array.isArray(data.rates)) {
-                const totalBanks = data.totalBanks || 0;
-                if (data.rates.length === 0) {
-                    container.innerHTML = `<div class="loading-widget">Нет данных по депозитам</div>`;
-                    return;
-                }
-                let tableHtml = `
-                    <div style="margin-bottom:8px;font-size:0.8rem;color:var(--text-2);">
-                        <i class="fas fa-university"></i> Найдено банков: ${totalBanks}
-                    </div>
+        const filterOptions = document.getElementById('filterOptions');
+
+        function getSortableValue(item, field) {
+            const raw = item[field];
+            if (raw === undefined || raw === null) return null;
+            if (typeof raw === 'number') return raw;
+            if (typeof raw === 'string' && raw.trim() === '') return null;
+            const num = parseFloat(raw);
+            if (!isNaN(num) && isFinite(num) && /^-?\d+(\.\d+)?$/.test(raw.trim())) {
+                return num;
+            }
+            return raw.toLowerCase ? raw.toLowerCase() : raw;
+        }
+
+        function compareItems(a, b, field, direction) {
+            const valA = getSortableValue(a, field);
+            const valB = getSortableValue(b, field);
+            if (valA === null && valB === null) return 0;
+            if (valA === null) return 1;
+            if (valB === null) return -1;
+            let result;
+            if (typeof valA === 'number' && typeof valB === 'number') {
+                result = valA - valB;
+            } else {
+                const strA = String(valA);
+                const strB = String(valB);
+                result = strA.localeCompare(strB, 'ru', { numeric: true, sensitivity: 'base' });
+            }
+            return direction === 'asc' ? result : -result;
+        }
+
+        function renderTable() {
+            if (!isDataLoaded) {
+                container.innerHTML = '<div class="loading-widget">Нет данных для отображения</div>';
+                return;
+            }
+
+            if (allRates.length === 0) {
+                const message = showAllTypes ? 'Нет депозитов для отображения' : 'Нет депозитов выбранных типов';
+                container.innerHTML = `
                     <div class="bonds-table-container">
                         <table class="bonds-table">
                             <thead>
@@ -170,48 +352,186 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                <tr class="empty-row">
+                                    <td colspan="3" style="text-align:center;color:var(--text-3);padding:25px;">${message}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 `;
-                data.rates.forEach(item => {
-                    let calcIcon = '';
-                    let calcText = item.percentCalculation || '—';
+                return;
+            }
 
-                    if (calcText.includes('ежедневный')) {
-                        calcIcon = '<i class="fas fa-sun" style="color:var(--amber);"></i>';
-                    } else if (calcText.includes('минимальный')) {
-                        calcIcon = '<i class="fas fa-moon" style="color:var(--sky);"></i>';
+            const sorted = [...allRates].sort((a, b) => compareItems(a, b, sortField, sortDirection));
+
+            const getSortIcon = (field) => {
+                if (field !== sortField) return '<i class="fas fa-sort" style="opacity:0.4;"></i>';
+                return sortDirection === 'asc'
+                    ? '<i class="fas fa-sort-up" style="color:var(--violet);"></i>'
+                    : '<i class="fas fa-sort-down" style="color:var(--violet);"></i>';
+            };
+
+            let html = `
+                <div style="margin-bottom:8px;font-size:0.8rem;color:var(--text-2);">
+                    <i class="fas fa-university"></i> Найдено банков: ${sorted.length}
+                </div>
+                <div class="bonds-table-container">
+                    <table class="bonds-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="bankName">Банк ${getSortIcon('bankName')}</th>
+                                <th data-sort="rateMin">Ставка, % ${getSortIcon('rateMin')}</th>
+                                <th data-sort="percentCalculation">Начисление процентов ${getSortIcon('percentCalculation')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            sorted.forEach(item => {
+                const bankName = item.bankName || '—';
+                const rate = (item.rateMin !== null && item.rateMin !== undefined) ? Number(item.rateMin).toFixed(2) : '—';
+                let calcText = item.percentCalculation || '—';
+                let calcIcon = '';
+                if (calcText.includes('ежедневный')) {
+                    calcIcon = '<i class="fas fa-sun" style="color:var(--amber);"></i>';
+                } else if (calcText.includes('минимальный')) {
+                    calcIcon = '<i class="fas fa-moon" style="color:var(--sky);"></i>';
+                } else {
+                    calcIcon = '<i class="fas fa-question-circle" style="color:var(--text-3);"></i>';
+                }
+                html += `
+                    <tr>
+                        <td>${bankName}</td>
+                        <td class="yield-col">${rate}</td>
+                        <td>
+                            <span style="display:inline-flex;align-items:center;gap:6px;">
+                                ${calcIcon}
+                                <span>${calcText}</span>
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+
+            document.querySelectorAll('#depositsContent th[data-sort]').forEach(th => {
+                th.addEventListener('click', () => {
+                    const field = th.getAttribute('data-sort');
+                    if (!field) return;
+                    if (sortField === field) {
+                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
                     } else {
-                        calcIcon = '<i class="fas fa-question-circle" style="color:var(--text-3);"></i>';
+                        const numericFields = ['rateMin'];
+                        if (numericFields.includes(field)) {
+                            sortDirection = 'desc';
+                        } else {
+                            sortDirection = 'asc';
+                        }
+                        sortField = field;
+                    }
+                    renderTable();
+                });
+            });
+        }
+
+        function updateFilterUI() {
+            const chips = filterOptions.querySelectorAll('.filter-chip');
+            chips.forEach(chip => {
+                const type = chip.getAttribute('data-type');
+                if (type === 'all') {
+                    if (showAllTypes) {
+                        chip.classList.add('all-active');
+                        chip.classList.remove('active');
+                    } else {
+                        chip.classList.remove('all-active');
+                    }
+                } else {
+                    if (selectedTypes.has(type)) {
+                        chip.classList.add('active');
+                    } else {
+                        chip.classList.remove('active');
+                    }
+                }
+            });
+        }
+
+        async function loadDeposits(filter = null) {
+            currentFilterTypes = filter;
+            container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по депозитам...</div>';
+            try {
+                let url = '/api/deposits/rates?page=0&size=1000&sort=rateMin,desc';
+                if (filter && filter.length > 0) {
+                    const params = new URLSearchParams();
+                    filter.forEach(t => params.append('types', t));
+                    url += '&' + params.toString();
+                }
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                if (data && data.rates && Array.isArray(data.rates)) {
+                    allRates = data.rates;
+                    isDataLoaded = true;
+                    renderTable();
+                } else {
+                    throw new Error('Неверный формат ответа');
+                }
+            } catch(e) {
+                isDataLoaded = false;
+                container.innerHTML = `
+                    <div class="error-widget">
+                        <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки данных по депозитам
+                        <button onclick="window.loadDeposits(window.currentFilterTypes)">Повторить</button>
+                    </div>
+                `;
+            }
+        }
+
+        function attachFilterHandlers() {
+            const chips = filterOptions.querySelectorAll('.filter-chip');
+            chips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const type = chip.getAttribute('data-type');
+
+                    if (type === 'all') {
+                        showAllTypes = true;
+                        selectedTypes.clear();
+                    } else {
+                        showAllTypes = false;
+                        if (selectedTypes.has(type)) {
+                            selectedTypes.delete(type);
+                            if (selectedTypes.size === 0) {
+                                showAllTypes = true;
+                            }
+                        } else {
+                            selectedTypes.add(type);
+                        }
                     }
 
-                    tableHtml += `
-                        <tr>
-                            <td>${item.bankName || '—'}</td>
-                            <td class="yield-col">${item.rateMin != null ? item.rateMin.toFixed(2) : '—'}</td>
-                            <td>
-                                <span style="display:inline-flex;align-items:center;gap:6px;">
-                                    ${calcIcon}
-                                    <span>${calcText}</span>
-                                </span>
-                            </td>
-                        </tr>
-                    `;
-                });
-                tableHtml += '</tbody></table></div>';
-                container.innerHTML = tableHtml;
-            } else {
-                throw new Error('Неверный формат ответа');
-            }
-        } catch(e) {
-            container.innerHTML = `
-                <div class="error-widget">
-                    <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки данных по депозитам
-                    <button onclick="loadAllDeposits()">Повторить</button>
-                </div>
-            `;
-        }
-    }
+                    updateFilterUI();
 
-    loadAllDeposits();
+                    let filterToSend = null;
+                    if (!showAllTypes && selectedTypes.size > 0) {
+                        filterToSend = Array.from(selectedTypes);
+                    }
+                    loadDeposits(filterToSend);
+                });
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            showAllTypes = true;
+            selectedTypes.clear();
+            currentFilterTypes = null;
+            updateFilterUI();
+            attachFilterHandlers();
+            loadDeposits(null);
+        });
+
+        window.loadDeposits = loadDeposits;
+        window.currentFilterTypes = currentFilterTypes;
+    })();
 </script>
 </body>
 </html>

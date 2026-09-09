@@ -58,10 +58,12 @@ public class MoexService {
 
     public List<OFZBondSummary> fetchOFZDataWithStats(Pageable pageable, List<String> bondTypeDisplay) throws IOException {
         LocalDate today = LocalDate.now();
-        Specification<BondDailyData> spec = BondSpecification.hasBondTypeDisplayIn(bondTypeDisplay);
+        Specification<BondDailyData> spec = Specification.where(
+                BondSpecification.hasBondTypeDisplayIn(bondTypeDisplay))
+                .and(BondSpecification.equalsDate(today));
 
         // 1. Проверяем наличие данных за сегодня в БД
-        List<BondDailyData> existingData = bondDailyDataRepository.findByDate(today, pageable, spec);
+        List<BondDailyData> existingData = bondDailyDataRepository.findAll(spec, pageable).getContent();
         if (!existingData.isEmpty()) {
             logger.info("Returning {} bond records from database for date {}", existingData.size(), today);
             return existingData.stream()
@@ -88,7 +90,7 @@ public class MoexService {
         logger.info("Saved {} bond records to database for date {}", entitiesToSave.size(), today);
 
 
-        List<BondDailyData> entitiesList = bondDailyDataRepository.findByDate(today, pageable, spec);
+        List<BondDailyData> entitiesList = bondDailyDataRepository.findAll(spec, pageable).getContent();
         // 5. Возвращаем результат
         return entitiesList.stream()
                 .map(bondMapper::entityToSummary)

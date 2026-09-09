@@ -300,122 +300,61 @@
 <script>
     (function() {
         // --- Глобальное состояние ---
-        let allBonds = [];               // полный массив облигаций (сырые объекты)
+        let allBonds = [];               // массив облигаций, полученных с сервера (уже отфильтрованных)
         let sortField = 'yield';        // поле сортировки по умолчанию
         let sortDirection = 'desc';     // направление (desc для yield по умолчанию)
         let isDataLoaded = false;       // флаг успешной загрузки
         let selectedTypes = new Set();  // множество выбранных типов облигаций
         let showAllTypes = true;        // флаг "показать все типы"
+        let currentFilterTypes = null;  // текущий фильтр (null = все, иначе массив строк)
 
-        // --- Вспомогательные функции ---
         const container = document.getElementById('bondsContent');
         const filterOptions = document.getElementById('filterOptions');
 
-        // Доступные типы облигаций
-        const bondTypes = ['фиксированный', 'плавающий', 'индексируемый', 'амортизируемый', 'валютный', 'бескупонный'];
-
-        // Проверка, является ли значение числом (для корректной сортировки)
+        // --- Вспомогательные функции ---
         function isNumeric(value) {
             if (value === null || value === undefined || value === '') return false;
             return !isNaN(parseFloat(value)) && isFinite(value);
         }
 
-        // Безопасное получение значения для сортировки (числа или строки)
         function getSortableValue(bond, field) {
             const raw = bond[field];
             if (raw === undefined || raw === null) return null;
             if (typeof raw === 'number') return raw;
             if (typeof raw === 'string' && raw.trim() === '') return null;
-            // Попытка конвертировать в число, если это возможно
             const num = parseFloat(raw);
             if (!isNaN(num) && isFinite(num) && /^-?\d+(\.\d+)?$/.test(raw.trim())) {
                 return num;
             }
-            // Для дат и строк возвращаем строку в нижнем регистре (для сравнения)
             return raw.toLowerCase ? raw.toLowerCase() : raw;
         }
 
-        // Компаратор для сортировки
         function compareBonds(a, b, field, direction) {
             const valA = getSortableValue(a, field);
             const valB = getSortableValue(b, field);
-
-            // Обработка null/undefined (всегда в конец)
             if (valA === null && valB === null) return 0;
             if (valA === null) return 1;
             if (valB === null) return -1;
-
             let result;
             if (typeof valA === 'number' && typeof valB === 'number') {
                 result = valA - valB;
             } else {
-                // Строковое сравнение
                 const strA = String(valA);
                 const strB = String(valB);
                 result = strA.localeCompare(strB, 'ru', { numeric: true, sensitivity: 'base' });
             }
-
             return direction === 'asc' ? result : -result;
         }
 
-        // Получение отфильтрованных данных
-        function getFilteredBonds() {
-            if (showAllTypes) {
-                return allBonds;
-            }
-
-            // Если выбран хотя бы один конкретный тип
-            if (selectedTypes.size > 0) {
-                return allBonds.filter(bond => {
-                    const type = (bond.bondTypeDisplay || '').toLowerCase();
-                    return Array.from(selectedTypes).some(selectedType =>
-                        type === selectedType.toLowerCase()
-                    );
-                });
-            }
-
-            // Если ничего не выбрано и не "все типы" - возвращаем пустой массив
-            return [];
-        }
-
-        // Обновление визуального состояния фильтров
-        function updateFilterUI() {
-            const chips = filterOptions.querySelectorAll('.filter-chip');
-            chips.forEach(chip => {
-                const type = chip.getAttribute('data-type');
-
-                if (type === 'all') {
-                    if (showAllTypes) {
-                        chip.classList.add('all-active');
-                        chip.classList.remove('active');
-                    } else {
-                        chip.classList.remove('all-active');
-                    }
-                } else {
-                    if (selectedTypes.has(type)) {
-                        chip.classList.add('active');
-                    } else {
-                        chip.classList.remove('active');
-                    }
-                }
-            });
-        }
-
-        // Рендер таблицы на основе текущего состояния сортировки и фильтрации
+        // Рендер таблицы на основе текущего состояния сортировки
         function renderTable() {
             if (!isDataLoaded) {
                 container.innerHTML = '<div class="loading-widget">Нет данных для отображения</div>';
                 return;
             }
 
-            // Получаем отфильтрованные данные
-            const filteredBonds = getFilteredBonds();
-
-            if (filteredBonds.length === 0) {
-                const message = showAllTypes || selectedTypes.size === 0
-                    ? 'Нет облигаций для отображения'
-                    : 'Нет облигаций выбранных типов';
-
+            if (allBonds.length === 0) {
+                const message = showAllTypes ? 'Нет облигаций для отображения' : 'Нет облигаций выбранных типов';
                 container.innerHTML = `
                     <div class="bonds-table-container">
                         <table class="bonds-table">
@@ -440,10 +379,9 @@
                 return;
             }
 
-            // Копируем массив и сортируем
-            const sortedBonds = [...filteredBonds].sort((a, b) => compareBonds(a, b, sortField, sortDirection));
+            // Сортируем копию массива
+            const sortedBonds = [...allBonds].sort((a, b) => compareBonds(a, b, sortField, sortDirection));
 
-            // Определяем иконки для заголовков
             const getSortIcon = (field) => {
                 if (field !== sortField) return '<i class="fas fa-sort" style="opacity:0.4;"></i>';
                 return sortDirection === 'asc'
@@ -468,7 +406,6 @@
             `;
 
             sortedBonds.forEach(bond => {
-                // Форматирование значений с проверками
                 const shortname = bond.shortname || '—';
                 const price = (bond.price !== null && bond.price !== undefined) ? Number(bond.price).toFixed(2) : '—';
                 const yieldVal = (bond.yield !== null && bond.yield !== undefined) ? Number(bond.yield).toFixed(2) : '—';
@@ -491,93 +428,76 @@
             tableHtml += '</tbody></table></div>';
             container.innerHTML = tableHtml;
 
-            // Привязываем обработчики кликов к заголовкам таблицы
             attachSortHandlers();
         }
 
-        // Привязка обработчиков кликов по заголовкам (после каждого рендера)
         function attachSortHandlers() {
             const headers = container.querySelectorAll('th[data-sort]');
             headers.forEach(th => {
-                th.addEventListener('click', (e) => {
+                th.addEventListener('click', () => {
                     const field = th.getAttribute('data-sort');
                     if (!field) return;
 
                     if (sortField === field) {
-                        // Переключаем направление
                         sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
                     } else {
-                        // Устанавливаем новое поле; для удобства:
-                        // при переходе на новое поле, для полей с числами (price, yield, couponValue) сразу desc,
-                        // для строковых (shortname, maturityDate, bondTypeDisplay) — asc
                         const numericFields = ['price', 'yield', 'couponValue'];
                         if (numericFields.includes(field)) {
-                            sortDirection = 'desc'; // числа: сначала наибольшие
+                            sortDirection = 'desc';
                         } else {
-                            sortDirection = 'asc';   // строки: по алфавиту
+                            sortDirection = 'asc';
                         }
                         sortField = field;
                     }
-
-                    // Перерисовываем таблицу
                     renderTable();
                 });
             });
         }
 
-        // Привязка обработчиков для фильтров (множественный выбор)
-        function attachFilterHandlers() {
+        function updateFilterUI() {
             const chips = filterOptions.querySelectorAll('.filter-chip');
             chips.forEach(chip => {
-                chip.addEventListener('click', () => {
-                    const type = chip.getAttribute('data-type');
-
-                    if (type === 'all') {
-                        // Нажали "Все типы" - сбрасываем все фильтры
-                        showAllTypes = true;
-                        selectedTypes.clear();
+                const type = chip.getAttribute('data-type');
+                if (type === 'all') {
+                    if (showAllTypes) {
+                        chip.classList.add('all-active');
+                        chip.classList.remove('active');
                     } else {
-                        // Нажали на конкретный тип
-                        showAllTypes = false;
-
-                        // Переключаем тип в множестве
-                        if (selectedTypes.has(type)) {
-                            selectedTypes.delete(type);
-                            // Если удалили последний тип, возвращаемся к "Все типы"
-                            if (selectedTypes.size === 0) {
-                                showAllTypes = true;
-                            }
-                        } else {
-                            selectedTypes.add(type);
-                        }
+                        chip.classList.remove('all-active');
                     }
-
-                    // Обновляем UI
-                    updateFilterUI();
-
-                    // Перерисовываем таблицу
-                    renderTable();
-                });
+                } else {
+                    if (selectedTypes.has(type)) {
+                        chip.classList.add('active');
+                    } else {
+                        chip.classList.remove('active');
+                    }
+                }
             });
         }
 
-        // Загрузка данных с сервера
-        async function loadAllBonds() {
+        // Загрузка данных с сервера с учётом фильтра
+        async function loadBondsWithFilter(types = null) {
+            // Обновляем currentFilterTypes, если передан аргумент, иначе используем сохранённый
+            if (arguments.length > 0) {
+                currentFilterTypes = types;
+            }
+            const filter = currentFilterTypes; // может быть null или массив
+
             container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по облигациям...</div>';
             try {
-                // Запрашиваем большое количество записей с сортировкой по yield (desc)
-                const resp = await fetch('/api/ofz?page=0&size=1000&sort=yield,desc');
+                let url = '/api/ofz?page=0&size=1000&sort=yield,desc'; // базовая сортировка с сервера (может быть переопределена клиентом)
+                if (filter && filter.length > 0) {
+                    const params = new URLSearchParams();
+                    filter.forEach(t => params.append('bondTypeDisplay', t));
+                    url += '&' + params.toString();
+                }
+                const resp = await fetch(url);
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                 const bonds = await resp.json();
 
                 if (Array.isArray(bonds)) {
-                    allBonds = bonds;
+                    allBonds = bonds; // теперь это уже отфильтрованные данные
                     isDataLoaded = true;
-
-                    // Устанавливаем сортировку по умолчанию: yield, desc
-                    if (!sortField) sortField = 'yield';
-                    if (!sortDirection) sortDirection = 'desc';
-
                     renderTable();
                 } else {
                     throw new Error('Ответ не является массивом');
@@ -587,25 +507,57 @@
                 container.innerHTML = `
                     <div class="error-widget">
                         <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки данных по облигациям
-                        <button onclick="loadAllBonds()">Повторить</button>
+                        <button onclick="loadBondsWithFilter()">Повторить</button>
                     </div>
                 `;
             }
         }
 
+        function attachFilterHandlers() {
+            const chips = filterOptions.querySelectorAll('.filter-chip');
+            chips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const type = chip.getAttribute('data-type');
+
+                    if (type === 'all') {
+                        showAllTypes = true;
+                        selectedTypes.clear();
+                    } else {
+                        showAllTypes = false;
+                        if (selectedTypes.has(type)) {
+                            selectedTypes.delete(type);
+                            if (selectedTypes.size === 0) {
+                                showAllTypes = true;
+                            }
+                        } else {
+                            selectedTypes.add(type);
+                        }
+                    }
+
+                    updateFilterUI();
+
+                    // Определяем текущий фильтр и отправляем запрос
+                    let filterToSend = null;
+                    if (!showAllTypes && selectedTypes.size > 0) {
+                        filterToSend = Array.from(selectedTypes);
+                    }
+                    loadBondsWithFilter(filterToSend);
+                });
+            });
+        }
+
         // Инициализация
         window.addEventListener('DOMContentLoaded', () => {
-            // Инициализируем состояние фильтров
             showAllTypes = true;
             selectedTypes.clear();
+            currentFilterTypes = null;
             updateFilterUI();
-
             attachFilterHandlers();
-            loadAllBonds();
+            loadBondsWithFilter(null); // загружаем все облигации
         });
 
-        // Экспортируем loadAllBonds для кнопки повторной загрузки
-        window.loadAllBonds = loadAllBonds;
+        // Экспортируем для кнопки повторной загрузки (используется в обработчике ошибки)
+        window.loadBondsWithFilter = loadBondsWithFilter;
     })();
 </script>
 </body>

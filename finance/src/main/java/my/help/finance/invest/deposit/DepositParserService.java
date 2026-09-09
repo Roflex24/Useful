@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,25 +47,28 @@ public class DepositParserService {
      * Если данные ещё не собраны, выполняет парсинг API и сохраняет в БД.
      */
     @Transactional()
-    public DepositRatesResponse getDepositRatesForToday(Pageable pageable) {
+    public DepositRatesResponse getDepositRatesForToday(Pageable pageable, List<String> types) {
         LocalDate today = LocalDate.now();
         logger.info("Getting deposit rates for date: {}", today);
+        Specification<DepositRateEntity> spec = Specification.where(
+                DepositSpecification.hasPercentCalculationIn(types))
+                .and(DepositSpecification.equalsDate(today));
 
-        List<DepositRateEntity> entities = depositRateRepository.findByParseDate(today, pageable);
+        List<DepositRateEntity> entities = depositRateRepository.findAll(spec, pageable).getContent();
         if (!entities.isEmpty()) {
             logger.info("Found {} existing deposit rate entities for today, returning cached data.", entities.size());
             return buildResponseFromEntities(entities);
         }
 
         logger.info("No data found for today, starting parsing from API.");
-        return parseAndSave(today, pageable);
+        return parseAndSave(today, pageable, spec);
     }
 
     /**
      * Выполняет парсинг API и сохраняет результаты в БД.
      */
     @Transactional
-    protected DepositRatesResponse parseAndSave(LocalDate parseDate, Pageable pageable) {
+    protected DepositRatesResponse parseAndSave(LocalDate parseDate, Pageable pageable, Specification<DepositRateEntity> spec) {
         logger.info("Starting deposit rate parsing for date: {}", parseDate);
         List<DepositRateDto> rates = new ArrayList<>();
 
@@ -105,7 +109,7 @@ public class DepositParserService {
             saveAll(rates, parseDate);
             logger.info("Successfully saved {} entries to database for date {}", rates.size(), parseDate);
 
-            List<DepositRateEntity> entities = depositRateRepository.findByParseDate(parseDate, pageable);
+            List<DepositRateEntity> entities = depositRateRepository.findAll(spec, pageable).getContent();
             return buildResponseFromEntities(entities);
 
         } catch (Exception e) {
