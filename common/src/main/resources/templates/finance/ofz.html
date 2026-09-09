@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Облигации ОФЗ — все данные</title>
+    <title>Облигации ОФЗ — интерактивная таблица</title>
     <!-- Шрифты и иконки -->
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -41,7 +41,7 @@
         .ab:nth-child(3) { width:360px;height:360px; background:radial-gradient(circle,#14B8A6,transparent 70%); bottom:-50px;left:42%; opacity:0.11; animation-duration:26s; animation-delay:-4s; }
         @keyframes drift { from{transform:translate(0,0) scale(1)} to{transform:translate(45px,30px) scale(1.08)} }
 
-        .layout { position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:28px 22px 60px; }
+        .layout { position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:28px 22px 60px; }
 
         .glass { background:var(--surface); border:1px solid var(--border); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
 
@@ -72,13 +72,112 @@
         }
         .panel-header i { color: var(--violet); }
 
+        .filter-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+        }
+        .filter-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-2);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .filter-label i {
+            color: var(--violet);
+            font-size: 0.9rem;
+        }
+        .filter-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+        .filter-chip {
+            padding: 7px 14px;
+            border-radius: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-2);
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            white-space: nowrap;
+            position: relative;
+        }
+        .filter-chip:hover {
+            background: var(--s-hover);
+            border-color: var(--border-lit);
+            color: var(--text);
+        }
+        .filter-chip.active {
+            background: var(--violet);
+            border-color: var(--violet);
+            color: white;
+            box-shadow: 0 0 12px rgba(139,92,246,0.4);
+        }
+        .filter-chip .fa-check {
+            margin-left: 5px;
+            font-size: 0.65rem;
+        }
+        .filter-chip.all-active {
+            background: var(--indigo);
+            border-color: var(--indigo);
+            color: white;
+            box-shadow: 0 0 12px rgba(99,102,241,0.4);
+        }
+
+        /* Всплывающая подсказка */
+        .filter-chip[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #f0f4ff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 400;
+            line-height: 1.4;
+            white-space: normal;
+            width: 220px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 100;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+        .filter-chip[data-tooltip]:hover::after {
+            opacity: 1;
+        }
+
         .bonds-table-container {
             max-height: 70vh;
             overflow-y: auto;
             border: 1px solid var(--border);
             border-radius: var(--r);
             background: rgba(0,0,0,0.2);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
         }
+        .bonds-table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+        .bonds-table-container::-webkit-scrollbar-track { background: transparent; }
+        .bonds-table-container::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.2); border-radius: 20px; }
+
         .bonds-table {
             width: 100%;
             border-collapse: collapse;
@@ -87,26 +186,41 @@
         .bonds-table th {
             position: sticky;
             top: 0;
-            background: rgba(10,18,36,0.95);
+            background: rgba(10,18,36,0.97);
             color: var(--text-2);
             font-weight: 600;
             text-align: left;
             padding: 10px 12px;
             border-bottom: 1px solid var(--border);
             backdrop-filter: blur(4px);
-            z-index: 1;
+            z-index: 2;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+        .bonds-table th:hover {
+            background: rgba(24,34,56,0.98);
+            color: #FFFFFF;
+        }
+        .bonds-table th i {
+            margin-left: 5px;
+            font-size: 0.7rem;
+            opacity: 0.7;
         }
         .bonds-table td {
             padding: 8px 12px;
             border-bottom: 1px solid rgba(255,255,255,0.04);
             color: var(--text-2);
+            transition: background 0.1s;
         }
         .bonds-table tr:hover td {
-            background: rgba(255,255,255,0.02);
+            background: rgba(255,255,255,0.025);
         }
         .bonds-table .price-col { font-family: var(--fn); font-weight: 600; color: var(--text); }
         .bonds-table .yield-col { font-family: var(--fn); font-weight: 600; color: var(--emerald); }
         .bonds-table .coupon-col, .bonds-table .maturity-col, .bonds-table .type-col { font-size: 0.75rem; }
+        .bonds-table .empty-row td { text-align: center; color: var(--text-3); padding: 25px; }
 
         .loading-widget { color: var(--text-3); font-size: 0.85rem; padding: 8px 0; }
         .error-widget { color: var(--rose); font-size: 0.85rem; padding: 8px 0; }
@@ -114,6 +228,8 @@
 
         @media(max-width:600px) {
             .bonds-table th, .bonds-table td { padding: 6px 8px; }
+            .filter-section { flex-direction: column; align-items: flex-start; }
+            .filter-options { width: 100%; }
         }
     </style>
 </head>
@@ -135,8 +251,46 @@
 
     <div class="content-panel">
         <div class="panel-header">
-            <i class="fas fa-table"></i> Все облигации (отсортированы по доходности)
+            <i class="fas fa-table"></i> Все облигации
         </div>
+
+        <!-- Фильтр по типам облигаций (множественный выбор) -->
+        <div class="filter-section">
+            <div class="filter-label">
+                <i class="fas fa-filter"></i> Тип облигации:
+            </div>
+            <div class="filter-options" id="filterOptions">
+                <button class="filter-chip all-active" data-type="all"
+                        data-tooltip="Показать все облигации без ограничений">
+                    Все типы <i class="fas fa-check"></i>
+                </button>
+                <button class="filter-chip" data-type="фиксированный"
+                        data-tooltip="Процент всегда одинаковый, как зарплата, которая не меняется.">
+                    Фиксированный <i class="fas fa-check"></i>
+                </button>
+                <button class="filter-chip" data-type="плавающий"
+                        data-tooltip="Процент меняется, как цены в магазине — то выше, то ниже.">
+                    Плавающий <i class="fas fa-check"></i>
+                </button>
+                <button class="filter-chip" data-type="индексируемый"
+                        data-tooltip="Процент зависит от инфляции. Когда цены растут, купон тоже растёт — защищает от роста цен.">
+                    Индексируемый <i class="fas fa-check"></i>
+                </button>
+                <button class="filter-chip" data-type="амортизируемый"
+                        data-tooltip="Долг возвращается частями, как будто вы отдаёте долг понемногу каждый месяц.">
+                    Амортизируемый <i class="fas fa-check"></i>
+                </button>
+                <button class="filter-chip" data-type="валютный"
+                        data-tooltip="Купон платят в иностранной валюте (доллары, евро), как будто вы храните деньги в другой стране.">
+                    Валютный <i class="fas fa-check"></i>
+                </button>
+                <button class="filter-chip" data-type="бескупонный"
+                        data-tooltip="Купон не платят, но облигацию продают со скидкой, как вещь на распродаже.">
+                    Бескупонный <i class="fas fa-check"></i>
+                </button>
+            </div>
+        </div>
+
         <div id="bondsContent">
             <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по облигациям...</div>
         </div>
@@ -144,20 +298,125 @@
 </div>
 
 <script>
-    async function loadAllBonds() {
+    (function() {
+        // --- Глобальное состояние ---
+        let allBonds = [];               // полный массив облигаций (сырые объекты)
+        let sortField = 'yield';        // поле сортировки по умолчанию
+        let sortDirection = 'desc';     // направление (desc для yield по умолчанию)
+        let isDataLoaded = false;       // флаг успешной загрузки
+        let selectedTypes = new Set();  // множество выбранных типов облигаций
+        let showAllTypes = true;        // флаг "показать все типы"
+
+        // --- Вспомогательные функции ---
         const container = document.getElementById('bondsContent');
-        container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по облигациям...</div>';
-        try {
-            // Запрашиваем большое количество записей (например, 1000) с сортировкой по доходности
-            const resp = await fetch('/api/ofz?page=0&size=1000&sort=yield,desc');
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const bonds = await resp.json();
-            if (Array.isArray(bonds)) {
-                if (bonds.length === 0) {
-                    container.innerHTML = '<div class="loading-widget">Нет данных по облигациям</div>';
-                    return;
+        const filterOptions = document.getElementById('filterOptions');
+
+        // Доступные типы облигаций
+        const bondTypes = ['фиксированный', 'плавающий', 'индексируемый', 'амортизируемый', 'валютный', 'бескупонный'];
+
+        // Проверка, является ли значение числом (для корректной сортировки)
+        function isNumeric(value) {
+            if (value === null || value === undefined || value === '') return false;
+            return !isNaN(parseFloat(value)) && isFinite(value);
+        }
+
+        // Безопасное получение значения для сортировки (числа или строки)
+        function getSortableValue(bond, field) {
+            const raw = bond[field];
+            if (raw === undefined || raw === null) return null;
+            if (typeof raw === 'number') return raw;
+            if (typeof raw === 'string' && raw.trim() === '') return null;
+            // Попытка конвертировать в число, если это возможно
+            const num = parseFloat(raw);
+            if (!isNaN(num) && isFinite(num) && /^-?\d+(\.\d+)?$/.test(raw.trim())) {
+                return num;
+            }
+            // Для дат и строк возвращаем строку в нижнем регистре (для сравнения)
+            return raw.toLowerCase ? raw.toLowerCase() : raw;
+        }
+
+        // Компаратор для сортировки
+        function compareBonds(a, b, field, direction) {
+            const valA = getSortableValue(a, field);
+            const valB = getSortableValue(b, field);
+
+            // Обработка null/undefined (всегда в конец)
+            if (valA === null && valB === null) return 0;
+            if (valA === null) return 1;
+            if (valB === null) return -1;
+
+            let result;
+            if (typeof valA === 'number' && typeof valB === 'number') {
+                result = valA - valB;
+            } else {
+                // Строковое сравнение
+                const strA = String(valA);
+                const strB = String(valB);
+                result = strA.localeCompare(strB, 'ru', { numeric: true, sensitivity: 'base' });
+            }
+
+            return direction === 'asc' ? result : -result;
+        }
+
+        // Получение отфильтрованных данных
+        function getFilteredBonds() {
+            if (showAllTypes) {
+                return allBonds;
+            }
+
+            // Если выбран хотя бы один конкретный тип
+            if (selectedTypes.size > 0) {
+                return allBonds.filter(bond => {
+                    const type = (bond.bondTypeDisplay || '').toLowerCase();
+                    return Array.from(selectedTypes).some(selectedType =>
+                        type === selectedType.toLowerCase()
+                    );
+                });
+            }
+
+            // Если ничего не выбрано и не "все типы" - возвращаем пустой массив
+            return [];
+        }
+
+        // Обновление визуального состояния фильтров
+        function updateFilterUI() {
+            const chips = filterOptions.querySelectorAll('.filter-chip');
+            chips.forEach(chip => {
+                const type = chip.getAttribute('data-type');
+
+                if (type === 'all') {
+                    if (showAllTypes) {
+                        chip.classList.add('all-active');
+                        chip.classList.remove('active');
+                    } else {
+                        chip.classList.remove('all-active');
+                    }
+                } else {
+                    if (selectedTypes.has(type)) {
+                        chip.classList.add('active');
+                    } else {
+                        chip.classList.remove('active');
+                    }
                 }
-                let tableHtml = `
+            });
+        }
+
+        // Рендер таблицы на основе текущего состояния сортировки и фильтрации
+        function renderTable() {
+            if (!isDataLoaded) {
+                container.innerHTML = '<div class="loading-widget">Нет данных для отображения</div>';
+                return;
+            }
+
+            // Получаем отфильтрованные данные
+            const filteredBonds = getFilteredBonds();
+
+            if (filteredBonds.length === 0) {
+                const message = showAllTypes || selectedTypes.size === 0
+                    ? 'Нет облигаций для отображения'
+                    : 'Нет облигаций выбранных типов';
+
+                container.innerHTML = `
                     <div class="bonds-table-container">
                         <table class="bonds-table">
                             <thead>
@@ -171,35 +430,183 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                <tr class="empty-row">
+                                    <td colspan="6">${message}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 `;
-                bonds.forEach(bond => {
-                    tableHtml += `
-                        <tr>
-                            <td>${bond.shortname || '—'}</td>
-                            <td class="price-col">${bond.price ? bond.price.toFixed(2) : '—'}</td>
-                            <td class="yield-col">${bond.yield ? bond.yield.toFixed(2) : '—'}</td>
-                            <td class="coupon-col">${bond.couponValue ? bond.couponValue.toFixed(2) : '—'}</td>
-                            <td class="maturity-col">${bond.maturityDate || '—'}</td>
-                            <td class="type-col">${bond.bondTypeDisplay || '—'}</td>
-                        </tr>
-                    `;
-                });
-                tableHtml += '</tbody></table></div>';
-                container.innerHTML = tableHtml;
-            } else {
-                throw new Error('Ответ не является массивом');
+                return;
             }
-        } catch(e) {
-            container.innerHTML = `
-                <div class="error-widget">
-                    <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки данных по облигациям
-                    <button onclick="loadAllBonds()">Повторить</button>
-                </div>
-            `;
-        }
-    }
 
-    loadAllBonds();
+            // Копируем массив и сортируем
+            const sortedBonds = [...filteredBonds].sort((a, b) => compareBonds(a, b, sortField, sortDirection));
+
+            // Определяем иконки для заголовков
+            const getSortIcon = (field) => {
+                if (field !== sortField) return '<i class="fas fa-sort" style="opacity:0.4;"></i>';
+                return sortDirection === 'asc'
+                    ? '<i class="fas fa-sort-up" style="color:var(--violet);"></i>'
+                    : '<i class="fas fa-sort-down" style="color:var(--violet);"></i>';
+            };
+
+            let tableHtml = `
+                <div class="bonds-table-container">
+                    <table class="bonds-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="shortname" title="Сортировать по названию">Название ${getSortIcon('shortname')}</th>
+                                <th data-sort="price" title="Сортировать по цене">Цена, ₽ ${getSortIcon('price')}</th>
+                                <th data-sort="yield" title="Сортировать по доходности">Доходность, % ${getSortIcon('yield')}</th>
+                                <th data-sort="couponValue" title="Сортировать по купону">Купон, ₽ ${getSortIcon('couponValue')}</th>
+                                <th data-sort="maturityDate" title="Сортировать по дате погашения">Погашение ${getSortIcon('maturityDate')}</th>
+                                <th data-sort="bondTypeDisplay" title="Сортировать по типу">Тип ${getSortIcon('bondTypeDisplay')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            sortedBonds.forEach(bond => {
+                // Форматирование значений с проверками
+                const shortname = bond.shortname || '—';
+                const price = (bond.price !== null && bond.price !== undefined) ? Number(bond.price).toFixed(2) : '—';
+                const yieldVal = (bond.yield !== null && bond.yield !== undefined) ? Number(bond.yield).toFixed(2) : '—';
+                const coupon = (bond.couponValue !== null && bond.couponValue !== undefined) ? Number(bond.couponValue).toFixed(2) : '—';
+                const maturity = bond.maturityDate || '—';
+                const typeDisplay = bond.bondTypeDisplay || '—';
+
+                tableHtml += `
+                    <tr>
+                        <td>${shortname}</td>
+                        <td class="price-col">${price}</td>
+                        <td class="yield-col">${yieldVal}</td>
+                        <td class="coupon-col">${coupon}</td>
+                        <td class="maturity-col">${maturity}</td>
+                        <td class="type-col">${typeDisplay}</td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += '</tbody></table></div>';
+            container.innerHTML = tableHtml;
+
+            // Привязываем обработчики кликов к заголовкам таблицы
+            attachSortHandlers();
+        }
+
+        // Привязка обработчиков кликов по заголовкам (после каждого рендера)
+        function attachSortHandlers() {
+            const headers = container.querySelectorAll('th[data-sort]');
+            headers.forEach(th => {
+                th.addEventListener('click', (e) => {
+                    const field = th.getAttribute('data-sort');
+                    if (!field) return;
+
+                    if (sortField === field) {
+                        // Переключаем направление
+                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        // Устанавливаем новое поле; для удобства:
+                        // при переходе на новое поле, для полей с числами (price, yield, couponValue) сразу desc,
+                        // для строковых (shortname, maturityDate, bondTypeDisplay) — asc
+                        const numericFields = ['price', 'yield', 'couponValue'];
+                        if (numericFields.includes(field)) {
+                            sortDirection = 'desc'; // числа: сначала наибольшие
+                        } else {
+                            sortDirection = 'asc';   // строки: по алфавиту
+                        }
+                        sortField = field;
+                    }
+
+                    // Перерисовываем таблицу
+                    renderTable();
+                });
+            });
+        }
+
+        // Привязка обработчиков для фильтров (множественный выбор)
+        function attachFilterHandlers() {
+            const chips = filterOptions.querySelectorAll('.filter-chip');
+            chips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const type = chip.getAttribute('data-type');
+
+                    if (type === 'all') {
+                        // Нажали "Все типы" - сбрасываем все фильтры
+                        showAllTypes = true;
+                        selectedTypes.clear();
+                    } else {
+                        // Нажали на конкретный тип
+                        showAllTypes = false;
+
+                        // Переключаем тип в множестве
+                        if (selectedTypes.has(type)) {
+                            selectedTypes.delete(type);
+                            // Если удалили последний тип, возвращаемся к "Все типы"
+                            if (selectedTypes.size === 0) {
+                                showAllTypes = true;
+                            }
+                        } else {
+                            selectedTypes.add(type);
+                        }
+                    }
+
+                    // Обновляем UI
+                    updateFilterUI();
+
+                    // Перерисовываем таблицу
+                    renderTable();
+                });
+            });
+        }
+
+        // Загрузка данных с сервера
+        async function loadAllBonds() {
+            container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по облигациям...</div>';
+            try {
+                // Запрашиваем большое количество записей с сортировкой по yield (desc)
+                const resp = await fetch('/api/ofz?page=0&size=1000&sort=yield,desc');
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const bonds = await resp.json();
+
+                if (Array.isArray(bonds)) {
+                    allBonds = bonds;
+                    isDataLoaded = true;
+
+                    // Устанавливаем сортировку по умолчанию: yield, desc
+                    if (!sortField) sortField = 'yield';
+                    if (!sortDirection) sortDirection = 'desc';
+
+                    renderTable();
+                } else {
+                    throw new Error('Ответ не является массивом');
+                }
+            } catch(e) {
+                isDataLoaded = false;
+                container.innerHTML = `
+                    <div class="error-widget">
+                        <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки данных по облигациям
+                        <button onclick="loadAllBonds()">Повторить</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Инициализация
+        window.addEventListener('DOMContentLoaded', () => {
+            // Инициализируем состояние фильтров
+            showAllTypes = true;
+            selectedTypes.clear();
+            updateFilterUI();
+
+            attachFilterHandlers();
+            loadAllBonds();
+        });
+
+        // Экспортируем loadAllBonds для кнопки повторной загрузки
+        window.loadAllBonds = loadAllBonds;
+    })();
 </script>
 </body>
 </html>

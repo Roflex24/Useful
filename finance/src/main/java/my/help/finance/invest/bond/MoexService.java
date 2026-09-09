@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -55,11 +56,12 @@ public class MoexService {
         this.moexApiClient = moexApiClient;
     }
 
-    public List<OFZBondSummary> fetchOFZDataWithStats(Pageable pageable) throws IOException {
+    public List<OFZBondSummary> fetchOFZDataWithStats(Pageable pageable, List<String> bondTypeDisplay) throws IOException {
         LocalDate today = LocalDate.now();
+        Specification<BondDailyData> spec = BondSpecification.hasBondTypeDisplayIn(bondTypeDisplay);
 
         // 1. Проверяем наличие данных за сегодня в БД
-        List<BondDailyData> existingData = bondDailyDataRepository.findByDate(today, pageable);
+        List<BondDailyData> existingData = bondDailyDataRepository.findByDate(today, pageable, spec);
         if (!existingData.isEmpty()) {
             logger.info("Returning {} bond records from database for date {}", existingData.size(), today);
             return existingData.stream()
@@ -86,7 +88,7 @@ public class MoexService {
         logger.info("Saved {} bond records to database for date {}", entitiesToSave.size(), today);
 
 
-        List<BondDailyData> entitiesList = bondDailyDataRepository.findByDate(today, pageable);
+        List<BondDailyData> entitiesList = bondDailyDataRepository.findByDate(today, pageable, spec);
         // 5. Возвращаем результат
         return entitiesList.stream()
                 .map(bondMapper::entityToSummary)

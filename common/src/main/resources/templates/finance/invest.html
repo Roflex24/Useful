@@ -7,7 +7,6 @@
     <!-- Шрифты и иконки -->
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js (может понадобиться для будущих графиков, оставлен) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         :root {
@@ -64,7 +63,7 @@
         @keyframes tin { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         .toast.e { border-color:rgba(244,63,94,0.3);color:var(--rose); }
 
-        /* =============== СТИЛИ ДЛЯ ВИДЖЕТОВ =============== */
+        /* =============== ОБЩИЕ СТИЛИ ДЛЯ ВИДЖЕТОВ =============== */
         .widget-panel {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -101,23 +100,6 @@
             color: var(--text);
             transform: rotate(45deg);
         }
-        .widget-value {
-            font-family: var(--fn);
-            font-size: 2.2rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            background: linear-gradient(135deg, #fff 30%, var(--violet));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: inline-block;
-            margin-bottom: 4px;
-        }
-        .widget-date {
-            font-size: 0.72rem;
-            color: var(--text-3);
-            margin-top: 4px;
-        }
         .widget-link {
             display: inline-flex;
             align-items: center;
@@ -139,6 +121,182 @@
             background: var(--s-hover);
             border-color: var(--border-lit);
             color: var(--text);
+        }
+
+        /* =============== КАРТОЧКИ ДЛЯ ОБЛИГАЦИЙ =============== */
+        .bonds-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 14px;
+            margin: 10px 0 12px;
+        }
+        .bond-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 16px 18px;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .bond-card:hover {
+            background: rgba(255,255,255,0.055);
+            border-color: var(--border-lit);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .bond-card .bond-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .bond-card .bond-name {
+            font-family: var(--fd);
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+        .bond-card .bond-type-badge {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(99,102,241,0.15);
+            color: var(--violet);
+            border: 1px solid rgba(99,102,241,0.15);
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+        .bond-card .bond-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 16px;
+            margin: 10px 0 4px;
+        }
+        .bond-card .bond-detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .bond-card .bond-detail-item .label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-3);
+            font-weight: 500;
+        }
+        .bond-card .bond-detail-item .value {
+            font-family: var(--fn);
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-top: 1px;
+        }
+        .bond-card .bond-detail-item .value.price { color: var(--sky); }
+        .bond-card .bond-detail-item .value.yield { color: var(--emerald); }
+        .bond-card .bond-detail-item .value.coupon { color: var(--amber); }
+        .bond-card .bond-detail-item .value.maturity { color: var(--text-2); font-size: 0.85rem; }
+
+        .bond-card .bond-meta {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            color: var(--text-3);
+        }
+        .bond-card .bond-meta i {
+            margin-right: 4px;
+        }
+
+        /* =============== КАРТОЧКИ ДЛЯ ДЕПОЗИТОВ =============== */
+        .deposits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 14px;
+            margin: 10px 0 12px;
+        }
+        .deposit-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 16px 18px;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+        .deposit-card:hover {
+            background: rgba(255,255,255,0.055);
+            border-color: var(--border-lit);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .deposit-card .deposit-bank {
+            font-family: var(--fd);
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .deposit-card .deposit-bank i {
+            color: var(--violet);
+            font-size: 0.8rem;
+        }
+        .deposit-card .deposit-rate {
+            font-family: var(--fn);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--emerald);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+        .deposit-card .deposit-rate .percent {
+            font-size: 1rem;
+            color: var(--text-2);
+            font-weight: 400;
+        }
+        .deposit-card .deposit-calculation {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-2);
+            padding: 3px 12px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            margin-top: 4px;
+        }
+        .deposit-card .deposit-calculation i {
+            font-size: 0.7rem;
+        }
+        .deposit-card .deposit-calculation .calc-daily { color: var(--amber); }
+        .deposit-card .deposit-calculation .calc-min { color: var(--sky); }
+
+        /* =============== ВСПОМОГАТЕЛЬНЫЕ СТИЛИ =============== */
+        .widget-value {
+            font-family: var(--fn);
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #fff 30%, var(--violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        .widget-date {
+            font-size: 0.72rem;
+            color: var(--text-3);
+            margin-top: 4px;
         }
         .currency-rates-grid {
             display: grid;
@@ -188,62 +346,31 @@
             font-size: 0.75rem;
             margin-left: 8px;
         }
-
-        /* Стили для таблицы облигаций и депозитов */
-        .bonds-table-container {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-            border-radius: var(--r);
-            margin: 10px 0 12px;
-            background: rgba(0,0,0,0.2);
-        }
-        .bonds-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.8rem;
-        }
-        .bonds-table th {
-            position: sticky;
-            top: 0;
-            background: rgba(10,18,36,0.95);
-            color: var(--text-2);
-            font-weight: 600;
-            text-align: left;
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--border);
-            backdrop-filter: blur(4px);
-        }
-        .bonds-table td {
-            padding: 8px 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            color: var(--text-2);
-        }
-        .bonds-table tr:hover td {
-            background: rgba(255,255,255,0.02);
-        }
-        .bonds-table .price-col {
-            font-family: var(--fn);
-            font-weight: 600;
-            color: var(--text);
-        }
-        .bonds-table .yield-col {
-            font-family: var(--fn);
-            font-weight: 600;
-            color: var(--emerald);
-        }
-        .bonds-table .coupon-col,
-        .bonds-table .maturity-col,
-        .bonds-table .type-col {
+        .widget-sub-info {
             font-size: 0.75rem;
+            color: var(--text-3);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .widget-sub-info i {
+            color: var(--violet);
         }
 
-        /* Адаптивность */
+        /* =============== АДАПТИВНОСТЬ =============== */
         @media(max-width:600px) {
             .currency-rates-grid { grid-template-columns: 1fr; }
             .widget-value { font-size: 1.8rem; }
-            .bonds-table-container { max-height: 300px; }
-            .bonds-table th, .bonds-table td { padding: 6px 8px; }
+            .bonds-grid { grid-template-columns: 1fr; }
+            .deposits-grid { grid-template-columns: 1fr; }
+            .bond-card .bond-details {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media(min-width:601px) and (max-width:900px) {
+            .bonds-grid { grid-template-columns: 1fr 1fr; }
+            .deposits-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -254,7 +381,7 @@
 
 <div class="layout">
 
-    <!-- Навигация (заголовок страницы) -->
+    <!-- Навигация -->
     <nav class="nav glass">
         <div class="nav-brand">
             <div class="nav-icon"><i class="fas fa-chart-line"></i></div>
@@ -266,7 +393,7 @@
         <a href="/page/finance" class="btn-ghost"><i class="fas fa-arrow-left"></i> Назад к финансам</a>
     </nav>
 
-    <!-- ВИДЖЕТ: КЛЮЧЕВАЯ СТАВКА ЦБ РФ -->
+    <!-- КЛЮЧЕВАЯ СТАВКА -->
     <div class="widget-panel">
         <div class="widget-header">
             <i class="fas fa-percent"></i> Ключевая ставка ЦБ РФ
@@ -275,12 +402,10 @@
         <div id="keyrateContent">
             <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка...</div>
         </div>
-        <a href="/page/key/rate" class="widget-link" id="keyrateDetailLink">
-            <i class="fas fa-chart-line"></i> Подробнее о ставке →
-        </a>
+        <a href="/page/key/rate" class="widget-link"><i class="fas fa-chart-line"></i> Подробнее о ставке →</a>
     </div>
 
-    <!-- ВИДЖЕТ: КУРСЫ ВАЛЮТ ЦБ РФ -->
+    <!-- КУРСЫ ВАЛЮТ -->
     <div class="widget-panel">
         <div class="widget-header">
             <i class="fas fa-chart-line"></i> Курсы валют ЦБ РФ
@@ -289,12 +414,10 @@
         <div id="currencyContent">
             <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка курсов...</div>
         </div>
-        <a href="/page/currency/rate" class="widget-link" id="currencyDetailLink">
-            <i class="fas fa-chart-line"></i> Подробнее о курсах валют →
-        </a>
+        <a href="/page/currency/rate" class="widget-link"><i class="fas fa-chart-line"></i> Подробнее о курсах валют →</a>
     </div>
 
-    <!-- ВИДЖЕТ: ОБЛИГАЦИИ ОФЗ -->
+    <!-- ОБЛИГАЦИИ ОФЗ — КАРТОЧКИ -->
     <div class="widget-panel">
         <div class="widget-header">
             <i class="fas fa-file-invoice-dollar"></i> Облигации ОФЗ
@@ -303,12 +426,10 @@
         <div id="bondsContent">
             <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по облигациям...</div>
         </div>
-        <a href="/page/ofz" class="widget-link" id="bondsDetailLink">
-            <i class="fas fa-chart-line"></i> Подробнее об облигациях →
-        </a>
+        <a href="/page/ofz" class="widget-link"><i class="fas fa-chart-line"></i> Подробнее об облигациях →</a>
     </div>
 
-    <!-- ВИДЖЕТ: ДЕПОЗИТЫ -->
+    <!-- ДЕПОЗИТЫ — КАРТОЧКИ -->
     <div class="widget-panel">
         <div class="widget-header">
             <i class="fas fa-piggy-bank"></i> Депозиты
@@ -317,16 +438,13 @@
         <div id="depositsContent">
             <div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по депозитам...</div>
         </div>
-        <a href="/page/deposits" class="widget-link" id="depositsDetailLink">
-            <i class="fas fa-chart-line"></i> Подробнее о депозитах →
-        </a>
+        <a href="/page/deposits" class="widget-link"><i class="fas fa-chart-line"></i> Подробнее о депозитах →</a>
     </div>
 
 </div>
 
 <script>
-    // =============== ФУНКЦИИ ДЛЯ КЛЮЧЕВОЙ СТАВКИ И ВАЛЮТ ===============
-
+    // =============== КЛЮЧЕВАЯ СТАВКА ===============
     async function loadKeyRate() {
         const container = document.getElementById('keyrateContent');
         container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка ставки...</div>';
@@ -352,6 +470,7 @@
         }
     }
 
+    // =============== КУРСЫ ВАЛЮТ ===============
     async function loadCurrencyRates() {
         const container = document.getElementById('currencyContent');
         container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка курсов...</div>';
@@ -387,13 +506,11 @@
         }
     }
 
-    // =============== ФУНКЦИЯ ДЛЯ ОБЛИГАЦИЙ ===============
-
+    // =============== ОБЛИГАЦИИ — КАРТОЧКИ ===============
     async function loadBonds() {
         const container = document.getElementById('bondsContent');
-        container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по облигациям...</div>';
+        container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка облигаций...</div>';
         try {
-            // Обновлённый запрос с параметрами пагинации и сортировки
             const resp = await fetch('/api/ofz?page=0&size=3&sort=yield,desc');
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const bonds = await resp.json();
@@ -402,55 +519,61 @@
                     container.innerHTML = '<div class="loading-widget">Нет данных по облигациям</div>';
                     return;
                 }
-                let tableHtml = `
-                    <div class="bonds-table-container">
-                        <table class="bonds-table">
-                            <thead>
-                                <tr>
-                                    <th>Название</th>
-                                    <th>Цена, ₽</th>
-                                    <th>Доходность, %</th>
-                                    <th>Купон, ₽</th>
-                                    <th>Погашение</th>
-                                    <th>Тип</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
+                let cardsHtml = `<div class="bonds-grid">`;
                 bonds.forEach(bond => {
-                    tableHtml += `
-                        <tr>
-                            <td>${bond.shortname || '—'}</td>
-                            <td class="price-col">${bond.price ? bond.price.toFixed(2) : '—'}</td>
-                            <td class="yield-col">${bond.yield ? bond.yield.toFixed(2) : '—'}</td>
-                            <td class="coupon-col">${bond.couponValue ? bond.couponValue.toFixed(2) : '—'}</td>
-                            <td class="maturity-col">${bond.maturityDate || '—'}</td>
-                            <td class="type-col">${bond.bondTypeDisplay || '—'}</td>
-                        </tr>
+                    const typeDisplay = bond.bondTypeDisplay || 'ОФЗ';
+                    const maturity = bond.maturityDate || '—';
+                    cardsHtml += `
+                        <div class="bond-card">
+                            <div class="bond-header">
+                                <span class="bond-name">${bond.shortname || 'Облигация'}</span>
+                                <span class="bond-type-badge">${typeDisplay}</span>
+                            </div>
+                            <div class="bond-details">
+                                <div class="bond-detail-item">
+                                    <span class="label">Цена</span>
+                                    <span class="value price">${bond.price ? bond.price.toFixed(2) : '—'} ₽</span>
+                                </div>
+                                <div class="bond-detail-item">
+                                    <span class="label">Доходность</span>
+                                    <span class="value yield">${bond.yield ? bond.yield.toFixed(2) : '—'}%</span>
+                                </div>
+                                <div class="bond-detail-item">
+                                    <span class="label">Купон</span>
+                                    <span class="value coupon">${bond.couponValue ? bond.couponValue.toFixed(2) : '—'} ₽</span>
+                                </div>
+                                <div class="bond-detail-item">
+                                    <span class="label">Погашение</span>
+                                    <span class="value maturity">${maturity}</span>
+                                </div>
+                            </div>
+                            <div class="bond-meta">
+                                <span><i class="far fa-calendar-alt"></i> ${maturity}</span>
+                                <span><i class="fas fa-tag"></i> ${typeDisplay}</span>
+                            </div>
+                        </div>
                     `;
                 });
-                tableHtml += '</tbody></table></div>';
-                container.innerHTML = tableHtml;
+                cardsHtml += `</div>`;
+                container.innerHTML = cardsHtml;
             } else {
                 throw new Error('Ответ не является массивом');
             }
         } catch(e) {
             container.innerHTML = `
                 <div class="error-widget">
-                    <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки данных по облигациям
+                    <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки облигаций
                     <button onclick="loadBonds()">Повторить</button>
                 </div>
             `;
         }
     }
 
-    // =============== ФУНКЦИЯ ДЛЯ ДЕПОЗИТОВ ===============
-
+    // =============== ДЕПОЗИТЫ — КАРТОЧКИ ===============
     async function loadDeposits() {
         const container = document.getElementById('depositsContent');
-        container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных по депозитам...</div>';
+        container.innerHTML = '<div class="loading-widget"><i class="fas fa-spinner fa-pulse"></i> Загрузка депозитов...</div>';
         try {
-            // Обновлённый запрос с параметрами пагинации и сортировки
             const resp = await fetch('/api/deposits/rates?page=0&size=3&sort=rateMin,desc');
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const data = await resp.json();
@@ -460,68 +583,62 @@
                     container.innerHTML = `<div class="loading-widget">Нет данных по депозитам</div>`;
                     return;
                 }
-                let tableHtml = `
-                    <div style="margin-bottom:8px;font-size:0.8rem;color:var(--text-2);">
+                let cardsHtml = `
+                    <div class="widget-sub-info">
                         <i class="fas fa-university"></i> Найдено банков: ${totalBanks}
                     </div>
-                    <div class="bonds-table-container">
-                        <table class="bonds-table">
-                            <thead>
-                                <tr>
-                                    <th>Банк</th>
-                                    <th>Ставка, %</th>
-                                    <th>Начисление процентов</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    <div class="deposits-grid">
                 `;
                 data.rates.forEach(item => {
                     let calcIcon = '';
                     let calcText = item.percentCalculation || '—';
+                    let iconClass = '';
 
                     if (calcText.includes('ежедневный')) {
-                        calcIcon = '<i class="fas fa-sun" style="color:var(--amber);"></i>';
+                        calcIcon = '<i class="fas fa-sun calc-daily"></i>';
                     } else if (calcText.includes('минимальный')) {
-                        calcIcon = '<i class="fas fa-moon" style="color:var(--sky);"></i>';
+                        calcIcon = '<i class="fas fa-moon calc-min"></i>';
                     } else {
                         calcIcon = '<i class="fas fa-question-circle" style="color:var(--text-3);"></i>';
                     }
 
-                    tableHtml += `
-                        <tr>
-                            <td>${item.bankName || '—'}</td>
-                            <td class="yield-col">${item.rateMin != null ? item.rateMin.toFixed(2) : '—'}</td>
-                            <td>
-                                <span style="display:inline-flex;align-items:center;gap:6px;">
-                                    ${calcIcon}
-                                    <span>${calcText}</span>
-                                </span>
-                            </td>
-                        </tr>
+                    cardsHtml += `
+                        <div class="deposit-card">
+                            <div class="deposit-bank">
+                                <i class="fas fa-university"></i> ${item.bankName || 'Банк'}
+                            </div>
+                            <div class="deposit-rate">
+                                ${item.rateMin != null ? item.rateMin.toFixed(2) : '—'}<span class="percent">%</span>
+                            </div>
+                            <div class="deposit-calculation">
+                                ${calcIcon}
+                                <span>${calcText}</span>
+                            </div>
+                        </div>
                     `;
                 });
-                tableHtml += '</tbody></table></div>';
-                container.innerHTML = tableHtml;
+                cardsHtml += `</div>`;
+                container.innerHTML = cardsHtml;
             } else {
                 throw new Error('Неверный формат ответа');
             }
         } catch(e) {
             container.innerHTML = `
                 <div class="error-widget">
-                    <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки данных по депозитам
+                    <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки депозитов
                     <button onclick="loadDeposits()">Повторить</button>
                 </div>
             `;
         }
     }
 
-    // Привязка кнопок обновления
+    // Кнопки обновления
     document.getElementById('refreshKeyrateBtn')?.addEventListener('click', loadKeyRate);
     document.getElementById('refreshCurrencyBtn')?.addEventListener('click', loadCurrencyRates);
     document.getElementById('refreshBondsBtn')?.addEventListener('click', loadBonds);
     document.getElementById('refreshDepositsBtn')?.addEventListener('click', loadDeposits);
 
-    // Первичная загрузка данных
+    // Первичная загрузка
     loadKeyRate();
     loadCurrencyRates();
     loadBonds();

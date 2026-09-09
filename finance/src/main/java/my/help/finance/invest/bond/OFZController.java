@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
@@ -17,7 +18,7 @@ public class OFZController {
     private final MoexService moexService;
 
     @GetMapping
-    public List<OFZBondSummary> getAllOFZ(Pageable pageable) throws IOException {
-        return moexService.fetchOFZDataWithStats(pageable);
+    public List<OFZBondSummary> getAllOFZ(@RequestParam(required = false) List<String> bondTypeDisplay, Pageable pageable) throws IOException {
+        return moexService.fetchOFZDataWithStats(pageable, bondTypeDisplay);
     }
 }
