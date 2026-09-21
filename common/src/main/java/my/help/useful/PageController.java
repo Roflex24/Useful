@@ -103,4 +103,9 @@ public class PageController {
     public String currencyRatePage() {
         return "/finance/currencyrate";
     }
+
+    @GetMapping("/page/ai/chat")
+    public String aiChatPage() {
+        return "chat";
+    }
 }
