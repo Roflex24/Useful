@@ -33,35 +33,9 @@ public class ChatSessionService {
     }
 
     @Transactional
-    public void ensure(String id) {
-        if (repo.existsById(id)) return;
-        OffsetDateTime now = OffsetDateTime.now();
-        repo.save(new ChatSession(id, "Новый чат", now, now));
-    }
-
-    @Transactional
-    public void touch(String id) {
-        repo.findById(id).ifPresent(s -> s.setLastUsed(OffsetDateTime.now()));
-    }
-
-    @Transactional
     public void rename(String id, String title) {
         if (title == null || title.isBlank()) return;
         repo.findById(id).ifPresent(s -> s.setTitle(title.trim()));
-    }
-
-    @Transactional
-    public void autoTitle(String id, String firstMessage) {
-        if (firstMessage == null) return;
-        String title = firstMessage.strip();
-        if (title.isEmpty()) return;
-        if (title.length() > 60) title = title.substring(0, 60) + "…";
-        final String finalTitle = title;
-        repo.findById(id).ifPresent(s -> {
-            if (s.getTitle() == null || s.getTitle().equals("Новый чат")) {
-                s.setTitle(finalTitle);
-            }
-        });
     }
 
     @Transactional

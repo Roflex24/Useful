@@ -98,6 +98,19 @@
         .icon-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
         .icon-btn:disabled { opacity: .5; cursor: not-allowed; }
 
+        /* Стиль для кнопки "Назад" */
+        .back-btn {
+            background: rgba(78, 205, 196, 0.10);
+            border-color: rgba(78, 205, 196, 0.35);
+            color: var(--accent-2);
+            font-weight: 500;
+        }
+        .back-btn:hover {
+            background: rgba(78, 205, 196, 0.20);
+            border-color: var(--accent-2);
+            color: #fff;
+        }
+
         .menu-btn { display: none; }
 
         .layout { flex: 1; display: flex; overflow: hidden; position: relative; z-index: 1; }
@@ -492,6 +505,7 @@
     <h1>AI Chat</h1>
     <div class="actions">
         <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">онлайн</span></div>
+        <a href="/page/avito" class="icon-btn back-btn" id="backBtn" title="Вернуться на страницу Avito">← Назад</a>
         <button class="icon-btn" id="clearBtn" title="Очистить текущий чат">🗑 Очистить</button>
     </div>
 </header>

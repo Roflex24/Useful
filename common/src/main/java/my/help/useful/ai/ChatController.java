@@ -10,7 +10,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
-import java.time.Duration;
 import java.util.List;
 
 record ChatRequest(String prompt) {}
@@ -34,7 +33,6 @@ public class ChatController {
                 // advisor, который подгружает историю перед запросом и сохраняет ответы после
                 .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
                 .defaultOptions(OpenAiChatOptions.builder()
-                        .timeout(Duration.ofMinutes(5))
                         .temperature(0.2)
                         .reasoningEffort("none"))
                 .build();
@@ -48,7 +46,6 @@ public class ChatController {
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, sessionId))
                 .stream()
                 .content()
-                .timeout(Duration.ofMinutes(10))
                 .onErrorResume(e -> Flux.just("\n\n⚠️ Ошибка соединения с моделью."));
     }
 
