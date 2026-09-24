@@ -3,8 +3,6 @@ package my.help.finance.avito.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import my.help.finance.avito.entity.Apartment;
-import my.help.finance.avito.entity.ApartmentBadge;
-import my.help.finance.avito.entity.ApartmentImage;
 import my.help.finance.avito.repository.ApartmentBadgeRepository;
 import my.help.finance.avito.repository.ApartmentImageRepository;
 import my.help.finance.avito.repository.ApartmentRepository;
@@ -15,10 +13,22 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
+/**
+ * Парсер страницы ПОИСКА Авито.
+ *
+ * Задача первого сбора — только поставить объявления в очередь на обход:
+ * собираем исключительно {@code avitoId} и {@code url}.
+ * Всё остальное (цена, адрес, метро, описание, фото, бейджи, продавец,
+ * координаты, Росреестр и т.п.) добирает уже бот-обходчик
+ * ({@link AvitoVisitorBotService} + {@link AvitoDetailPageParserService})
+ * со страницы отдельного объявления.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,25 +37,17 @@ public class AvitoParserService {
     private static final String STOP_MARKER = "Вас может заинтересовать";
     private static final String AVITO_BASE  = "https://www.avito.ru";
 
-    private static final Pattern TITLE_ROOMS  = Pattern.compile("^(\\d+)-к\\.");
-    private static final Pattern TITLE_STUDIO = Pattern.compile("(?i)студия");
-    private static final Pattern TITLE_AREA   = Pattern.compile("([\\d]+(?:[.,]\\d+)?)\\s*м²");
-    private static final Pattern TITLE_FLOOR  = Pattern.compile("(\\d+)\\s*/\\s*(\\d+)\\s*эт");
-
-    private static final Pattern DIGITS = Pattern.compile("\\d+");
-
     private final ApartmentRepository repository;
     private final ApartmentImageRepository imageRepository;
     private final ApartmentBadgeRepository badgeRepository;
 
     /**
-     * Обрабатывает НЕСКОЛЬКО HTML-файлов за одну транзакцию.
-     * Дубли (одинаковый avitoId), встретившиеся в разных файлах или
-     * внутри одного файла, схлопываются в памяти ДО обращения к БД —
-     * побеждает последнее по порядку вхождение.
-     * Затем для каждого уникального avitoId делается upsert:
-     * если запись уже есть в базе — обновляется (включая фото и бейджи),
-     * если нет — создаётся.
+     * Обрабатывает НЕСКОЛЬКО HTML-файлов страницы поиска за одну транзакцию.
+     * Дубли (одинаковый avitoId) схлопываются в памяти ДО обращения к БД.
+     * Для каждого уникального avitoId:
+     *   — если записи нет — создаётся (только avitoId + url);
+     *   — если запись уже есть — НЕ перетирается, чтобы не потерять
+     *     данные, собранные ботом-обходчиком детальных страниц.
      */
     @Transactional
     public List<Apartment> parseAndSaveMultiple(List<String> htmlContents) {
@@ -88,11 +90,13 @@ public class AvitoParserService {
                 .orElse(false);
     }
 
+    // ------------------------------------------------------------------
+    //  Парсинг — только avitoId + url
+    // ------------------------------------------------------------------
+
     private List<Apartment> parseHtml(String html) {
         int stopIdx = html.indexOf(STOP_MARKER);
         String cleanHtml = (stopIdx != -1) ? html.substring(0, stopIdx) : html;
-
-        Map<String, double[]> coordsByItemId = extractCoordinatesByItemId(cleanHtml);
 
         Document doc = Jsoup.parse(cleanHtml);
 
@@ -103,391 +107,58 @@ public class AvitoParserService {
 
         List<Apartment> result = new ArrayList<>();
         for (Element el : items) {
-            parseItem(el, coordsByItemId).ifPresent(result::add);
+            parseItem(el).ifPresent(result::add);
         }
         return result;
     }
 
-    private Map<String, double[]> extractCoordinatesByItemId(String html) {
-        Map<String, double[]> result = new HashMap<>();
-
-        Pattern idPattern     = Pattern.compile("\"debug\":\\{\"id\":(\\d+)\\}");
-        Pattern coordsPattern = Pattern.compile("\"coords\":\\{\"lat\":\"([^\"]+)\",\"lng\":\"([^\"]+)\"");
-
-        List<Integer> idPositions = new ArrayList<>();
-        List<String> idValues = new ArrayList<>();
-        Matcher idMatcher = idPattern.matcher(html);
-        while (idMatcher.find()) {
-            idPositions.add(idMatcher.start());
-            idValues.add(idMatcher.group(1));
-        }
-
-        Matcher coordsMatcher = coordsPattern.matcher(html);
-        while (coordsMatcher.find()) {
-            int coordsPos = coordsMatcher.start();
-
-            int lo = 0, hi = idPositions.size() - 1, matchIdx = -1;
-            while (lo <= hi) {
-                int mid = (lo + hi) / 2;
-                if (idPositions.get(mid) < coordsPos) {
-                    matchIdx = mid;
-                    lo = mid + 1;
-                } else {
-                    hi = mid - 1;
-                }
-            }
-
-            if (matchIdx != -1) {
-                try {
-                    double lat = Double.parseDouble(coordsMatcher.group(1));
-                    double lng = Double.parseDouble(coordsMatcher.group(2));
-                    result.put(idValues.get(matchIdx), new double[]{ lat, lng });
-                } catch (NumberFormatException ignored) {
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private Optional<Apartment> parseItem(Element el, Map<String, double[]> coordsByItemId) {
+    /**
+     * Из карточки объявления на странице поиска достаём только:
+     *   — data-item-id  → avitoId
+     *   — href ссылки    → url
+     * Больше ничего не парсим: всё остальное появится после обхода
+     * объявления ботом-обходчиком.
+     */
+    private Optional<Apartment> parseItem(Element el) {
         String avitoId = el.attr("data-item-id");
         if (avitoId.isBlank()) return Optional.empty();
 
+        Element urlEl = el.selectFirst("a[itemprop=url]");
+        if (urlEl == null) return Optional.empty();
+
+        String href = urlEl.attr("href");
+        if (href.isBlank()) return Optional.empty();
+
         Apartment apt = new Apartment();
         apt.setAvitoId(avitoId);
-
-        String title = text(el, "[data-marker=item-title]");
-        apt.setTitle(title);
-        parseTitleStructure(title, apt);
-
-        parsePrice(el, apt);
-        parseAddress(el, apt);
-        parseDescription(el, apt);
-        parseImages(el, apt);
-        parseUrl(el, apt);
-        parseStatusFlags(el, apt);
-        parseSeller(el, apt);
-        parseBadges(el, apt);
-
-        double[] coords = coordsByItemId.get(avitoId);
-        if (coords != null) {
-            apt.setLatitude(coords[0]);
-            apt.setLongitude(coords[1]);
-        }
-
+        apt.setUrl(absoluteUrl(href));
         return Optional.of(apt);
     }
 
-    private void parseTitleStructure(String title, Apartment apt) {
-        if (title == null) return;
-
-        Matcher mRooms = TITLE_ROOMS.matcher(title);
-        if (mRooms.find()) {
-            apt.setRooms(Integer.parseInt(mRooms.group(1)));
-            apt.setStudio(false);
-        } else if (TITLE_STUDIO.matcher(title).find()) {
-            apt.setStudio(true);
-        }
-
-        Matcher mArea = TITLE_AREA.matcher(title);
-        if (mArea.find()) {
-            apt.setTotalArea(parseDoubleSafe(mArea.group(1)));
-        }
-
-        Matcher mFloor = TITLE_FLOOR.matcher(title);
-        if (mFloor.find()) {
-            apt.setFloor(parseIntSafe(mFloor.group(1)));
-            apt.setTotalFloors(parseIntSafe(mFloor.group(2)));
-        }
-    }
-
-    private void parsePrice(Element el, Apartment apt) {
-        Element priceMeta = el.selectFirst("[data-marker=item-price] [itemprop=price]");
-        if (priceMeta != null) {
-            apt.setPrice(parseLongDigits(priceMeta.attr("content")));
-        }
-        Element currencyMeta = el.selectFirst("[data-marker=item-price] [itemprop=priceCurrency]");
-        if (currencyMeta != null) {
-            apt.setCurrency(cleanText(currencyMeta.attr("content")));
-        }
-        apt.setPriceRaw(text(el, "[data-marker=item-price-value]"));
-
-        Element pricePerMeterEl = el.selectFirst("[class*=inlineNormalizedPrice]");
-        if (pricePerMeterEl != null) {
-            apt.setPricePerMeter(parseLongDigits(pricePerMeterEl.text()));
-        }
-    }
-
-    private void parseAddress(Element el, Apartment apt) {
-        Element location = el.selectFirst("[data-marker=item-address] [data-marker=item-location]");
-        if (location == null) return;
-
-        Elements paragraphs = location.select("> p");
-
-        if (!paragraphs.isEmpty()) {
-            Element line1 = paragraphs.getFirst();
-            apt.setAddress(cleanText(line1.text()));
-
-            Element streetEl = line1.selectFirst("[data-marker=street_link]");
-            if (streetEl != null) {
-                apt.setStreet(cleanText(streetEl.text()));
-                apt.setStreetLink(absoluteUrl(streetEl.attr("href")));
-            }
-            Element houseEl = line1.selectFirst("[data-marker=house_link]");
-            if (houseEl != null) {
-                apt.setHouseNumber(cleanText(houseEl.text()));
-                apt.setHouseLink(absoluteUrl(houseEl.attr("href")));
-            }
-        }
-
-        if (paragraphs.size() > 1) {
-            Element line2 = paragraphs.get(1);
-            String line2Text = cleanText(line2.text());
-            apt.setMetro(line2Text);
-
-            Element metroEl = line2.selectFirst("[data-marker=metro_link]");
-            if (metroEl != null) {
-                String metroName = cleanText(metroEl.text());
-                apt.setMetroName(metroName);
-                apt.setMetroLink(absoluteUrl(metroEl.attr("href")));
-
-                if (line2Text != null && metroName != null) {
-                    int idx = line2Text.indexOf(metroName);
-                    if (idx != -1) {
-                        String rest = line2Text.substring(idx + metroName.length())
-                                .replaceFirst("^[,\\s]+", "")
-                                .trim();
-                        if (!rest.isBlank()) {
-                            apt.setMetroDistanceRaw(rest);
-                            apt.setMetroMinutes(extractLastNumber(rest));
-                        }
-                    }
-                }
-            } else {
-                apt.setDistrict(line2Text);
-            }
-        }
-    }
-
-    private void parseDescription(Element el, Apartment apt) {
-        Element descMeta = el.selectFirst("[itemprop=description]");
-        if (descMeta != null) {
-            apt.setDescription(cleanText(descMeta.attr("content")));
-        }
-
-        Element fullDescEl = el.selectFirst("div[class^=iva-item-bottomBlock] p:not([data-marker=item-date])");
-        if (fullDescEl != null) {
-            apt.setDescriptionFull(cleanText(fullDescEl.text()));
-        }
-    }
-
-    private void parseImages(Element el, Apartment apt) {
-        List<String> urls = new ArrayList<>();
-
-        Elements sliderImages = el.select("[data-marker^=slider-image/image-]");
-        String prefix = "slider-image/image-";
-        for (Element sliderImg : sliderImages) {
-            String marker = sliderImg.attr("data-marker");
-            int idx = marker.indexOf(prefix);
-            if (idx != -1) {
-                String url = marker.substring(idx + prefix.length());
-                if (!url.isBlank() && !urls.contains(url)) {
-                    urls.add(url);
-                }
-            }
-        }
-
-        if (urls.isEmpty()) {
-            Elements imgEls = el.select("[itemprop=image]");
-            for (Element imgEl : imgEls) {
-                String src = imgEl.attr("src");
-                if (!src.isBlank() && !urls.contains(src)) {
-                    urls.add(src);
-                }
-            }
-        }
-
-        for (int i = 0; i < urls.size(); i++) {
-            apt.addImage(ApartmentImage.builder().url(urls.get(i)).position(i).build());
-        }
-
-        apt.setImageUrl(urls.isEmpty() ? null : urls.getFirst());
-    }
-
-    private void parseUrl(Element el, Apartment apt) {
-        Element urlEl = el.selectFirst("a[itemprop=url]");
-        if (urlEl != null) {
-            apt.setUrl(absoluteUrl(urlEl.attr("href")));
-        }
-    }
-
-    private void parseStatusFlags(Element el, Apartment apt) {
-        boolean isNew = false;
-        for (Element badge : el.select("[class*=textBadgeContent]")) {
-            if ("Новое объявление".equalsIgnoreCase(cleanText(badge.text()))) {
-                isNew = true;
-                break;
-            }
-        }
-        apt.setIsNew(isNew);
-
-        boolean promoted = !el.select("[class*=vas-icon_type-promoted]").isEmpty();
-        apt.setIsPromoted(promoted);
-
-        apt.setPublishedDateRaw(text(el, "[data-marker=item-date]"));
-    }
-
-    private void parseSeller(Element el, Apartment apt) {
-        Element sellerBlock = el.selectFirst("[class^=iva-item-sellerInfo]");
-        if (sellerBlock == null) return;
-
-        Element nameLink = sellerBlock.selectFirst("a[href^=/user/]");
-        if (nameLink != null) {
-            apt.setSellerName(cleanText(nameLink.text()));
-            apt.setSellerProfileUrl(absoluteUrl(nameLink.attr("href")));
-        }
-
-        Element listingsEl = sellerBlock.selectFirst("[class^=iva-item-text]");
-        if (listingsEl != null) {
-            String raw = cleanText(listingsEl.text());
-            apt.setSellerCompletedListingsRaw(raw);
-            if (raw != null) {
-                Matcher m = DIGITS.matcher(raw);
-                if (m.find()) {
-                    apt.setSellerCompletedListingsCount(parseIntSafe(m.group()));
-                }
-            }
-        }
-    }
-
-    private void parseBadges(Element el, Apartment apt) {
-        for (Element badgeEl : el.select("[data-marker^=iva-item/]")) {
-            String label = cleanText(badgeEl.text());
-            if (label == null || label.isBlank()) continue;
-            apt.addBadge(ApartmentBadge.builder()
-                    .type(ApartmentBadge.BadgeType.ITEM)
-                    .code(badgeEl.attr("data-marker"))
-                    .label(label)
-                    .build());
-        }
-
-        for (Element badgeEl : el.select("[data-marker^=badge-title]")) {
-            String label = cleanText(badgeEl.text());
-            if (label == null || label.isBlank()) continue;
-            apt.addBadge(ApartmentBadge.builder()
-                    .type(ApartmentBadge.BadgeType.SELLER)
-                    .code(badgeEl.attr("data-marker"))
-                    .label(label)
-                    .build());
-        }
-    }
+    // ------------------------------------------------------------------
+    //  Upsert — не перетираем уже обогащённые данные
+    // ------------------------------------------------------------------
 
     private Apartment upsert(Apartment incoming) {
         return repository.findByAvitoId(incoming.getAvitoId())
                 .map(existing -> {
-                    existing.setTitle(incoming.getTitle());
-                    existing.setRooms(incoming.getRooms());
-                    existing.setStudio(incoming.getStudio());
-                    existing.setTotalArea(incoming.getTotalArea());
-                    existing.setFloor(incoming.getFloor());
-                    existing.setTotalFloors(incoming.getTotalFloors());
-
-                    existing.setPrice(incoming.getPrice());
-                    existing.setPriceRaw(incoming.getPriceRaw());
-                    existing.setCurrency(incoming.getCurrency());
-                    existing.setPricePerMeter(incoming.getPricePerMeter());
-
-                    existing.setAddress(incoming.getAddress());
-                    existing.setStreet(incoming.getStreet());
-                    existing.setStreetLink(incoming.getStreetLink());
-                    existing.setHouseNumber(incoming.getHouseNumber());
-                    existing.setHouseLink(incoming.getHouseLink());
-                    existing.setMetro(incoming.getMetro());
-                    existing.setMetroName(incoming.getMetroName());
-                    existing.setMetroLink(incoming.getMetroLink());
-                    existing.setMetroDistanceRaw(incoming.getMetroDistanceRaw());
-                    existing.setMetroMinutes(incoming.getMetroMinutes());
-                    existing.setDistrict(incoming.getDistrict());
-                    existing.setLatitude(incoming.getLatitude());
-                    existing.setLongitude(incoming.getLongitude());
-
-                    existing.setDescription(incoming.getDescription());
-                    existing.setDescriptionFull(incoming.getDescriptionFull());
-
-                    existing.setUrl(incoming.getUrl());
-                    existing.setImageUrl(incoming.getImageUrl());
-                    existing.replaceImages(incoming.getImages());
-                    existing.replaceBadges(incoming.getBadges());
-
-                    existing.setIsNew(incoming.getIsNew());
-                    existing.setIsPromoted(incoming.getIsPromoted());
-                    existing.setPublishedDateRaw(incoming.getPublishedDateRaw());
-
-                    existing.setSellerName(incoming.getSellerName());
-                    existing.setSellerProfileUrl(incoming.getSellerProfileUrl());
-                    existing.setSellerCompletedListingsRaw(incoming.getSellerCompletedListingsRaw());
-                    existing.setSellerCompletedListingsCount(incoming.getSellerCompletedListingsCount());
-
-                    return repository.save(existing);
+                    // Первый сбор кладёт только avitoId и url.
+                    // Если запись уже есть — не трогаем её: детальные данные
+                    // (цена, адрес, фото, Росреестр и т.п.) собирает бот-обходчик.
+                    // Дописываем только url, если он вдруг оказался пуст.
+                    if (existing.getUrl() == null || existing.getUrl().isBlank()) {
+                        existing.setUrl(incoming.getUrl());
+                        return repository.save(existing);
+                    }
+                    return existing;
                 })
                 .orElseGet(() -> repository.save(incoming));
     }
 
-    private String text(Element parent, String cssSelector) {
-        Element el = parent.selectFirst(cssSelector);
-        if (el == null) return null;
-        return cleanText(el.text());
-    }
-
-    private String cleanText(String raw) {
-        if (raw == null) return null;
-        String t = raw.replace("\u00A0", " ").trim();
-        return t.isEmpty() ? null : t;
-    }
+    // ------------------------------------------------------------------
 
     private String absoluteUrl(String href) {
         if (href == null || href.isBlank()) return null;
         return href.startsWith("http") ? href : AVITO_BASE + href;
-    }
-
-    private Long parseLongDigits(String raw) {
-        if (raw == null || raw.isBlank()) return null;
-        String digits = raw.replaceAll("[^\\d]", "");
-        if (digits.isEmpty()) return null;
-        try {
-            return Long.parseLong(digits);
-        } catch (NumberFormatException e) {
-            log.warn("Cannot parse number: {}", raw);
-            return null;
-        }
-    }
-
-    private Integer parseIntSafe(String raw) {
-        if (raw == null || raw.isBlank()) return null;
-        try {
-            return Integer.parseInt(raw.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private Double parseDoubleSafe(String raw) {
-        if (raw == null || raw.isBlank()) return null;
-        try {
-            return Double.parseDouble(raw.replace(',', '.'));
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private Integer extractLastNumber(String raw) {
-        if (raw == null) return null;
-        Matcher m = DIGITS.matcher(raw);
-        Integer last = null;
-        while (m.find()) {
-            last = parseIntSafe(m.group());
-        }
-        return last;
     }
 }
