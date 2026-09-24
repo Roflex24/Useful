@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class AvitoParserService {
 
-    private static final String STOP_MARKER = "Похоже на то, что вы ищете";
+    private static final String STOP_MARKER = "Вас может заинтересовать";
     private static final String AVITO_BASE  = "https://www.avito.ru";
 
     private static final Pattern TITLE_ROOMS  = Pattern.compile("^(\\d+)-к\\.");
@@ -95,6 +95,10 @@ public class AvitoParserService {
         Map<String, double[]> coordsByItemId = extractCoordinatesByItemId(cleanHtml);
 
         Document doc = Jsoup.parse(cleanHtml);
+
+        // Игнорируем блок "Квартиры в новых ЖК"
+        doc.select("[data-marker=itemsCarousel]").remove();
+
         Elements items = doc.select("[data-marker=item]");
 
         List<Apartment> result = new ArrayList<>();

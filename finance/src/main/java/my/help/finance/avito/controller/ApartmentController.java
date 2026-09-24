@@ -29,6 +29,7 @@ public class ApartmentController {
     private final ApartmentRepository repository;
     private final AvitoVisitorBotService botService;
     private final AvitoDetailPageParserService detailParserService;
+    private final AvitoSearchPageBotService searchPageBotService;
 
     @PostMapping(value = "/parse", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ParseRs> parseHtmlFiles(
@@ -156,5 +157,28 @@ public class ApartmentController {
                     return ResponseEntity.ok(repository.save(apt));
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ── Автоматическая загрузка страницы поиска Авито ────────────────
+
+    /** DTO для опциональной передачи URL страницы поиска с фронта. */
+    public record StartSearchParseRq(String url) {}
+
+    @PostMapping("/bot/parse-search")
+    public AvitoSearchPageBotService.BotStatusDto startSearchParse(
+            @RequestBody(required = false) StartSearchParseRq body
+    ) {
+        String url = body != null ? body.url() : null;
+        return searchPageBotService.start(url);
+    }
+
+    @PostMapping("/bot/parse-search/stop")
+    public AvitoSearchPageBotService.BotStatusDto stopSearchParse() {
+        return searchPageBotService.stop();
+    }
+
+    @GetMapping("/bot/parse-search/status")
+    public AvitoSearchPageBotService.BotStatusDto searchParseStatus() {
+        return searchPageBotService.getStatus();
     }
 }

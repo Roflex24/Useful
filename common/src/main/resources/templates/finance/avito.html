@@ -431,12 +431,33 @@
   <main>
 
     <!-- Upload -->
+    <div class="upload-card glass" style="border-color: var(--border-lit);">
+      <h2><i class="fas fa-robot" style="color:var(--indigo)"></i> Автоматическая загрузка с Авито</h2>
+
+      <div class="bot-hint" style="margin-bottom:16px;">
+        🤖 Нажмите кнопку — робот откроет страницу поиска Авито в браузере,
+        человекоподобно проматывает её до самого низа, откроет исходник
+        (<kbd>Ctrl+U</kbd>), скопирует HTML и передаст его в парсер.
+        <b>Не трогайте мышь и клавиатуру, пока робот работает.</b>
+      </div>
+
+      <div class="btn-group" style="margin-top:0;">
+        <button class="btn btn-primary" id="auto-parse-btn" onclick="startAutoParse()">
+          🤖 Запустить робота
+        </button>
+        <button class="btn btn-danger" id="auto-parse-stop-btn" onclick="stopAutoParse()" disabled>
+          ⏹ Остановить
+        </button>
+        <div class="status" id="auto-status"></div>
+      </div>
+    </div>
     <div class="upload-card glass">
       <h2><i class="fas fa-upload" style="color:var(--indigo)"></i> Загрузить страницу Авито</h2>
 
-      <a class="btn btn-secondary" href="https://www.avito.ru/nizhniy_novgorod/kvartiry/prodam/do-9-mln-rubley-ASgBAgECAUSSA8YQAUXGmgwXeyJmcm9tIjowLCJ0byI6OTAwMDAwMH0?cd=1&amp;context=H4sIAAAAAAAA_wEmANn_YToxOntzOjE6InkiO3M6MTY6IkxNWjJLRXhHMmREeFQ1dlIiO32dNrk1JgAAAA&amp;f=ASgBAgECBESSA8YQygiEWY7eDgKQ3g4CAkWECRV7ImZyb20iOjYwLCJ0byI6bnVsbH3GmgwXeyJmcm9tIjowLCJ0byI6OTAwMDAwMH0&amp;localPriority=0&amp;s=104"
+      <a class="btn btn-secondary" id="avito-search-link"
+         href="https://www.avito.ru/nizhniy_novgorod/kvartiry/prodam/do-10-mln-rubley-ASgBAgECAUSSA8YQAUXGmgwYeyJmcm9tIjowLCJ0byI6MTAwMDAwMDB9?cd=1&context=H4sIAAAAAAAA_wEmANn_YToxOntzOjE6InkiO3M6MTY6IjdlM1FyVVVQYWt0VXNaWWwiO30QjzADJgAAAA&f=ASgBAgECBUSSA8YQ5hbm_AGsvg2kxzWO3g4CkN4OAgJFhAkVeyJmcm9tIjo2MCwidG8iOm51bGx9xpoMGHsiZnJvbSI6MCwidG8iOjEwMDAwMDAwfQ&footWalkingMetro=15&localPriority=0&s=104"
          target="_blank" rel="noopener noreferrer" style="margin-bottom: 16px;">
-        🔗 Открыть страницу поиска на Авито
+        🔗 Открыть страницу поиска на Авито (её же откроет робот)
       </a>
 
       <div class="drop-zone" id="drop-zone">
@@ -1259,10 +1280,123 @@
     if (e.key === "Escape") closeDetailDrawer();
   });
 
+  // ── Автоматическая загрузка страницы поиска через робота ─────────────────
+  let autoParsePollTimer = null;
+
+  /** URL страницы поиска берём из существующей ссылки. */
+  function getAvitoSearchUrl() {
+    const link = document.getElementById("avito-search-link");
+    return link ? link.href : "";
+  }
+
+  function setAutoStatus(type, text) {
+    const el = document.getElementById("auto-status");
+    el.className = `status show ${type}`;
+    el.textContent = text;
+  }
+
+  async function startAutoParse() {
+    const url = getAvitoSearchUrl();
+    if (!url) {
+      setAutoStatus("error", "❌ Не найдена ссылка на страницу поиска Авито");
+      return;
+    }
+
+    document.getElementById("auto-parse-btn").disabled = true;
+    setAutoStatus("loading", "⏳ Открываю браузер и запускаю робота…");
+
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments/bot/parse-search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+      });
+      const status = await res.json();
+      renderAutoParseStatus(status);
+      if (status.status === "RUNNING" || status.status === "STOPPING") {
+        ensureAutoParsePolling();
+      }
+    } catch (err) {
+      setAutoStatus("error", "❌ Не удалось запустить робота: " + err.message);
+      document.getElementById("auto-parse-btn").disabled = false;
+    }
+  }
+
+  async function stopAutoParse() {
+    document.getElementById("auto-parse-stop-btn").disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments/bot/parse-search/stop`, { method: "POST" });
+      renderAutoParseStatus(await res.json());
+    } catch (err) {
+      setAutoStatus("error", "❌ Не удалось остановить робота: " + err.message);
+    }
+  }
+
+  async function pollAutoParseStatus() {
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments/bot/parse-search/status`);
+      if (!res.ok) return;
+      const status = await res.json();
+      renderAutoParseStatus(status);
+
+      if (status.status === "IDLE") {
+        stopAutoParsePolling();
+
+        if (status.lastError) {
+          setAutoStatus("error", "❌ " + status.lastError);
+        } else if (status.parsedCount !== null && status.parsedCount !== undefined) {
+          setAutoStatus("success", `✅ Готово! Обработано объявлений: ${status.parsedCount}`);
+          await loadAllApartments();
+          await loadBotQueue();
+        }
+      }
+    } catch (err) {
+      // тихо игнорируем сетевые сбои поллинга
+    }
+  }
+
+  function ensureAutoParsePolling() {
+    if (autoParsePollTimer) return;
+    autoParsePollTimer = setInterval(pollAutoParseStatus, 1500);
+  }
+
+  function stopAutoParsePolling() {
+    if (autoParsePollTimer) {
+      clearInterval(autoParsePollTimer);
+      autoParsePollTimer = null;
+    }
+  }
+
+  function renderAutoParseStatus(status) {
+    const running = status.status === "RUNNING" || status.status === "STOPPING";
+    document.getElementById("auto-parse-btn").disabled = running;
+    document.getElementById("auto-parse-stop-btn").disabled = !running;
+
+    if (status.status === "RUNNING") {
+      setAutoStatus("loading", "🤖 Робот работает: открывает Авито, скроллит, копирует… (не трогайте мышь/клавиатуру)");
+    } else if (status.status === "STOPPING") {
+      setAutoStatus("loading", "⏹ Останавливаю робота…");
+    }
+  }
+
+  /** При открытии страницы — узнать, не запущен ли уже робот (например, из другой вкладки). */
+  async function initAutoParseStatus() {
+    try {
+      const res = await fetch(`${API_BASE}/api/apartments/bot/parse-search/status`);
+      if (!res.ok) return;
+      const status = await res.json();
+      if (status.status === "RUNNING" || status.status === "STOPPING") {
+        renderAutoParseStatus(status);
+        ensureAutoParsePolling();
+      }
+    } catch (err) { /* backend может быть ещё не готов — не страшно */ }
+  }
+
   // ── Старт ─────────────────────────────────────────────────────────────────
   loadAllApartments();
   loadBotQueue();
   initBotStatus();
+  initAutoParseStatus();
 </script>
 
 </body>
