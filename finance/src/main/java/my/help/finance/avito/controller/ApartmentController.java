@@ -30,8 +30,6 @@ public class ApartmentController {
     private final AvitoVisitorBotService botService;
     private final AvitoDetailPageParserService detailParserService;
 
-    private final ApartmentScoringService scoringService;
-
     @PostMapping(value = "/parse", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ParseRs> parseHtmlFiles(
             @RequestParam("files") List<MultipartFile> files
@@ -158,19 +156,5 @@ public class ApartmentController {
                     return ResponseEntity.ok(repository.save(apt));
                 })
                 .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PostMapping("/rank")
-    public List<ApartmentScoreResult> rank(
-            @RequestBody ScoringRq rq,
-            @RequestParam(name = "limit", required = false) Integer limit
-    ) {
-        List<Apartment> apartments = repository.findAll();
-        List<ApartmentScoreResult> ranked = scoringService.scoreAndRank(apartments, rq.weights());
-
-        if (limit != null && limit > 0 && limit < ranked.size()) {
-            return ranked.subList(0, limit);
-        }
-        return ranked;
     }
 }

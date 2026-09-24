@@ -183,6 +183,7 @@
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
       backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
       overflow: hidden; display: flex; flex-direction: column; transition: transform .25s, box-shadow .25s, border-color .25s;
+      position: relative;
     }
     .apt-card:hover { transform: translateY(-3px); box-shadow: 0 20px 60px rgba(0,0,0,0.35); border-color: var(--border-lit); }
 
@@ -207,34 +208,7 @@
     }
     .apt-delete-btn:hover { background: var(--rose-soft); color: var(--rose); }
 
-    /* ── Оценка / скоринг ─────────────────────────────────────── */
-    .score-card { padding: 22px 26px; border-radius: var(--radius-lg); margin-bottom: 24px; }
-    .score-card h2 {
-      font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--text);
-      display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
-    }
-    .score-card .score-hint { font-size: 12.5px; color: var(--text-3); margin-bottom: 18px; line-height: 1.5; }
-
-    .weights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px 22px; margin-bottom: 18px; }
-    .weight-item label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
-    .weight-item label .w-val { font-family: var(--font-num); color: #A5B4FC; }
-    .weight-item input[type="range"] {
-      width: 100%; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px;
-      background: var(--surface); border: 1px solid var(--border); outline: none; cursor: pointer;
-    }
-    .weight-item input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--indigo), #4F46E5); border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(99,102,241,0.4);
-      cursor: pointer;
-    }
-    .weight-item input[type="range"]::-moz-range-thumb {
-      width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(135deg, var(--indigo), #4F46E5);
-      border: 2px solid #fff; cursor: pointer;
-    }
-    .weight-item .w-desc { font-size: 11px; color: var(--text-3); margin-top: 4px; }
-
     /* ── Индикатор полноты данных (обошёл ли бот объявление) ── */
-    .apt-card { position: relative; }
     .apt-status-dot {
       position: absolute; top: 10px; left: 10px; z-index: 2; width: 12px; height: 12px;
       border-radius: 50%; cursor: help; box-shadow: 0 0 0 2px rgba(6,12,26,0.55), 0 0 8px currentColor;
@@ -242,23 +216,6 @@
     .apt-status-dot.visited   { background: var(--emerald); color: var(--emerald); }
     .apt-status-dot.pending   { background: var(--rose); color: var(--rose); animation: dot-pulse 1.8s ease-in-out infinite; }
     @keyframes dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
-
-    /* ── Бейдж оценки на карточке ── */
-    .apt-score {
-      position: absolute; top: 10px; right: 10px; z-index: 2; min-width: 40px; height: 40px; padding: 0 8px;
-      border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 2px;
-      font-family: var(--font-num); font-weight: 700; font-size: 15px; color: #fff;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.35); backdrop-filter: blur(6px); cursor: help;
-      border: 1px solid rgba(255,255,255,0.25);
-    }
-    .apt-score.score-high { background: linear-gradient(135deg, #10B981, #059669); }
-    .apt-score.score-mid  { background: linear-gradient(135deg, #F59E0B, #D97706); }
-    .apt-score.score-low  { background: linear-gradient(135deg, #F43F5E, #BE123C); }
-    .apt-score .rank { position: absolute; top: -8px; left: -8px; background: #0B1326; border: 1px solid var(--border); color: var(--text-2); font-size: 10px; font-weight: 700; border-radius: 999px; padding: 1px 6px; font-family: var(--font-ui); }
-
-    .sort-hint { font-size: 12px; color: var(--text-3); margin-bottom: 12px; display: none; align-items: center; gap: 8px; }
-    .sort-hint.show { display: flex; }
-    .sort-hint button { border: none; background: none; color: #A5B4FC; cursor: pointer; font-size: 12px; text-decoration: underline; font-family: var(--font-ui); padding: 0; }
 
     /* ── View toggle (список / карта) ── */
     .view-toggle { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 3px; margin-bottom: 16px; }
@@ -273,9 +230,6 @@
     #map-view { display: none; }
     #map { height: 600px; width: 100%; border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.35); z-index: 0; border: 1px solid var(--border); }
     .map-empty-hint { margin-top: 10px; font-size: 12px; color: var(--text-3); text-align: center; }
-
-    .map-legend { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: center; margin-top: 10px; font-size: 12px; color: var(--text-2); }
-    .map-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; box-shadow: 0 0 0 2px rgba(255,255,255,0.15); }
 
     /* Тёмная тема для тайлов Leaflet + попапов */
     .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9) saturate(0.9); }
@@ -292,9 +246,6 @@
     .map-popup-title { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
     .map-popup-address { font-size: 11px; color: var(--text-2); margin-bottom: 2px; }
     .map-popup-metro { font-size: 11px; color: var(--text-2); margin-bottom: 6px; }
-    .map-popup-score { font-size: 11.5px; color: var(--text-2); margin-bottom: 6px; display: flex; align-items: center; }
-    .map-popup-score .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
-    .map-popup-score b { color: var(--text); font-family: var(--font-num); }
     .map-popup-link { display: inline-block; font-size: 12px; font-weight: 600; color: #A5B4FC; text-decoration: none; }
     .map-popup-link:hover { text-decoration: underline; }
     .apt-link { font-size: 12px; color: #A5B4FC; text-decoration: none; font-weight: 600; }
@@ -548,26 +499,6 @@
       </div>
     </div>
 
-    <!-- Оценка / скоринг -->
-    <div class="score-card glass">
-      <h2><i class="fas fa-star" style="color:var(--indigo)"></i> Оценка и топ квартир</h2>
-      <div class="score-hint">
-        Настройте вес каждого критерия (0 — не учитывать) и нажмите «Собрать топ».
-        Оценка считается относительно квартир, которые сейчас в базе: например,
-        цена за м² сравнивается не с фиксированным порогом, а с остальными
-        загруженными объявлениями — самая дешёвая в подборке получит 100, самая дорогая — 0.
-      </div>
-      <div class="weights-grid" id="weights-grid"></div>
-      <div class="btn-group" style="margin-top:0;">
-        <button class="btn btn-primary" id="rank-btn" onclick="rankApartments()">
-          🏆 Собрать топ
-        </button>
-        <button class="btn btn-secondary" onclick="resetRanking()">
-          ↺ Сбросить оценку
-        </button>
-      </div>
-    </div>
-
     <!-- Results -->
     <div id="results-section">
       <div class="results-header">
@@ -578,11 +509,6 @@
         <button class="btn btn-danger" id="clear-db-btn" onclick="clearDatabase()">
           🗑 Очистить базу
         </button>
-      </div>
-
-      <div class="sort-hint" id="sort-hint">
-        📊 Список отсортирован по оценке
-        <button onclick="resetRanking()">сбросить</button>
       </div>
 
       <div class="search-bar glass">
@@ -600,12 +526,6 @@
         <div id="map"></div>
         <div class="map-empty-hint" id="map-empty-hint" style="display:none;">
           Ни у одной из квартир в текущей выборке нет координат — попробуйте загрузить свежий HTML со страницы Авито.
-        </div>
-        <div class="map-legend" id="map-legend" style="display:none;">
-          <span><span class="dot" style="background:#10B981"></span>оценка ≥ 70</span>
-          <span><span class="dot" style="background:#F59E0B"></span>оценка 40–69</span>
-          <span><span class="dot" style="background:#F43F5E"></span>оценка &lt; 40</span>
-          <span><span class="dot" style="background:#6366F1"></span>без оценки</span>
         </div>
       </div>
     </div>
@@ -633,29 +553,6 @@
   let allApartments = [];
   let selectedFiles = [];   // массив File — можно накопить несколько .html/.htm
   let currentDetailAvitoId = null;   // avitoId квартиры, открытой в панели "Подробнее"
-
-  // ── Оценка / скоринг ─────────────────────────────────────────────────────
-  // Ключи должны совпадать с ScoringCriterion.getKey() на бэкенде.
-  // weight — значение слайдера по умолчанию (0..5), hint — короткое пояснение под ним.
-  const CRITERIA = [
-    { key: "pricePerMeter",     label: "Цена за м²",         weight: 3, hint: "дешевле относительно других объявлений — выше балл" },
-    { key: "metroDistance",     label: "Близость к метро",   weight: 2, hint: "меньше минут пешком — выше балл" },
-    { key: "trust",             label: "Доверие",             weight: 2, hint: "проверенные документы/реквизиты, собственник" },
-    { key: "rosreestrCheck",    label: "Проверка в Росреестре", weight: 2, hint: "совпадают площадь/адрес/этаж, нет ограничений и обременений" },
-    { key: "floorPosition",     label: "Этаж",                weight: 1, hint: "средние этажи лучше первого и последнего" },
-    { key: "area",              label: "Площадь",             weight: 1, hint: "больше площадь — выше балл" },
-    { key: "renovationQuality", label: "Качество ремонта",    weight: 0, hint: "дизайнерский/евро — выше балл, без ремонта — ниже" },
-    { key: "ceilingHeight",     label: "Высота потолков",     weight: 0, hint: "выше потолки — выше балл" },
-    { key: "houseRating",       label: "Рейтинг дома",        weight: 0, hint: "по отзывам жильцов — выше балл" },
-    { key: "buildingAge",       label: "Возраст дома",        weight: 0, hint: "новее дом — выше балл" },
-    { key: "sellerExperience",  label: "Опыт продавца",       weight: 0, hint: "число завершённых объявлений продавца" },
-    { key: "freshness",         label: "Свежесть",            weight: 0, hint: "недавно опубликованные — выше балл" },
-    { key: "priceTotal",        label: "Полная цена",         weight: 0, hint: "дешевле в целом — выше балл (обычно достаточно цены за м²)" },
-  ];
-
-  // avitoId -> { totalScore, rank, breakdown }, заполняется после "Собрать топ"
-  let apartmentScores = {};
-  let isRanked = false;
 
   // ── Drop-zone ─────────────────────────────────────────────────────────────
   const dropZone  = document.getElementById("drop-zone");
@@ -797,9 +694,6 @@
       if (!res.ok) throw new Error(res.statusText);
 
       allApartments = [];
-      apartmentScores = {};
-      isRanked = false;
-      document.getElementById("sort-hint").classList.remove("show");
       renderCards(allApartments);
       updateBotStatsFromApartments(allApartments);
       await loadBotQueue();
@@ -957,115 +851,6 @@
     document.getElementById("status").className = "status";
   }
 
-  // ── Оценка / скоринг ──────────────────────────────────────────────────────
-
-  /** Строит слайдеры весов по конфигу CRITERIA (один раз при загрузке страницы). */
-  function renderWeightSliders() {
-    const grid = document.getElementById("weights-grid");
-    grid.innerHTML = CRITERIA.map(c => `
-      <div class="weight-item">
-        <label>
-          <span>${esc(c.label)}</span>
-          <span class="w-val" id="w-val-${c.key}">${c.weight}</span>
-        </label>
-        <input type="range" id="w-${c.key}" min="0" max="5" step="0.5" value="${c.weight}"
-               oninput="document.getElementById('w-val-${c.key}').textContent = this.value">
-        <div class="w-desc">${esc(c.hint)}</div>
-      </div>
-    `).join("");
-  }
-
-  /** Собирает текущие значения слайдеров в объект {criterionKey: weight}. */
-  function collectWeights() {
-    const weights = {};
-    for (const c of CRITERIA) {
-      weights[c.key] = parseFloat(document.getElementById(`w-${c.key}`).value) || 0;
-    }
-    return weights;
-  }
-
-  /** Отправляет веса на бэкенд, получает оценку по каждой квартире и пересортировывает список. */
-  async function rankApartments() {
-    if (allApartments.length === 0) return;
-
-    const weights = collectWeights();
-    if (Object.values(weights).every(w => w === 0)) {
-      setStatus("error", "❌ Все веса равны нулю — задайте хотя бы один критерий");
-      return;
-    }
-
-    const rankBtn = document.getElementById("rank-btn");
-    rankBtn.disabled = true;
-    setStatus("loading", "⏳ Считаем оценку…");
-
-    try {
-      const res = await fetch(`${API_BASE}/api/apartments/rank`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weights }),
-      });
-      if (!res.ok) throw new Error(res.statusText);
-
-      const ranked = await res.json(); // List<ApartmentScoreResult>
-      apartmentScores = {};
-      for (const r of ranked) {
-        apartmentScores[r.avitoId] = { totalScore: r.totalScore, rank: r.rank, breakdown: r.breakdown };
-      }
-      isRanked = true;
-
-      // Пересортировываем текущую выборку по оценке (квартиры без оценки — в конец)
-      allApartments = [...allApartments].sort((a, b) => {
-        const sa = apartmentScores[a.avitoId]?.totalScore;
-        const sb = apartmentScores[b.avitoId]?.totalScore;
-        if (sa == null && sb == null) return 0;
-        if (sa == null) return 1;
-        if (sb == null) return -1;
-        return sb - sa;
-      });
-
-      document.getElementById("sort-hint").classList.add("show");
-      hideStatus();
-      renderCards(allApartments);
-    } catch (err) {
-      setStatus("error", `❌ Не удалось посчитать оценку: ${err.message}`);
-    } finally {
-      rankBtn.disabled = false;
-    }
-  }
-
-  /** Убирает оценку и сортировку по ней, возвращает список к порядку из базы. */
-  function resetRanking() {
-    apartmentScores = {};
-    isRanked = false;
-    document.getElementById("sort-hint").classList.remove("show");
-    renderCards(allApartments);
-  }
-
-  /** css-класс бейджа по величине оценки. */
-  function scoreClass(score) {
-    if (score >= 70) return "score-high";
-    if (score >= 40) return "score-mid";
-    return "score-low";
-  }
-
-  /** HTML бейджа оценки для карточки (пусто, если квартира ещё не оценена). */
-  function scoreBadgeHTML(apt) {
-    const info = apartmentScores[apt.avitoId ?? apt.avito_id];
-    if (!info || info.totalScore == null) return "";
-
-    const top3 = (info.breakdown || [])
-            .filter(b => b.weight > 0)
-            .sort((a, b) => b.weightedContribution - a.weightedContribution)
-            .slice(0, 3)
-            .map(b => `${b.criterion}: ${b.normalizedScore?.toFixed(0) ?? "—"}`)
-            .join(" · ");
-
-    return `
-      <div class="apt-score ${scoreClass(info.totalScore)}" title="${esc(top3)}">
-        <span class="rank">#${info.rank}</span>${info.totalScore.toFixed(0)}
-      </div>`;
-  }
-
   // ── Render cards ──────────────────────────────────────────────────────────
   function renderCards(apartments) {
     const grid  = document.getElementById("cards-grid");
@@ -1108,7 +893,6 @@
     return `
       <div class="apt-card">
         ${statusDot}
-        ${scoreBadgeHTML(apt)}
         ${img}${imgPh}
         <div class="apt-body">
           <div class="apt-price">${esc(price)}</div>
@@ -1181,7 +965,6 @@
       if (!res.ok && res.status !== 404) throw new Error(res.statusText);
 
       allApartments = allApartments.filter(a => (a.avitoId ?? a.avito_id) !== avitoId);
-      delete apartmentScores[avitoId];
 
       if (currentDetailAvitoId === avitoId) {
         closeDetailDrawer();
@@ -1386,19 +1169,6 @@
   }
 
   /**
-   * Цвет маркера по оценке квартиры — та же палитра, что и у бейджа
-   * оценки на карточке (score-high/mid/low), плюс нейтральный цвет для
-   * квартир без оценки (топ ещё не собирали, либо конкретно у этой
-   * квартиры не хватает данных для расчёта).
-   */
-  function markerColor(score) {
-    if (score == null) return "#6366F1";     // нейтральный — оценки нет
-    if (score >= 70) return "#10B981";       // score-high
-    if (score >= 40) return "#F59E0B";       // score-mid
-    return "#F43F5E";                        // score-low
-  }
-
-  /**
    * Обновляет маркеры на карте по текущей выборке квартир.
    * Безопасно вызывать даже если карта ещё не создана (например,
    * сразу после загрузки страницы, пока открыт вид "Список") —
@@ -1416,22 +1186,18 @@
       const lng = apt.longitude ?? apt.lng;
       if (typeof lat !== "number" || typeof lng !== "number") continue;
 
-      const info = apartmentScores[apt.avitoId ?? apt.avito_id];
-      const score = info?.totalScore ?? null;
-
       L.circleMarker([lat, lng], {
         radius: 9,
         weight: 2,
         color: "rgba(255,255,255,0.85)",
-        fillColor: markerColor(score),
+        fillColor: "#6366F1",
         fillOpacity: 0.9,
-      }).bindPopup(mapPopupHTML(apt, info)).addTo(markersLayer);
+      }).bindPopup(mapPopupHTML(apt)).addTo(markersLayer);
 
       points.push([lat, lng]);
     }
 
     document.getElementById("map-empty-hint").style.display = points.length ? "none" : "block";
-    document.getElementById("map-legend").style.display = isRanked ? "flex" : "none";
 
     if (points.length) {
       leafletMap.fitBounds(points, { padding: [30, 30], maxZoom: 15 });
@@ -1439,7 +1205,7 @@
   }
 
   /** HTML содержимого всплывающей подсказки маркера на карте. */
-  function mapPopupHTML(apt, scoreInfo) {
+  function mapPopupHTML(apt) {
     const priceRaw = apt.priceRaw ?? apt.price_raw;
     const imageUrl = apt.imageUrl ?? apt.image_url;
 
@@ -1455,10 +1221,6 @@
             ? `<a class="map-popup-link" href="${esc(apt.url)}" target="_blank" rel="noopener">Открыть на Авито →</a>`
             : "";
 
-    const scoreLine = (scoreInfo && scoreInfo.totalScore != null)
-            ? `<div class="map-popup-score"><span class="dot" style="background:${markerColor(scoreInfo.totalScore)}"></span>Оценка: <b>${scoreInfo.totalScore.toFixed(0)}</b> · #${scoreInfo.rank}</div>`
-            : "";
-
     return `
       <div class="map-popup">
         ${img}
@@ -1466,7 +1228,6 @@
         <div class="map-popup-title">${esc(apt.title || "—")}</div>
         <div class="map-popup-address">📍 ${esc(apt.address || "Адрес не указан")}</div>
         ${apt.metro ? `<div class="map-popup-metro">🚇 ${esc(apt.metro)}</div>` : ""}
-        ${scoreLine}
         ${link}
       </div>`;
   }
@@ -1499,7 +1260,6 @@
   });
 
   // ── Старт ─────────────────────────────────────────────────────────────────
-  renderWeightSliders();
   loadAllApartments();
   loadBotQueue();
   initBotStatus();
