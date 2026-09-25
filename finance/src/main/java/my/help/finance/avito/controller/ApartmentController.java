@@ -30,6 +30,8 @@ public class ApartmentController {
     private final AvitoVisitorBotService botService;
     private final AvitoDetailPageParserService detailParserService;
     private final AvitoSearchPageBotService searchPageBotService;
+    private final ApartmentAnalysisService analysisService;
+    private final DeepSeekBotService deepSeekBotService;
 
     @PostMapping(value = "/parse", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ParseRs> parseHtmlFiles(
@@ -180,5 +182,38 @@ public class ApartmentController {
     @GetMapping("/bot/parse-search/status")
     public AvitoSearchPageBotService.BotStatusDto searchParseStatus() {
         return searchPageBotService.getStatus();
+    }
+
+    public record AnalysisPromptRs(String prompt, int length) {}
+    public record DeepSeekStartRq(String prompt) {}
+
+    /** Отдаёт промпт, собранный из всех квартир в базе. */
+    @GetMapping("/analysis/prompt")
+    public AnalysisPromptRs getAnalysisPrompt() {
+        String prompt = analysisService.buildAnalysisPrompt();
+        return new AnalysisPromptRs(prompt, prompt.length());
+    }
+
+    /**
+     * Запускает робота: открыть DeepSeek, вставить промпт, отправить.
+     * Если в теле передан {@code prompt} — используется он, иначе промпт
+     * генерируется из БД.
+     */
+    @PostMapping("/bot/deepseek/start")
+    public DeepSeekBotService.BotStatusDto startDeepSeek(
+            @RequestBody(required = false) DeepSeekStartRq body
+    ) {
+        String prompt = body != null ? body.prompt() : null;
+        return deepSeekBotService.start(prompt);
+    }
+
+    @PostMapping("/bot/deepseek/stop")
+    public DeepSeekBotService.BotStatusDto stopDeepSeek() {
+        return deepSeekBotService.stop();
+    }
+
+    @GetMapping("/bot/deepseek/status")
+    public DeepSeekBotService.BotStatusDto deepSeekStatus() {
+        return deepSeekBotService.getStatus();
     }
 }

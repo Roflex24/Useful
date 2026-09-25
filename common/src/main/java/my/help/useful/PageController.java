@@ -69,6 +69,11 @@ public class PageController {
         return "/finance/finance";
     }
 
+    @GetMapping("/page/analysis")
+    public String analysisPage() {
+        return "/finance/analysis";
+    }
+
     @GetMapping("/page/runway")
     public String runwayPage() {
         return "/finance/runway";
