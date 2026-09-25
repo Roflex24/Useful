@@ -10,28 +10,27 @@ public record ApartmentBrief(
         Long pricePerMeter,
         Double totalArea,
         Integer rooms,
-        Boolean studio,
         Integer floor,
         Integer totalFloors,
         String address,
         String metroName,
         Integer metroMinutes,
         String renovation,
-        Boolean rosreestrHasRestrictions,
-        Boolean rosreestrDataMatches,
+        String buildingType,
+        Integer yearBuilt,
         String url
 ) {
     public static ApartmentBrief from(Apartment a) {
         return new ApartmentBrief(
                 a.getId(), a.getAvitoId(), a.getTitle(),
                 a.getPrice(), a.getPricePerMeter(), a.getTotalArea(),
-                a.getRooms(), a.getStudio(), a.getFloor(), a.getTotalFloors(),
-                a.getAddress() != null ? a.getAddress() : a.getFullAddress(),
-                a.getMetroName() != null ? a.getMetroName() : a.getMetro(),
+                a.getRooms(), a.getFloor(), a.getTotalFloors(),
+                a.getAddress(),
+                a.getMetroName(),
                 a.getMetroMinutes(),
                 a.getRenovation(),
-                a.getRosreestrHasRestrictions(),
-                a.getRosreestrDataMatches(),
+                a.getBuildingType(),
+                a.getYearBuilt(),
                 a.getUrl()
         );
     }

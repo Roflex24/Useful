@@ -9,6 +9,5 @@ public record ApartmentStats(
         Long avgPrice,
         Long medianPrice,
         Long avgPricePerMeter,
-        Map<String, Long> byRooms,
-        Map<String, Long> byDistrict
+        Map<String, Long> byRooms
 ) {}

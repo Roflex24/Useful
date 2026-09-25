@@ -1,39 +1,34 @@
 package my.help.finance.avito.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import my.help.finance.avito.entity.Apartment;
-import my.help.finance.avito.entity.ApartmentImage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Парсер СТРАНИЦЫ ОБЪЯВЛЕНИЯ. Извлекает только поля, оставшиеся
+ * в сущности {@link Apartment}.
+ */
 @Slf4j
 @Service
 public class AvitoDetailPageParserService {
 
     private static final Pattern DIGITS_DECIMAL = Pattern.compile("(\\d+(?:[.,]\\d+)?)");
     private static final Pattern DIGITS = Pattern.compile("\\d+");
-    private static final Pattern OWNERS_COUNT = Pattern.compile("\\d+\\s*собственник", Pattern.CASE_INSENSITIVE);
-    private static final Pattern LAST_OWNER_CHANGE = Pattern.compile("смена собственника", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CADASTRAL_NUMBER_JSON = Pattern.compile("\"cadastralNumber\"\\s*:\\s*\"([^\"]*)\"");
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final Pattern ADDRESS_JSON_PATTERN =
+            Pattern.compile("\\\\?\"address\\\\?\"\\s*:\\s*\\\\?\"([^\\\\\"]{10,300})\\\\?\"");
 
     public boolean enrichFromDetailHtml(Apartment apt, String html) {
-        if (html == null || html.length() < 2000) {
-            return false;
-        }
+        if (html == null || html.length() < 2000) return false;
 
         Document doc;
         try {
@@ -45,50 +40,88 @@ public class AvitoDetailPageParserService {
 
         boolean looksLikeItemPage = doc.selectFirst("[data-marker=item-view/title-info]") != null
                 || doc.selectFirst("[data-marker=item-view/item-params]") != null;
-        if (!looksLikeItemPage) {
-            return false;
-        }
+        if (!looksLikeItemPage) return false;
 
+        parseAvitoId(doc, apt);
+        parseTitle(doc, apt);
         parsePrice(doc, apt);
-        parseDescription(doc, apt);
         parseParams(doc, apt);
         parseAddressAndCoords(doc, apt);
-        parseViewsAndDate(doc, apt);
-        parsePhoneAndContact(doc, apt);
-        parseQuickFeatures(doc, apt);
-        parsePhotos(doc, apt);
-        parseRosreestrCheck(doc, apt);
+        parseMetro(doc, apt);
+        parsePhoto(doc, apt);
+
+        // Инфраструктурные поля. Если это уже делается в вызывающем сервисе —
+        // эти строки можно удалить.
+        apt.setDetailVisited(true);
+        apt.setDetailVisitedAt(LocalDateTime.now());
+        if (apt.getDetailVisitAttempts() == null) {
+            apt.setDetailVisitAttempts(1);
+        } else {
+            apt.setDetailVisitAttempts(apt.getDetailVisitAttempts() + 1);
+        }
 
         return true;
+    }
+
+    private void parseAvitoId(Document doc, Apartment apt) {
+        if (apt.getAvitoId() != null && !apt.getAvitoId().isBlank()) return;
+
+        Element idEl = doc.selectFirst("[data-marker=item-view/item-id]");
+        if (idEl != null) {
+            String digits = idEl.text().replaceAll("\\D", "");
+            if (!digits.isEmpty()) {
+                apt.setAvitoId(digits);
+                return;
+            }
+        }
+
+        // запасной вариант — canonical-ссылка
+        Element canonical = doc.selectFirst("link[rel=canonical]");
+        if (canonical != null) {
+            Matcher m = Pattern.compile("(\\d{6,})").matcher(canonical.attr("href"));
+            if (m.find()) {
+                apt.setAvitoId(m.group(1));
+            }
+        }
+    }
+
+    private void parseTitle(Document doc, Apartment apt) {
+        Element titleEl = doc.selectFirst("[data-marker=item-view/title-info]");
+        if (titleEl != null) {
+            String t = cleanText(titleEl.text());
+            if (t != null) apt.setTitle(t);
+        }
     }
 
     private void parsePrice(Document doc, Apartment apt) {
         Element priceEl = doc.selectFirst("[data-marker=item-view/item-price]");
         if (priceEl != null) {
-            Long price = parseLongDigits(priceEl.attr("content"));
+            // В новой вёрстке цена лежит в тексте, а не в content
+            Long price = parseLongDigits(priceEl.text());
+            if (price == null) {
+                price = parseLongDigits(priceEl.attr("content"));
+            }
             if (price != null) apt.setPrice(price);
-            apt.setPriceRaw(cleanText(priceEl.ownText()));
+
+            String priceText = priceEl.text();
+            if (priceText.contains("₽") || priceText.toLowerCase().contains("руб")) {
+                apt.setCurrency("RUB");
+            }
         }
 
-        Element currencyEl = doc.selectFirst("[data-marker=item-view/item-price] [itemprop=priceCurrency]");
-        if (currencyEl != null && !currencyEl.attr("content").isBlank()) {
-            apt.setCurrency(currencyEl.attr("content"));
-        }
-
+        // цена за м² — либо из блока контактов, либо посчитать
         Element contactsBlock = doc.selectFirst("[data-marker=item-view/item-view-contacts]");
         if (contactsBlock != null) {
-            Matcher m = Pattern.compile("([\\d\\s]{3,})\\s*₽\\s*за\\s*м²").matcher(contactsBlock.text());
+            Matcher m = Pattern.compile("([\\d\\s\\u00A0]{3,})\\s*₽\\s*за\\s*м²")
+                    .matcher(contactsBlock.text());
             if (m.find()) {
                 Long perMeter = parseLongDigits(m.group(1));
                 if (perMeter != null) apt.setPricePerMeter(perMeter);
             }
         }
-    }
-
-    private void parseDescription(Document doc, Apartment apt) {
-        Element descEl = doc.selectFirst("[data-marker=item-view/item-description]");
-        if (descEl != null) {
-            apt.setDescriptionFullDetail(cleanText(descEl.text()));
+        if (apt.getPricePerMeter() == null
+                && apt.getPrice() != null && apt.getTotalArea() != null && apt.getTotalArea() > 0) {
+            apt.setPricePerMeter(Math.round(apt.getPrice() / apt.getTotalArea()));
         }
     }
 
@@ -98,79 +131,174 @@ public class AvitoDetailPageParserService {
         for (Element block : blocks) {
             all.putAll(parseParamsList(block));
         }
-
         if (all.isEmpty()) return;
 
-        try {
-            apt.setDetailParamsJson(objectMapper.writeValueAsString(all));
-        } catch (Exception e) {
-            log.warn("Не удалось сериализовать характеристики {} в JSON: {}", apt.getAvitoId(), e.getMessage());
+        // ── Комнаты / студия
+        String roomsRaw = all.get("Количество комнат");
+        if (roomsRaw != null) {
+            Integer rooms = parseIntSafe(roomsRaw);
+            if (rooms != null) apt.setRooms(rooms);
         }
 
-        putArea(all, "Площадь кухни", apt::setKitchenArea);
-        putArea(all, "Жилая площадь", apt::setLivingArea);
-        putString(all, "Балкон или лоджия", apt::setBalconyOrLoggia);
-        putString(all, "Тип комнат", apt::setRoomsType);
-        putString(all, "Санузел", apt::setBathroomType);
-        putString(all, "Окна", apt::setWindowsView);
-        putString(all, "Ремонт", apt::setRenovation);
-        putString(all, "Способ продажи", apt::setSaleMethod);
-        putString(all, "Условия продажи", apt::setSaleConditions);
-        putArea(all, "Высота потолков", apt::setCeilingHeight);
-        putString(all, "Стоимость ремонта", apt::setRenovationCostEstimate);
+        // ── Общая площадь
+        putArea(all, "Общая площадь", apt::setTotalArea);
 
+        // ── Этаж
         String floorRaw = all.get("Этаж");
-        if (floorRaw != null && apt.getFloor() == null) {
+        if (floorRaw != null) {
             Matcher m = Pattern.compile("(\\d+)\\s*из\\s*(\\d+)").matcher(floorRaw);
             if (m.find()) {
                 apt.setFloor(parseIntSafe(m.group(1)));
-                if (apt.getTotalFloors() == null) apt.setTotalFloors(parseIntSafe(m.group(2)));
+                apt.setTotalFloors(parseIntSafe(m.group(2)));
+            } else {
+                Integer f = parseIntSafe(floorRaw);
+                if (f != null) apt.setFloor(f);
             }
         }
 
+        // ── Дом
         putString(all, "Тип дома", apt::setBuildingType);
-        putString(all, "Пассажирский лифт", apt::setPassengerElevator);
-        putString(all, "Грузовой лифт", apt::setFreightElevator);
-        putString(all, "В доме", apt::setHouseUtilities);
-        putString(all, "Двор", apt::setYardFeatures);
-        putString(all, "Парковка", apt::setParking);
+        putString(all, "Ремонт", apt::setRenovation);
 
         String yearBuiltRaw = all.get("Год постройки");
-        if (yearBuiltRaw != null) {
-            apt.setYearBuilt(parseIntSafe(yearBuiltRaw));
-        }
-
-        String houseFloors = all.get("Этажей в доме");
-        if (houseFloors != null && apt.getTotalFloors() == null) {
-            apt.setTotalFloors(parseIntSafe(houseFloors));
-        }
-
-        parseHouseRating(doc, apt);
+        if (yearBuiltRaw != null) apt.setYearBuilt(parseIntSafe(yearBuiltRaw));
     }
 
-    private void parseHouseRating(Document doc, Apartment apt) {
-        Element ratingBlock = doc.selectFirst("[data-marker=rating-and-reviews]");
-        if (ratingBlock == null) return;
+    private void parseAddressAndCoords(Document doc, Apartment apt) {
+        String address = null;
 
-        Elements spans = ratingBlock.select("span");
-        for (Element span : spans) {
-            String t = span.text().trim();
-            if (t.matches("\\d[.,]\\d")) {
-                apt.setHouseRating(parseDoubleSafe(t));
-            } else if (t.toLowerCase().contains("отзыв")) {
-                Matcher m = DIGITS.matcher(t);
-                if (m.find()) apt.setHouseReviewsCount(parseIntSafe(m.group()));
+        Element addressBlock = doc.selectFirst("#item-view-address");
+        if (addressBlock == null) {
+            log.warn("#item-view-address не найден для {}", apt.getAvitoId());
+        } else {
+            address = extractAddressFromBlock(addressBlock);
+        }
+
+        // запасной вариант — вытащить из JSON, встроенного в страницу
+        if (address == null) {
+            address = extractAddressFromJson(doc.html());
+        }
+
+        if (address != null) {
+            apt.setAddress(address);
+            log.debug("Адрес для {}: {}", apt.getAvitoId(), address);
+        } else {
+            log.warn("Не удалось извлечь адрес для {}", apt.getAvitoId());
+        }
+
+        Element mapWrapper = doc.selectFirst("[data-marker='item-map-wrapper']");
+        if (mapWrapper != null) {
+            Double lat = parseDoubleSafe(mapWrapper.attr("data-map-lat"));
+            Double lon = parseDoubleSafe(mapWrapper.attr("data-map-lon"));
+            if (lat != null) apt.setLatitude(lat);
+            if (lon != null) apt.setLongitude(lon);
+        }
+    }
+
+    private String extractAddressFromBlock(Element block) {
+        // 1) Точный класс из текущей вёрстки Авито
+        Element span = block.selectFirst("span._8360df6eedcf8d52");
+        if (span != null) {
+            String t = cleanText(span.text());
+            if (t != null && !t.isBlank()) return t;
+        }
+
+        // 2) itemPro poperty (старая вёрстка)
+        Element ip = block.selectFirst("[itemprop=address]");
+        if (ip != null) {
+            String t = cleanText(ip.text());
+            if (t != null && !t.isBlank()) return t;
+        }
+
+        // 3) Первый LEAF-span, похожий на адрес (нет вложенных span)
+        for (Element el : block.select("span")) {
+            if (!el.select("> span").isEmpty()) continue;
+            String t = cleanText(el.text());
+            if (t == null) continue;
+            if (t.length() < 10 || t.length() > 300) continue;
+            if (t.contains("мин") || t.contains("метро") || t.contains("карт")) continue;
+            if (!t.contains(",")) continue;
+            return t;
+        }
+
+        // 4) Любой leaf-span с буквами и цифрами
+        for (Element el : block.select("span")) {
+            if (!el.select("> span").isEmpty()) continue;
+            String t = cleanText(el.text());
+            if (t == null) continue;
+            if (t.length() < 15) continue;
+            if (t.contains("мин") || t.contains("метро") || t.contains("карт")) continue;
+            if (!t.matches(".*[А-Яа-яЁё].*\\d.*")) continue;
+            return t;
+        }
+
+        return null;
+    }
+
+    private String extractAddressFromJson(String html) {
+        if (html == null || html.isEmpty()) return null;
+        Matcher m = ADDRESS_JSON_PATTERN.matcher(html);
+        if (m.find()) {
+            String addr = m.group(1);
+            if (addr != null) {
+                addr = addr.replace("\\/", "/").trim();
+                if (!addr.isEmpty()) return addr;
+            }
+        }
+        return null;
+    }
+
+    private void parseMetro(Document doc, Apartment apt) {
+        Element addressBlock = doc.selectFirst("#item-view-address");
+        if (addressBlock == null) return;
+
+        // В новой вёрстке метро лежит внутри #item-view-address
+        // Пример текста: "Канавинская11–15 мин."
+        for (Element span : addressBlock.select("span")) {
+            String text = cleanText(span.text());
+            if (text == null || !text.contains("мин")) continue;
+
+            Matcher m = Pattern.compile("^(.*?)\\s*(\\d+).*?мин").matcher(text);
+            if (m.find()) {
+                String name = m.group(1).trim();
+                Integer minutes = parseIntSafe(m.group(2));
+                if (!name.isBlank()) {
+                    apt.setMetroName(name);
+                    apt.setMetroMinutes(minutes);
+                    return; // берём первую станцию
+                }
             }
         }
 
-        Element catalogLink = doc.selectFirst("a[data-marker=nd-jk-details-button]");
-        if (catalogLink == null) {
-            catalogLink = doc.selectFirst("a[href*=/catalog/houses/]");
-        }
-        if (catalogLink != null) {
-            apt.setHouseCatalogUrl(absoluteUrl(catalogLink.attr("href")));
+        // запасной вариант — боковой блок контактов
+        Element sideMetro = doc.selectFirst("[data-marker=item-view/item-view-contacts] ._0af34493c0881b75 p");
+        if (sideMetro != null) {
+            String text = cleanText(sideMetro.text());
+            if (text != null) {
+                Matcher m = Pattern.compile("^(.*?)\\s*(\\d+).*?мин").matcher(text);
+                if (m.find()) {
+                    apt.setMetroName(m.group(1).trim());
+                    apt.setMetroMinutes(parseIntSafe(m.group(2)));
+                }
+            }
         }
     }
+
+    private void parsePhoto(Document doc, Apartment apt) {
+        // Сначала пробуем главный слайдер, потом всю галерею
+        Element img = doc.selectFirst("#gallery-slider img");
+        if (img == null) {
+            img = doc.selectFirst("[data-marker=item-view/main-gallery] img");
+        }
+        if (img == null) return;
+
+        String src = img.hasAttr("src") ? img.attr("src") : img.attr("data-src");
+        if (src != null && !src.isBlank()) {
+            apt.setImageUrl(src);
+        }
+    }
+
+    // ── helpers ─────────────────────────────────────────────
 
     private Map<String, String> parseParamsList(Element paramsBlock) {
         Map<String, String> map = new LinkedHashMap<>();
@@ -187,10 +315,7 @@ public class AvitoDetailPageParserService {
                 String withoutLabel = full.replaceFirst(Pattern.quote(labelSpan.text()), "").trim();
                 value = cleanText(withoutLabel);
             }
-
-            if (value != null && !value.isEmpty()) {
-                map.put(label, value);
-            }
+            if (value != null && !value.isEmpty()) map.put(label, value);
         }
         return map;
     }
@@ -207,179 +332,10 @@ public class AvitoDetailPageParserService {
         if (m.find()) setter.accept(parseDoubleSafe(m.group(1)));
     }
 
-    private void parseAddressAndCoords(Document doc, Apartment apt) {
-        Element addressBlock = doc.selectFirst("#item-view-address");
-        if (addressBlock != null) {
-            Element addressSpan = addressBlock.selectFirst("[itemprop=address] span");
-            if (addressSpan != null) {
-                apt.setFullAddress(cleanText(addressSpan.text()));
-            }
-            apt.setLocationSectionRaw(cleanText(addressBlock.text()));
-        }
-
-        Element mapWrapper = doc.selectFirst("[data-marker=item-map-wrapper]");
-        if (mapWrapper != null) {
-            Double lat = parseDoubleSafe(mapWrapper.attr("data-map-lat"));
-            Double lon = parseDoubleSafe(mapWrapper.attr("data-map-lon"));
-            if (lat != null) apt.setLatitude(lat);
-            if (lon != null) apt.setLongitude(lon);
-        }
-    }
-
-    private void parseViewsAndDate(Document doc, Apartment apt) {
-        Element totalViewsEl = doc.selectFirst("[data-marker=item-view/total-views]");
-        if (totalViewsEl != null) {
-            Matcher m = DIGITS.matcher(totalViewsEl.text());
-            if (m.find()) apt.setTotalViews(parseIntSafe(m.group()));
-        }
-
-        Element todayViewsEl = doc.selectFirst("[data-marker=item-view/today-views]");
-        if (todayViewsEl != null) {
-            Matcher m = DIGITS.matcher(todayViewsEl.text());
-            if (m.find()) apt.setTodayViews(parseIntSafe(m.group()));
-        }
-
-        Element dateEl = doc.selectFirst("[data-marker=item-view/item-date]");
-        if (dateEl != null) {
-            String raw = dateEl.text().replaceFirst("^[·\\s]+", "").trim();
-            apt.setDetailPublishedRaw(cleanText(raw));
-        }
-    }
-
-    private void parsePhoneAndContact(Document doc, Apartment apt) {
-        Elements phoneParagraphs = doc.select("[data-marker=item-phone-button/card] p, [data-marker=item-phone-button/header] p");
-        for (Element p : phoneParagraphs) {
-            String t = p.text().trim();
-            if (t.matches(".*\\d.*[X×xX].*") || t.matches("[\\d\\sXX\\-+]{7,}")) {
-                apt.setPhoneMasked(t);
-                break;
-            }
-        }
-
-        Matcher m = Pattern.compile(
-                "title=\"([А-ЯЁ][а-яё\\-]+(?:\\s[А-ЯЁ][а-яё\\-]+){0,2})\">\\s*\\1\\s*<"
-        ).matcher(doc.outerHtml());
-        if (m.find()) {
-            apt.setContactPersonName(m.group(1));
-        }
-    }
-
-    private void parseQuickFeatures(Document doc, Apartment apt) {
-        Elements chips = doc.select("[data-marker^=realty-usp/desktop-chips/option]");
-        if (chips.isEmpty()) return;
-
-        Pattern optionPattern = Pattern.compile("option\\(([^)]+)\\)");
-        var features = new LinkedHashSet<String>();
-
-        for (Element chip : chips) {
-            Matcher m = optionPattern.matcher(chip.attr("data-marker"));
-            if (!m.find()) continue;
-            String raw = m.group(1); // например "Изолир. комнаты-cards"
-            int lastDash = raw.lastIndexOf('-');
-            String label = lastDash > 0 ? raw.substring(0, lastDash) : raw;
-            if (!label.isBlank()) features.add(label.trim());
-        }
-
-        if (!features.isEmpty()) {
-            apt.setQuickFeatures(String.join(", ", features));
-        }
-    }
-
-    private void parsePhotos(Document doc, Apartment apt) {
-        Elements imgs = doc.select("[data-marker=image-preview/item] img");
-        if (imgs.isEmpty()) return;
-
-        java.util.List<ApartmentImage> newImages = new java.util.ArrayList<>();
-        int position = 0;
-        for (Element img : imgs) {
-            String src = img.hasAttr("src") ? img.attr("src") : img.attr("data-src");
-            if (src.isBlank()) continue;
-            newImages.add(ApartmentImage.builder().url(src).position(position++).build());
-        }
-
-        if (!newImages.isEmpty()) {
-            apt.replaceImages(newImages);
-            if (apt.getImageUrl() == null) {
-                apt.setImageUrl(newImages.getFirst().getUrl());
-            }
-        }
-    }
-
-    private void parseRosreestrCheck(Document doc, Apartment apt) {
-        Element block = doc.selectFirst("[data-marker=domoteka-entry-block]");
-        if (block == null) {
-            return;
-        }
-
-        Element titleEl = block.selectFirst("h2");
-        if (titleEl != null) {
-            apt.setRosreestrCheckTitle(cleanText(titleEl.text()));
-        }
-
-        Elements items = block.select("p[data-marker=TeaserData.item]");
-        if (items.isEmpty()) {
-            return;
-        }
-
-        List<String> texts = new ArrayList<>();
-        for (Element item : items) {
-            String t = cleanText(item.text());
-            if (t != null) {
-                texts.add(t);
-            }
-        }
-        if (texts.isEmpty()) {
-            return;
-        }
-
-        try {
-            apt.setRosreestrChecksJson(objectMapper.writeValueAsString(texts));
-        } catch (Exception e) {
-            log.warn("Не удалось сериализовать проверки Росреестра {}: {}", apt.getAvitoId(), e.getMessage());
-        }
-
-        for (String t : texts) {
-            String lower = t.toLowerCase();
-
-            if (OWNERS_COUNT.matcher(t).find()) {
-                apt.setRosreestrOwnersCountRaw(t);
-            }
-            if (LAST_OWNER_CHANGE.matcher(t).find()) {
-                apt.setRosreestrLastOwnerChangeRaw(t);
-            }
-
-            if (lower.contains("не найдены ограничения") || lower.contains("не найдены обременения")) {
-                apt.setRosreestrHasRestrictions(false);
-            } else if (lower.contains("ограничен") || lower.contains("обременен")) {
-                apt.setRosreestrHasRestrictions(true);
-            }
-
-            if (lower.contains("совпадают площадь") || lower.contains("совпадают адрес")) {
-                apt.setRosreestrDataMatches(true);
-            } else if (lower.contains("не совпада")) {
-                apt.setRosreestrDataMatches(false);
-            }
-        }
-
-        Matcher cadastralMatcher = CADASTRAL_NUMBER_JSON.matcher(doc.outerHtml());
-        if (cadastralMatcher.find()) {
-            String cadastral = cadastralMatcher.group(1);
-            if (cadastral != null && !cadastral.isBlank()) {
-                apt.setRosreestrCadastralNumber(cadastral);
-            }
-        }
-    }
-
     private String cleanText(String raw) {
         if (raw == null) return null;
         String t = raw.replace("\u00A0", " ").trim();
         return t.isEmpty() ? null : t;
-    }
-
-    private String absoluteUrl(String href) {
-        if (href == null || href.isBlank()) return null;
-        if (href.startsWith("http")) return href;
-        return "https://www.avito.ru" + href;
     }
 
     private Integer parseIntSafe(String raw) {
