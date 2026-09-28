@@ -54,8 +54,10 @@ public class HistoryController {
 
     @PostMapping("/snapshots/create")
     public String createSnapshotManually() {
-        snapshotService.createSnapshotForPreviousMonth();
-        return "Snapshot created successfully";
+        boolean created = snapshotService.checkAndCreateSnapshot();
+        return created
+                ? "Snapshot for the previous month was successfully created"
+                : "Snapshot for the previous month already exists or is not required at the moment";
     }
 
     @GetMapping("/dynamics/monthly")

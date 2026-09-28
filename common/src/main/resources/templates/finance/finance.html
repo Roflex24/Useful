@@ -1083,6 +1083,9 @@
             <button id="loadHistoryBtn" class="btn-outline">
                 <i class="fas fa-calendar-alt"></i> Показать
             </button>
+            <button id="saveSnapshotBtn" class="btn-outline" title="Создать снапшот за прошлый месяц">
+                <i class="fas fa-floppy-disk"></i> Сохранить данные за прошлый месяц
+            </button>
         </div>
         <div class="controls-right">
             <div id="historyInfoBadge" style="display:none" class="history-badge">
@@ -2049,6 +2052,25 @@
     document.getElementById('createAccountBtn').onclick  = () => openAccountModal('Создание счёта');
     document.getElementById('viewAllCashbacksBtn').onclick = openAllCashbacksModal;
     document.getElementById('loadHistoryBtn').onclick     = loadHistoricalData;
+    document.getElementById('saveSnapshotBtn').onclick = async () => {
+        if (!confirm('Создать снапшот финансовых данных за прошлый месяц?')) return;
+        try {
+            showLoading(true);
+            const res = await fetch(`${API_HISTORY}/snapshots/create`, { method: 'POST' });
+            const text = await res.text();
+            if (res.ok) {
+                const isSuccess = text.toLowerCase().includes('успешно');
+                showToast(text || 'Снапшот сохранён', isSuccess ? 'success' : 'info');
+                await loadAvailableSnapshots(); // обновим список месяцев в селекте
+            } else {
+                showToast('Ошибка: ' + (text || res.statusText), 'error');
+            }
+        } catch (e) {
+            showToast('Ошибка: ' + e.message, 'error');
+        } finally {
+            showLoading(false);
+        }
+    };
     document.getElementById('showCurrentBtn').onclick     = loadCurrentData;
 
     window.onclick = (e) => {

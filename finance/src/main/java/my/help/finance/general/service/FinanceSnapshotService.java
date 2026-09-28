@@ -303,7 +303,24 @@ public class FinanceSnapshotService {
         return summary;
     }
 
-    public boolean shouldCreateSnapshot() {
+    public boolean checkAndCreateSnapshot() {
+        if (!shouldCreateSnapshot()) {
+            log.info("Snapshot is not needed at this time");
+            return false;
+        }
+
+        log.info("Starting snapshot creation for previous month...");
+        try {
+            createSnapshotForPreviousMonth();
+            log.info("Snapshot creation completed successfully");
+            return true;
+        } catch (ConflictException e) {
+            log.warn("Snapshot already exists: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean shouldCreateSnapshot() {
         LocalDate today = LocalDate.now();
         LocalDate firstOfMonth = today.withDayOfMonth(1);
 

@@ -16,14 +16,11 @@ public class FinanceSnapshotScheduler {
     private final FinanceSnapshotService snapshotService;
 
     /**
-     * Каждый день в 7:30 проверяем и создаём снимок если нужно
+     * Каждый день в 7:30 проверяем и создаём снимок если нужно.
+     * Тот же метод вызывается вручную из HistoryController.
      */
     @Scheduled(cron = "0 30 7 * * *")
     public void checkAndCreateSnapshot() {
-        if (snapshotService.shouldCreateSnapshot()) {
-            log.info("Starting scheduled snapshot creation...");
-            snapshotService.createSnapshotForPreviousMonth();
-            log.info("Scheduled snapshot creation completed");
-        }
+        snapshotService.checkAndCreateSnapshot();
     }
 }
