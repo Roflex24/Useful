@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -54,5 +55,36 @@ public class EventService {
 
     public void delete(Long id) {
         eventRepository.deleteById(id);
+    }
+
+    public String getEventsForTelegram() {
+        LocalDateTime start = LocalDateTime.now()
+                .toLocalDate()
+                .atStartOfDay();          // сегодня 00:00:00
+        LocalDateTime end = start.plusDays(7); // через 7 дней 00:00:00 (не включая)
+
+        List<Event> events = eventRepository
+                .findByDateTimeGreaterThanEqualAndDateTimeLessThanOrderByDateTimeAsc(start, end);
+
+        if (events.isEmpty()) {
+            return "Предстоящих событий на ближайшие 7 дней нет.";
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+        StringBuilder sb = new StringBuilder("📅 События на ближайшие 7 дней:\n\n");
+
+        for (Event event : events) {
+            sb.append("• ")
+                    .append(event.getDateTime().format(formatter))
+                    .append(" — ")
+                    .append(event.getName());
+
+            if (event.getDescription() != null && !event.getDescription().isBlank()) {
+                sb.append("\n   ").append(event.getDescription());
+            }
+            sb.append("\n\n");
+        }
+
+        return sb.toString().trim();
     }
 }

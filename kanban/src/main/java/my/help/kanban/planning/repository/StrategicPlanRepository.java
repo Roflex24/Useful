@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface StrategicPlanRepository extends JpaRepository<StrategicPlan, Long> {
 
@@ -18,4 +19,6 @@ public interface StrategicPlanRepository extends JpaRepository<StrategicPlan, Lo
 
     @Query("SELECT p FROM StrategicPlan p WHERE (:type IS NULL OR p.planType = :type) AND (p.endDate IS NULL OR p.endDate >= :today) ORDER BY p.endDate DESC")
     List<StrategicPlan> findPlansByTypeAndRelevant(@Param("type") PlanType type, @Param("today") LocalDate today);
+
+    Optional<StrategicPlan> findFirstByPlanTypeOrderByStartDateDescIdDesc(PlanType planType);
 }

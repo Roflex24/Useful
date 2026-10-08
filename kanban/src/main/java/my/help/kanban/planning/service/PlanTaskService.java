@@ -3,7 +3,9 @@ package my.help.kanban.planning.service;
 import lombok.RequiredArgsConstructor;
 import my.help.kanban.planning.dto.PlanTaskRq;
 import my.help.kanban.planning.dto.PlanTaskRs;
+import my.help.kanban.planning.entity.PlanStatus;
 import my.help.kanban.planning.entity.PlanTask;
+import my.help.kanban.planning.entity.PlanType;
 import my.help.kanban.planning.entity.StrategicPlan;
 import my.help.kanban.planning.mapper.PlanTaskMapper;
 import my.help.kanban.planning.repository.PlanTaskRepository;
@@ -76,5 +78,59 @@ public class PlanTaskService {
     @Transactional
     public void deleteByPlan(Long planId) {
         planRepository.findById(planId).ifPresent(taskRepository::deleteByPlan);
+    }
+
+    @Transactional(readOnly = true)
+    public String getPlanTasksForTelegramBot() {
+        StrategicPlan plan = planRepository
+                .findFirstByPlanTypeOrderByStartDateDescIdDesc(PlanType.WEEK)
+                .orElseThrow(() -> new RuntimeException("Последний недельный план не найден"));
+
+        List<PlanTask> tasks = taskRepository.findByPlanIdOrderByOrderIndexAsc(plan.getId());
+
+        if (tasks.isEmpty()) {
+            return "📭 В последнем недельном плане нет задач.";
+        }
+
+        String header = "📋 *" + plan.getTitle() + "*\n"
+                + "━━━━━━━━━━━━━━━━━━━━\n"
+                + "📌 Всего задач: " + tasks.size() + "\n"
+                + "━━━━━━━━━━━━━━━━━━━━";
+
+        String body = tasks.stream()
+                .map(this::formatTaskForTelegram)
+                .collect(Collectors.joining("\n\n"));
+
+        return header + "\n\n" + body + "\n";
+    }
+
+    private String formatTaskForTelegram(PlanTask task) {
+        StringBuilder sb = new StringBuilder();
+
+        // Статус-эмодзи в начале строки
+        sb.append(getStatusEmoji(task.getStatus()))
+                .append(" *").append(task.getTitle()).append("*");
+
+        // Описание
+        if (task.getDescription() != null && !task.getDescription().isBlank()) {
+            sb.append("\n   📝 ").append(task.getDescription());
+        }
+
+        // Комментарий
+        if (task.getComment() != null && !task.getComment().isBlank()) {
+            sb.append("\n   💬 _").append(task.getComment()).append("_");
+        }
+
+        return sb.toString();
+    }
+
+    private String getStatusEmoji(PlanStatus status) {
+        if (status == null) {
+            return "🔹";
+        }
+        return switch (status) {
+            case IN_PROGRESS -> "🔄";
+            default -> "🔹";
+        };
     }
 }

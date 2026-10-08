@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -84,5 +85,52 @@ public class TaskService {
 
     public List<TaskRs> getListForPeriod(LocalDate start, LocalDate end) {
         return taskMapper.toModelList(taskRepository.findByCloseDateBetween(start, end));
+    }
+
+    public String getTasksForColumnInWork() {
+        List<Column> columns = columnRepository.findAll().stream()
+                .filter(column -> column.getOrderIndex() == 1 || column.getOrderIndex() == 2)
+                .sorted(Comparator.comparingInt(Column::getOrderIndex))
+                .toList();
+
+        if (columns.isEmpty()) {
+            return "Колонки с очередностью 1 и 2 не найдены.";
+        }
+
+        StringBuilder message = new StringBuilder("Задачи в работе:\n");
+        boolean hasTasks = false;
+
+        for (Column column : columns) {
+            List<Task> tasks = taskRepository.findByColumnId(column.getId());
+
+            if (tasks.isEmpty()) {
+                continue;
+            }
+
+            hasTasks = true;
+
+            message.append("\n")
+                    .append(column.getTitle())
+                    .append(":\n");
+
+            tasks.stream()
+                    .sorted(Comparator.comparingInt(Task::getOrderIndex))
+                    .forEach(task -> {
+                        message.append("• ")
+                                .append(task.getTitle());
+
+                        if (task.getDifficulty() != null) {
+                            message.append(" (").append(task.getDifficulty()).append(")");
+                        }
+
+                        message.append("\n");
+                    });
+        }
+
+        if (!hasTasks) {
+            return "В колонках с очередностью 1 и 2 нет задач.";
+        }
+
+        return message.toString();
     }
 }
