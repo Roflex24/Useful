@@ -1,0 +1,2184 @@
+// Java classes from: C:\Users\am-20\OpenideProjects\Useful\.\finance\src\main\java\my\help\finance\avito
+// Generated: Mon Sep 28 14:28:20 MSK 2026
+
+=== File: .\finance\src\main\java\my\help\finance\avito\ai\ApartmentAiConfig.java ===
+package my.help.finance.avito.ai;
+
+import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springframework.ai.tool.method.MethodToolCallbackProvider;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ApartmentAiConfig {
+
+    @Bean
+    public ToolCallbackProvider apartmentToolCallbackProvider(ApartmentAiTools tools) {
+        return MethodToolCallbackProvider.builder()
+                .toolObjects(tools)
+                .build();
+    }
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\ai\ApartmentAiTools.java ===
+package my.help.finance.avito.ai;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import my.help.finance.avito.dto.ApartmentBrief;
+import my.help.finance.avito.dto.ApartmentStats;
+import my.help.finance.avito.entity.Apartment;
+import my.help.finance.avito.repository.ApartmentRepository;
+import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class ApartmentAiTools {
+
+    private static final int MAX_LIMIT = 200;
+
+    private final ApartmentRepository repository;
+
+    // ------------------------------------------------------------------
+    //  ИНСТРУМЕНТ 1: количество с фильтром
+    // ------------------------------------------------------------------
+
+    @Tool(description = """
+            Возвращает количество квартир в базе, удовлетворяющих фильтру.
+            Все параметры опциональны. Используй этот метод, чтобы быстро
+            ответить «сколько у меня квартир дешевле X», «сколько студий
+            в районе Y» и т.п., не выгружая сами объявления.
+            """)
+    @Transactional(readOnly = true)
+    public long countApartments(
+            @ToolParam(description = "Минимум комнат", required = false) Integer minRooms,
+            @ToolParam(description = "Максимум комнат", required = false) Integer maxRooms,
+            @ToolParam(description = "Минимальная цена, ₽", required = false) Long minPrice,
+            @ToolParam(description = "Максимальная цена, ₽", required = false) Long maxPrice,
+            @ToolParam(description = "Минимальная общая площадь, м²", required = false) Double minArea,
+            @ToolParam(description = "Максимальная общая площадь, м²", required = false) Double maxArea,
+            @ToolParam(description = "Подстрока названия метро", required = false) String metro
+    ) {
+        long count = filter(minRooms, maxRooms, minPrice, maxPrice, minArea, maxArea, metro).count();
+        log.info("countApartments result: count={}", count);
+        return count;
+    }
+
+    // ------------------------------------------------------------------
+    //  ИНСТРУМЕНТ 2: краткий список объявлений
+    // ------------------------------------------------------------------
+
+    @Tool(description = """
+            Ищет квартиры в базе и возвращает краткие карточки (id, avitoId,
+            цена, площадь, комнаты, метро, адрес, ремонт, url).
+            Результат ограничен параметром limit (по умолчанию 30, max 200).
+            """)
+    @Transactional(readOnly = true)
+    public List<ApartmentBrief> searchApartments(
+            @ToolParam(description = "Минимум комнат", required = false) Integer minRooms,
+            @ToolParam(description = "Максимум комнат", required = false) Integer maxRooms,
+            @ToolParam(description = "Минимальная цена, ₽", required = false) Long minPrice,
+            @ToolParam(description = "Максимальная цена, ₽", required = false) Long maxPrice,
+            @ToolParam(description = "Минимальная общая площадь, м²", required = false) Double minArea,
+            @ToolParam(description = "Максимальная общая площадь, м²", required = false) Double maxArea,
+            @ToolParam(description = "Подстрока района", required = false) String district,
+            @ToolParam(description = "Подстрока метро", required = false) String metro,
+            @ToolParam(description = "Сколько вернуть (default 30, max 200)", required = false) Integer limit,
+            @ToolParam(description = "Сортировка: 'price', 'pricePerMeter', 'area', 'freshness' (default).", required = false) String sort
+    ) {
+        int n = (limit == null || limit <= 0) ? 30 : Math.min(limit, MAX_LIMIT);
+
+        Comparator<Apartment> cmp = switch (sort == null ? "freshness" : sort.toLowerCase()) {
+            case "price"          -> Comparator.comparing(Apartment::getPrice, Comparator.nullsLast(Long::compareTo));
+            case "pricepermeter"  -> Comparator.comparing(Apartment::getPricePerMeter, Comparator.nullsLast(Long::compareTo));
+            case "area"           -> Comparator.comparing(Apartment::getTotalArea, Comparator.nullsLast(Double::compareTo)).reversed();
+            default               -> Comparator.comparing(Apartment::getId, Comparator.nullsLast(Long::compareTo)).reversed();
+        };
+
+        List<ApartmentBrief> result = filter(minRooms, maxRooms, minPrice, maxPrice, minArea, maxArea, metro)
+                .sorted(cmp)
+                .limit(n)
+                .map(ApartmentBrief::from)
+                .toList();
+
+        log.info("searchApartments result: size={}", result.size());
+        return result;
+    }
+
+    // ------------------------------------------------------------------
+    //  ИНСТРУМЕНТ 3: агрегированная статистика
+    // ------------------------------------------------------------------
+
+    @Tool(description = """
+            Считает агрегированную статистику по подмножеству квартир:
+            количество, мин/макс/средняя/медианная цена, средняя цена за м²,
+            распределение по числу комнат и по районам.
+            """)
+    @Transactional(readOnly = true)
+    public ApartmentStats getStats(
+            @ToolParam(description = "Минимум комнат", required = false) Integer minRooms,
+            @ToolParam(description = "Максимум комнат", required = false) Integer maxRooms,
+            @ToolParam(description = "Минимальная цена, ₽", required = false) Long minPrice,
+            @ToolParam(description = "Максимальная цена, ₽", required = false) Long maxPrice,
+            @ToolParam(description = "Подстрока района", required = false) String district,
+            @ToolParam(description = "Подстрока метро", required = false) String metro
+    ) {
+        List<Apartment> list = filter(minRooms, maxRooms, minPrice, maxPrice,
+                null, null, metro).toList();
+
+        List<Long> prices = list.stream().map(Apartment::getPrice).filter(Objects::nonNull).sorted().toList();
+        List<Long> ppm    = list.stream().map(Apartment::getPricePerMeter).filter(Objects::nonNull).sorted().toList();
+
+        Long min = prices.isEmpty() ? null : prices.getFirst();
+        Long max = prices.isEmpty() ? null : prices.getLast();
+        Long avg = prices.isEmpty() ? null : Math.round(prices.stream().mapToLong(Long::longValue).average().orElse(0));
+        Long med = prices.isEmpty() ? null : prices.get(prices.size() / 2);
+        Long avgPpm = ppm.isEmpty() ? null : Math.round(ppm.stream().mapToLong(Long::longValue).average().orElse(0));
+
+        Map<String, Long> byRooms = list.stream()
+                .filter(a -> a.getRooms() != null)
+                .collect(Collectors.groupingBy(a -> a.getRooms() + "-комн.", LinkedHashMap::new, Collectors.counting()));
+
+        return new ApartmentStats(list.size(), min, max, avg, med, avgPpm, byRooms);
+    }
+
+    // ------------------------------------------------------------------
+
+    private java.util.stream.Stream<Apartment> filter(
+            Integer minRooms, Integer maxRooms,
+            Long minPrice, Long maxPrice,
+            Double minArea, Double maxArea,
+            String metro
+    ) {
+        Predicate<Apartment> p = a -> true;
+        if (minRooms != null) p = p.and(a -> a.getRooms() != null && a.getRooms() >= minRooms);
+        if (maxRooms != null) p = p.and(a -> a.getRooms() != null && a.getRooms() <= maxRooms);
+        if (minPrice != null) p = p.and(a -> a.getPrice() != null && a.getPrice() >= minPrice);
+        if (maxPrice != null) p = p.and(a -> a.getPrice() != null && a.getPrice() <= maxPrice);
+        if (minArea  != null) p = p.and(a -> a.getTotalArea() != null && a.getTotalArea() >= minArea);
+        if (maxArea  != null) p = p.and(a -> a.getTotalArea() != null && a.getTotalArea() <= maxArea);
+        if (metro != null && !metro.isBlank()) {
+            String m = metro.toLowerCase();
+            p = p.and(a -> a.getMetroName() != null && a.getMetroName().toLowerCase().contains(m));
+        }
+        return repository.findAll().stream().filter(p);
+    }
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\controller\ApartmentController.java ===
+package my.help.finance.avito.controller;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import my.help.finance.avito.dto.*;
+import my.help.finance.avito.entity.Apartment;
+import my.help.finance.avito.repository.ApartmentRepository;
+import my.help.finance.avito.service.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/apartments")
+@RequiredArgsConstructor
+@Tag(name = "Avito API", description = "Парсинг и работа с авито")
+public class ApartmentController {
+
+    private final AvitoParserService parserService;
+    private final ApartmentRepository repository;
+    private final AvitoVisitorBotService botService;
+    private final AvitoDetailPageParserService detailParserService;
+    private final AvitoSearchPageBotService searchPageBotService;
+    private final ApartmentAnalysisService analysisService;
+    private final DeepSeekBotService deepSeekBotService;
+
+    @PostMapping(value = "/parse", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ParseRs> parseHtmlFiles(
+            @RequestParam("files") List<MultipartFile> files
+    ) {
+        if (files == null || files.isEmpty() || files.stream().allMatch(MultipartFile::isEmpty)) {
+            return ResponseEntity.badRequest()
+                    .body(new ParseRs(0, List.of(), "Файлы не выбраны"));
+        }
+
+        List<String> htmlContents = new ArrayList<>();
+        List<String> skippedFiles = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) continue;
+
+            String filename = file.getOriginalFilename();
+            if (filename == null || (!filename.endsWith(".html") && !filename.endsWith(".htm"))) {
+                skippedFiles.add(filename);
+                continue;
+            }
+
+            try {
+                byte[] bytes = file.getBytes();
+                String html;
+                try {
+                    html = new String(bytes, StandardCharsets.UTF_8);
+                } catch (Exception e) {
+                    html = new String(bytes, Charset.forName("windows-1251"));
+                }
+                htmlContents.add(html);
+            } catch (IOException e) {
+                return ResponseEntity.internalServerError()
+                        .body(new ParseRs(0, List.of(),
+                                "Ошибка чтения файла " + filename + ": " + e.getMessage()));
+            }
+        }
+
+        if (htmlContents.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(new ParseRs(0, List.of(),
+                            "Среди загруженных файлов нет подходящих .html/.htm"));
+        }
+
+        try {
+            List<Apartment> saved = parserService.parseAndSaveMultiple(htmlContents);
+
+            String warning = skippedFiles.isEmpty() ? null
+                    : "Пропущены файлы (не .html/.htm): " + skippedFiles;
+
+            return ResponseEntity.ok(new ParseRs(saved.size(), saved, warning));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(new ParseRs(0, List.of(), "Ошибка парсинга: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping
+    public List<Apartment> getAllApartments() {
+        return repository.findAll();
+    }
+
+    @GetMapping("/{avitoId}")
+    public ResponseEntity<Apartment> getByAvitoId(@PathVariable String avitoId) {
+        return repository.findByAvitoId(avitoId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAllApartments() {
+        parserService.deleteAllApartments();
+    }
+
+    @DeleteMapping("/{avitoId}")
+    public ResponseEntity<Void> deleteApartment(@PathVariable String avitoId) {
+        boolean deleted = parserService.deleteApartmentByAvitoId(avitoId);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/bot/start")
+    public AvitoVisitorBotService.BotStatusDto startBot() {
+        return botService.start();
+    }
+
+    @PostMapping("/bot/stop")
+    public AvitoVisitorBotService.BotStatusDto stopBot() {
+        return botService.stop();
+    }
+
+    @GetMapping("/bot/status")
+    public AvitoVisitorBotService.BotStatusDto botStatus() {
+        return botService.getStatus();
+    }
+
+    @GetMapping("/bot/queue")
+    public List<BotQueueItem> getBotQueue() {
+        return repository.findQueueForBot().stream()
+                .map(a -> new BotQueueItem(a.getId(), a.getAvitoId(), a.getUrl(), a.getDetailVisitAttempts()))
+                .toList();
+    }
+
+    @PostMapping("/{avitoId}/bot/visited")
+    public ResponseEntity<Apartment> markVisited(
+            @PathVariable String avitoId,
+            @RequestBody BotVisitedRq body
+    ) {
+        return repository.findByAvitoId(avitoId)
+                .map(apt -> {
+                    int attempts = apt.getDetailVisitAttempts() == null ? 0 : apt.getDetailVisitAttempts();
+                    apt.setDetailVisitAttempts(attempts + 1);
+
+                    boolean success = false;
+                    if (body != null && body.success() && body.html() != null && !body.html().isBlank()) {
+                        success = detailParserService.enrichFromDetailHtml(apt, body.html());
+                    }
+
+                    if (success) {
+                        apt.setDetailVisited(true);
+                        apt.setDetailVisitedAt(LocalDateTime.now());
+                    }
+
+                    return ResponseEntity.ok(repository.save(apt));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ── Автоматическая загрузка страницы поиска Авито ────────────────
+
+    /** DTO для опциональной передачи URL страницы поиска с фронта. */
+    public record StartSearchParseRq(String url) {}
+
+    @PostMapping("/bot/parse-search")
+    public AvitoSearchPageBotService.BotStatusDto startSearchParse(
+            @RequestBody(required = false) StartSearchParseRq body
+    ) {
+        String url = body != null ? body.url() : null;
+        return searchPageBotService.start(url);
+    }
+
+    @PostMapping("/bot/parse-search/stop")
+    public AvitoSearchPageBotService.BotStatusDto stopSearchParse() {
+        return searchPageBotService.stop();
+    }
+
+    @GetMapping("/bot/parse-search/status")
+    public AvitoSearchPageBotService.BotStatusDto searchParseStatus() {
+        return searchPageBotService.getStatus();
+    }
+
+    public record AnalysisPromptRs(String prompt, int length) {}
+    public record DeepSeekStartRq(String prompt) {}
+
+    /** Отдаёт промпт, собранный из всех квартир в базе. */
+    @GetMapping("/analysis/prompt")
+    public AnalysisPromptRs getAnalysisPrompt() {
+        String prompt = analysisService.buildAnalysisPrompt();
+        return new AnalysisPromptRs(prompt, prompt.length());
+    }
+
+    /**
+     * Запускает робота: открыть DeepSeek, вставить промпт, отправить.
+     * Если в теле передан {@code prompt} — используется он, иначе промпт
+     * генерируется из БД.
+     */
+    @PostMapping("/bot/deepseek/start")
+    public DeepSeekBotService.BotStatusDto startDeepSeek(
+            @RequestBody(required = false) DeepSeekStartRq body
+    ) {
+        String prompt = body != null ? body.prompt() : null;
+        return deepSeekBotService.start(prompt);
+    }
+
+    @PostMapping("/bot/deepseek/stop")
+    public DeepSeekBotService.BotStatusDto stopDeepSeek() {
+        return deepSeekBotService.stop();
+    }
+
+    @GetMapping("/bot/deepseek/status")
+    public DeepSeekBotService.BotStatusDto deepSeekStatus() {
+        return deepSeekBotService.getStatus();
+    }
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\dto\ApartmentBrief.java ===
+package my.help.finance.avito.dto;
+
+import my.help.finance.avito.entity.Apartment;
+
+public record ApartmentBrief(
+        Long id,
+        String avitoId,
+        String title,
+        Long price,
+        Long pricePerMeter,
+        Double totalArea,
+        Integer rooms,
+        Integer floor,
+        Integer totalFloors,
+        String address,
+        String metroName,
+        Integer metroMinutes,
+        String renovation,
+        String buildingType,
+        Integer yearBuilt,
+        String url
+) {
+    public static ApartmentBrief from(Apartment a) {
+        return new ApartmentBrief(
+                a.getId(), a.getAvitoId(), a.getTitle(),
+                a.getPrice(), a.getPricePerMeter(), a.getTotalArea(),
+                a.getRooms(), a.getFloor(), a.getTotalFloors(),
+                a.getAddress(),
+                a.getMetroName(),
+                a.getMetroMinutes(),
+                a.getRenovation(),
+                a.getBuildingType(),
+                a.getYearBuilt(),
+                a.getUrl()
+        );
+    }
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\dto\ApartmentStats.java ===
+package my.help.finance.avito.dto;
+
+import java.util.Map;
+
+public record ApartmentStats(
+        long count,
+        Long minPrice,
+        Long maxPrice,
+        Long avgPrice,
+        Long medianPrice,
+        Long avgPricePerMeter,
+        Map<String, Long> byRooms
+) {}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\dto\BotQueueItem.java ===
+package my.help.finance.avito.dto;
+
+public record BotQueueItem(
+        Long id,
+        String avitoId,
+        String url,
+        Integer previousAttempts
+) {}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\dto\BotVisitedRq.java ===
+package my.help.finance.avito.dto;
+
+public record BotVisitedRq(
+        boolean success,
+        String html
+) {}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\dto\ParseRs.java ===
+package my.help.finance.avito.dto;
+
+import my.help.finance.avito.entity.Apartment;
+
+import java.util.List;
+
+public record ParseRs(
+        int parsedCount,
+        List<Apartment> apartments,
+        String error
+) {}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\entity\Apartment.java ===
+package my.help.finance.avito.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "apartments")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Apartment {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "avito_id", unique = true, nullable = false, length = 64)
+    private String avitoId;
+
+    @Column(length = 512)
+    private String title;
+
+    private Integer rooms;
+
+    @Column(name = "total_area")
+    private Double totalArea;
+
+    private Integer floor;
+
+    @Column(name = "total_floors")
+    private Integer totalFloors;
+
+    private Long price;
+
+    @Column(name = "price_per_meter")
+    private Long pricePerMeter;
+
+    @Column(length = 8)
+    private String currency;
+
+    @Column(length = 512)
+    private String address;
+
+    @Column(name = "metro_name")
+    private String metroName;
+
+    @Column(name = "metro_minutes")
+    private Integer metroMinutes;
+
+    private Double latitude;
+
+    private Double longitude;
+
+    @Column(name = "image_url", length = 1024)
+    private String imageUrl;
+
+    @Column(name = "building_type")
+    private String buildingType;
+
+    @Column(name = "year_built")
+    private Integer yearBuilt;
+
+    @Column
+    private String renovation;
+
+    // ── инфраструктура бота-обходчика ─────────────────────────────
+    @Column(length = 1024)
+    private String url;
+
+    @Column(name = "detail_visited")
+    private Boolean detailVisited;
+
+    @Column(name = "detail_visited_at")
+    private LocalDateTime detailVisitedAt;
+
+    @Column(name = "detail_visit_attempts")
+    @Builder.Default
+    private Integer detailVisitAttempts = 0;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\repository\ApartmentRepository.java ===
+package my.help.finance.avito.repository;
+
+import my.help.finance.avito.entity.Apartment;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface ApartmentRepository extends JpaRepository<Apartment, Long> {
+
+    Optional<Apartment> findByAvitoId(String avitoId);
+
+    @Override
+    List<Apartment> findAll();
+
+    @Query("""
+    select a from Apartment a
+    where a.url is not null and (a.detailVisited is null or a.detailVisited = false)
+    order by a.id asc
+    """)
+    List<Apartment> findQueueForBot();
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\service\ApartmentAnalysisService.java ===
+package my.help.finance.avito.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import my.help.finance.avito.entity.Apartment;
+import my.help.finance.avito.repository.ApartmentRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
+import java.util.List;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ApartmentAnalysisService {
+
+    /** Верхняя граница размера промпта — защита от слишком длинных чатов. */
+    private static final int MAX_PROMPT_LENGTH = 60_000;
+    /** Ограничение количества квартир, попадающих в промпт. */
+    private static final int MAX_APARTMENTS_IN_PROMPT = 400;
+
+    private final ApartmentRepository repository;
+
+    @Transactional(readOnly = true)
+    public String buildAnalysisPrompt() {
+        List<Apartment> apartments = repository.findAll().stream()
+                .filter(a -> a.getPrice() != null)
+                .sorted(Comparator.comparing(Apartment::getPrice))
+                .limit(MAX_APARTMENTS_IN_PROMPT)
+                .toList();
+
+        if (apartments.isEmpty()) {
+            return "В базе нет квартир с указанной ценой — анализировать нечего.";
+        }
+
+        StringBuilder sb = new StringBuilder(16_384);
+        sb.append("Ты — эксперт по рынку недвижимости. Проанализируй базу объявлений ")
+                .append("о продаже квартир и дай структурированные выводы.\n\n");
+        sb.append("Всего объявлений в выборке: ").append(apartments.size()).append("\n\n");
+        sb.append("Формат строки: avitoId | цена ₽ | ₽/м² | комн. | площадь м² | этаж | ")
+                .append("метро | адрес | ремонт | год | тип дома\n\n");
+
+        for (Apartment a : apartments) {
+            sb.append("- ")
+                    .append(nz(a.getAvitoId())).append(" | ")
+                    .append(nz(a.getPrice())).append(" | ")
+                    .append(nz(a.getPricePerMeter())).append(" | ")
+                    .append(nz(a.getRooms())).append(" | ")
+                    .append(nz(a.getTotalArea())).append(" | ")
+                    .append(floorLabel(a)).append(" | ")
+                    .append(nz(a.getMetroName())).append(" | ")
+                    .append(nz(a.getAddress())).append(" | ")
+                    .append(nz(a.getRenovation())).append(" | ")
+                    .append(nz(a.getYearBuilt())).append(" | ")
+                    .append(nz(a.getBuildingType()))
+                    .append("\n");
+        }
+
+        sb.append("\nДай ответ строго по пунктам:\n")
+                .append("1. Общая картина рынка: диапазон цен, медиана, средняя цена за м².\n")
+                .append("2. Распределение по числу комнат и по районам / станциям метро.\n")
+                .append("3. Топ-5 самых выгодных предложений по цене за м² — с обоснованием.\n")
+                .append("4. Топ-5 переоценённых предложений — с обоснованием.\n")
+                .append("5. Замеченные тренды и аномалии.\n")
+                .append("6. Практические рекомендации: на что обратить внимание при покупке.\n");
+
+        String result = sb.toString();
+        if (result.length() > MAX_PROMPT_LENGTH) {
+            result = result.substring(0, MAX_PROMPT_LENGTH) + "\n\n[...промпт усечён...]";
+        }
+        log.info("Собран промпт для анализа: {} символов, {} квартир",
+                result.length(), apartments.size());
+        return result;
+    }
+
+    private static String nz(Object o) { return o == null ? "—" : o.toString(); }
+
+    private static String floorLabel(Apartment a) {
+        if (a.getFloor() == null) return "—";
+        return a.getTotalFloors() == null
+                ? a.getFloor() + "/—"
+                : a.getFloor() + "/" + a.getTotalFloors();
+    }
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\service\AvitoDetailPageParserService.java ===
+package my.help.finance.avito.service;
+
+import lombok.extern.slf4j.Slf4j;
+import my.help.finance.avito.entity.Apartment;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Парсер СТРАНИЦЫ ОБЪЯВЛЕНИЯ. Извлекает только поля, оставшиеся
+ * в сущности {@link Apartment}.
+ */
+@Slf4j
+@Service
+public class AvitoDetailPageParserService {
+
+    private static final Pattern DIGITS_DECIMAL = Pattern.compile("(\\d+(?:[.,]\\d+)?)");
+    private static final Pattern DIGITS = Pattern.compile("\\d+");
+    private static final Pattern ADDRESS_JSON_PATTERN =
+            Pattern.compile("\\\\?\"address\\\\?\"\\s*:\\s*\\\\?\"([^\\\\\"]{10,300})\\\\?\"");
+
+    public boolean enrichFromDetailHtml(Apartment apt, String html) {
+        if (html == null || html.length() < 2000) return false;
+
+        Document doc;
+        try {
+            doc = Jsoup.parse(html);
+        } catch (Exception e) {
+            log.warn("Не удалось распарсить HTML детальной страницы {}: {}", apt.getAvitoId(), e.getMessage());
+            return false;
+        }
+
+        boolean looksLikeItemPage = doc.selectFirst("[data-marker=item-view/title-info]") != null
+                || doc.selectFirst("[data-marker=item-view/item-params]") != null;
+        if (!looksLikeItemPage) return false;
+
+        parseAvitoId(doc, apt);
+        parseTitle(doc, apt);
+        parsePrice(doc, apt);
+        parseParams(doc, apt);
+        parseAddressAndCoords(doc, apt);
+        parseMetro(doc, apt);
+        parsePhoto(doc, apt);
+
+        // Инфраструктурные поля. Если это уже делается в вызывающем сервисе —
+        // эти строки можно удалить.
+        apt.setDetailVisited(true);
+        apt.setDetailVisitedAt(LocalDateTime.now());
+        if (apt.getDetailVisitAttempts() == null) {
+            apt.setDetailVisitAttempts(1);
+        } else {
+            apt.setDetailVisitAttempts(apt.getDetailVisitAttempts() + 1);
+        }
+
+        return true;
+    }
+
+    private void parseAvitoId(Document doc, Apartment apt) {
+        if (apt.getAvitoId() != null && !apt.getAvitoId().isBlank()) return;
+
+        Element idEl = doc.selectFirst("[data-marker=item-view/item-id]");
+        if (idEl != null) {
+            String digits = idEl.text().replaceAll("\\D", "");
+            if (!digits.isEmpty()) {
+                apt.setAvitoId(digits);
+                return;
+            }
+        }
+
+        // запасной вариант — canonical-ссылка
+        Element canonical = doc.selectFirst("link[rel=canonical]");
+        if (canonical != null) {
+            Matcher m = Pattern.compile("(\\d{6,})").matcher(canonical.attr("href"));
+            if (m.find()) {
+                apt.setAvitoId(m.group(1));
+            }
+        }
+    }
+
+    private void parseTitle(Document doc, Apartment apt) {
+        Element titleEl = doc.selectFirst("[data-marker=item-view/title-info]");
+        if (titleEl != null) {
+            String t = cleanText(titleEl.text());
+            if (t != null) apt.setTitle(t);
+        }
+    }
+
+    private void parsePrice(Document doc, Apartment apt) {
+        Element priceEl = doc.selectFirst("[data-marker=item-view/item-price]");
+        if (priceEl != null) {
+            // В новой вёрстке цена лежит в тексте, а не в content
+            Long price = parseLongDigits(priceEl.text());
+            if (price == null) {
+                price = parseLongDigits(priceEl.attr("content"));
+            }
+            if (price != null) apt.setPrice(price);
+
+            String priceText = priceEl.text();
+            if (priceText.contains("₽") || priceText.toLowerCase().contains("руб")) {
+                apt.setCurrency("RUB");
+            }
+        }
+
+        // цена за м² — либо из блока контактов, либо посчитать
+        Element contactsBlock = doc.selectFirst("[data-marker=item-view/item-view-contacts]");
+        if (contactsBlock != null) {
+            Matcher m = Pattern.compile("([\\d\\s\\u00A0]{3,})\\s*₽\\s*за\\s*м²")
+                    .matcher(contactsBlock.text());
+            if (m.find()) {
+                Long perMeter = parseLongDigits(m.group(1));
+                if (perMeter != null) apt.setPricePerMeter(perMeter);
+            }
+        }
+        if (apt.getPricePerMeter() == null
+                && apt.getPrice() != null && apt.getTotalArea() != null && apt.getTotalArea() > 0) {
+            apt.setPricePerMeter(Math.round(apt.getPrice() / apt.getTotalArea()));
+        }
+    }
+
+    private void parseParams(Document doc, Apartment apt) {
+        Map<String, String> all = new LinkedHashMap<>();
+        Elements blocks = doc.select("[data-marker=item-view/item-params]");
+        for (Element block : blocks) {
+            all.putAll(parseParamsList(block));
+        }
+        if (all.isEmpty()) return;
+
+        // ── Комнаты / студия
+        String roomsRaw = all.get("Количество комнат");
+        if (roomsRaw != null) {
+            Integer rooms = parseIntSafe(roomsRaw);
+            if (rooms != null) apt.setRooms(rooms);
+        }
+
+        // ── Общая площадь
+        putArea(all, "Общая площадь", apt::setTotalArea);
+
+        // ── Этаж
+        String floorRaw = all.get("Этаж");
+        if (floorRaw != null) {
+            Matcher m = Pattern.compile("(\\d+)\\s*из\\s*(\\d+)").matcher(floorRaw);
+            if (m.find()) {
+                apt.setFloor(parseIntSafe(m.group(1)));
+                apt.setTotalFloors(parseIntSafe(m.group(2)));
+            } else {
+                Integer f = parseIntSafe(floorRaw);
+                if (f != null) apt.setFloor(f);
+            }
+        }
+
+        // ── Дом
+        putString(all, "Тип дома", apt::setBuildingType);
+        putString(all, "Ремонт", apt::setRenovation);
+
+        String yearBuiltRaw = all.get("Год постройки");
+        if (yearBuiltRaw != null) apt.setYearBuilt(parseIntSafe(yearBuiltRaw));
+    }
+
+    private void parseAddressAndCoords(Document doc, Apartment apt) {
+        String address = null;
+
+        Element addressBlock = doc.selectFirst("#item-view-address");
+        if (addressBlock == null) {
+            log.warn("#item-view-address не найден для {}", apt.getAvitoId());
+        } else {
+            address = extractAddressFromBlock(addressBlock);
+        }
+
+        // запасной вариант — вытащить из JSON, встроенного в страницу
+        if (address == null) {
+            address = extractAddressFromJson(doc.html());
+        }
+
+        if (address != null) {
+            apt.setAddress(address);
+            log.debug("Адрес для {}: {}", apt.getAvitoId(), address);
+        } else {
+            log.warn("Не удалось извлечь адрес для {}", apt.getAvitoId());
+        }
+
+        Element mapWrapper = doc.selectFirst("[data-marker='item-map-wrapper']");
+        if (mapWrapper != null) {
+            Double lat = parseDoubleSafe(mapWrapper.attr("data-map-lat"));
+            Double lon = parseDoubleSafe(mapWrapper.attr("data-map-lon"));
+            if (lat != null) apt.setLatitude(lat);
+            if (lon != null) apt.setLongitude(lon);
+        }
+    }
+
+    private String extractAddressFromBlock(Element block) {
+        // 1) Точный класс из текущей вёрстки Авито
+        Element span = block.selectFirst("span._8360df6eedcf8d52");
+        if (span != null) {
+            String t = cleanText(span.text());
+            if (t != null && !t.isBlank()) return t;
+        }
+
+        // 2) itemPro poperty (старая вёрстка)
+        Element ip = block.selectFirst("[itemprop=address]");
+        if (ip != null) {
+            String t = cleanText(ip.text());
+            if (t != null && !t.isBlank()) return t;
+        }
+
+        // 3) Первый LEAF-span, похожий на адрес (нет вложенных span)
+        for (Element el : block.select("span")) {
+            if (!el.select("> span").isEmpty()) continue;
+            String t = cleanText(el.text());
+            if (t == null) continue;
+            if (t.length() < 10 || t.length() > 300) continue;
+            if (t.contains("мин") || t.contains("метро") || t.contains("карт")) continue;
+            if (!t.contains(",")) continue;
+            return t;
+        }
+
+        // 4) Любой leaf-span с буквами и цифрами
+        for (Element el : block.select("span")) {
+            if (!el.select("> span").isEmpty()) continue;
+            String t = cleanText(el.text());
+            if (t == null) continue;
+            if (t.length() < 15) continue;
+            if (t.contains("мин") || t.contains("метро") || t.contains("карт")) continue;
+            if (!t.matches(".*[А-Яа-яЁё].*\\d.*")) continue;
+            return t;
+        }
+
+        return null;
+    }
+
+    private String extractAddressFromJson(String html) {
+        if (html == null || html.isEmpty()) return null;
+        Matcher m = ADDRESS_JSON_PATTERN.matcher(html);
+        if (m.find()) {
+            String addr = m.group(1);
+            if (addr != null) {
+                addr = addr.replace("\\/", "/").trim();
+                if (!addr.isEmpty()) return addr;
+            }
+        }
+        return null;
+    }
+
+    private void parseMetro(Document doc, Apartment apt) {
+        Element addressBlock = doc.selectFirst("#item-view-address");
+        if (addressBlock == null) return;
+
+        // В новой вёрстке метро лежит внутри #item-view-address
+        // Пример текста: "Канавинская11–15 мин."
+        for (Element span : addressBlock.select("span")) {
+            String text = cleanText(span.text());
+            if (text == null || !text.contains("мин")) continue;
+
+            Matcher m = Pattern.compile("^(.*?)\\s*(\\d+).*?мин").matcher(text);
+            if (m.find()) {
+                String name = m.group(1).trim();
+                Integer minutes = parseIntSafe(m.group(2));
+                if (!name.isBlank()) {
+                    apt.setMetroName(name);
+                    apt.setMetroMinutes(minutes);
+                    return; // берём первую станцию
+                }
+            }
+        }
+
+        // запасной вариант — боковой блок контактов
+        Element sideMetro = doc.selectFirst("[data-marker=item-view/item-view-contacts] ._0af34493c0881b75 p");
+        if (sideMetro != null) {
+            String text = cleanText(sideMetro.text());
+            if (text != null) {
+                Matcher m = Pattern.compile("^(.*?)\\s*(\\d+).*?мин").matcher(text);
+                if (m.find()) {
+                    apt.setMetroName(m.group(1).trim());
+                    apt.setMetroMinutes(parseIntSafe(m.group(2)));
+                }
+            }
+        }
+    }
+
+    private void parsePhoto(Document doc, Apartment apt) {
+        // Сначала пробуем главный слайдер, потом всю галерею
+        Element img = doc.selectFirst("#gallery-slider img");
+        if (img == null) {
+            img = doc.selectFirst("[data-marker=item-view/main-gallery] img");
+        }
+        if (img == null) return;
+
+        String src = img.hasAttr("src") ? img.attr("src") : img.attr("data-src");
+        if (src != null && !src.isBlank()) {
+            apt.setImageUrl(src);
+        }
+    }
+
+    // ── helpers ─────────────────────────────────────────────
+
+    private Map<String, String> parseParamsList(Element paramsBlock) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (Element li : paramsBlock.select("ul > li")) {
+            Element labelSpan = li.selectFirst("span");
+            if (labelSpan == null) continue;
+
+            String label = labelSpan.text().replaceAll("[:\\s]+$", "").trim();
+            if (label.isEmpty()) continue;
+
+            String value = cleanText(li.ownText());
+            if (value == null || value.isEmpty()) {
+                String full = li.text();
+                String withoutLabel = full.replaceFirst(Pattern.quote(labelSpan.text()), "").trim();
+                value = cleanText(withoutLabel);
+            }
+            if (value != null && !value.isEmpty()) map.put(label, value);
+        }
+        return map;
+    }
+
+    private void putString(Map<String, String> params, String label, java.util.function.Consumer<String> setter) {
+        String v = params.get(label);
+        if (v != null && !v.isBlank()) setter.accept(v);
+    }
+
+    private void putArea(Map<String, String> params, String label, java.util.function.Consumer<Double> setter) {
+        String v = params.get(label);
+        if (v == null) return;
+        Matcher m = DIGITS_DECIMAL.matcher(v);
+        if (m.find()) setter.accept(parseDoubleSafe(m.group(1)));
+    }
+
+    private String cleanText(String raw) {
+        if (raw == null) return null;
+        String t = raw.replace("\u00A0", " ").trim();
+        return t.isEmpty() ? null : t;
+    }
+
+    private Integer parseIntSafe(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            return Integer.parseInt(raw.replaceAll("[^\\d]", ""));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Double parseDoubleSafe(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            return Double.parseDouble(raw.trim().replace(',', '.'));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Long parseLongDigits(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        String digits = raw.replaceAll("[^\\d]", "");
+        if (digits.isEmpty()) return null;
+        try {
+            return Long.parseLong(digits);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\service\AvitoParserService.java ===
+package my.help.finance.avito.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import my.help.finance.avito.entity.Apartment;
+import my.help.finance.avito.repository.ApartmentRepository;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * Парсер страницы ПОИСКА Авито.
+ * Собираем только {@code avitoId} и {@code url} — всё остальное
+ * добирает бот-обходчик детальных страниц.
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AvitoParserService {
+
+    private static final String STOP_MARKER = "Вас может заинтересовать";
+    private static final String AVITO_BASE  = "https://www.avito.ru";
+
+    private final ApartmentRepository repository;
+
+    @Transactional
+    public List<Apartment> parseAndSaveMultiple(List<String> htmlContents) {
+        Map<String, Apartment> deduped = new LinkedHashMap<>();
+        int totalParsed = 0;
+
+        for (String html : htmlContents) {
+            List<Apartment> parsedFromFile = parseHtml(html);
+            totalParsed += parsedFromFile.size();
+            for (Apartment apt : parsedFromFile) {
+                deduped.put(apt.getAvitoId(), apt);
+            }
+        }
+
+        List<Apartment> saved = new ArrayList<>();
+        for (Apartment apt : deduped.values()) {
+            saved.add(upsert(apt));
+        }
+
+        log.info("Files: {}, raw items parsed: {}, unique after dedup: {}, saved/updated: {}.",
+                htmlContents.size(), totalParsed, deduped.size(), saved.size());
+
+        return saved;
+    }
+
+    @Transactional
+    public void deleteAllApartments() {
+        repository.deleteAllInBatch();
+    }
+
+    @Transactional
+    public boolean deleteApartmentByAvitoId(String avitoId) {
+        return repository.findByAvitoId(avitoId)
+                .map(apt -> {
+                    repository.delete(apt);
+                    return true;
+                })
+                .orElse(false);
+    }
+
+    // ------------------------------------------------------------------
+
+    private List<Apartment> parseHtml(String html) {
+        int stopIdx = html.indexOf(STOP_MARKER);
+        String cleanHtml = (stopIdx != -1) ? html.substring(0, stopIdx) : html;
+
+        Document doc = Jsoup.parse(cleanHtml);
+        doc.select("[data-marker=itemsCarousel]").remove();
+
+        Elements items = doc.select("[data-marker=item]");
+
+        List<Apartment> result = new ArrayList<>();
+        for (Element el : items) {
+            parseItem(el).ifPresent(result::add);
+        }
+        return result;
+    }
+
+    private Optional<Apartment> parseItem(Element el) {
+        String avitoId = el.attr("data-item-id");
+        if (avitoId.isBlank()) return Optional.empty();
+
+        Element urlEl = el.selectFirst("a[itemprop=url]");
+        if (urlEl == null) return Optional.empty();
+
+        String href = urlEl.attr("href");
+        if (href.isBlank()) return Optional.empty();
+
+        Apartment apt = new Apartment();
+        apt.setAvitoId(avitoId);
+        apt.setUrl(absoluteUrl(href));
+        return Optional.of(apt);
+    }
+
+    private Apartment upsert(Apartment incoming) {
+        return repository.findByAvitoId(incoming.getAvitoId())
+                .map(existing -> {
+                    if (existing.getUrl() == null || existing.getUrl().isBlank()) {
+                        existing.setUrl(incoming.getUrl());
+                        return repository.save(existing);
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> repository.save(incoming));
+    }
+
+    private String absoluteUrl(String href) {
+        if (href == null || href.isBlank()) return null;
+        return href.startsWith("http") ? href : AVITO_BASE + href;
+    }
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\service\AvitoSearchPageBotService.java ===
+package my.help.finance.avito.service;
+
+import lombok.extern.slf4j.Slf4j;
+import my.help.finance.avito.entity.Apartment;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.event.KeyEvent;
+import java.net.URI;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * Робот, который сам открывает страницу поиска Авито в браузере,
+ * человекоподобно проматывает её до конца, открывает исходник (Ctrl+U),
+ * копирует HTML и передаёт его в существующий парсер.
+ *
+ * Управляет настоящей мышью/клавиатурой — backend должен запускаться
+ * на десктопе с монитором (java.awt.headless=false).
+ */
+@Slf4j
+@Service
+public class AvitoSearchPageBotService {
+
+    // Загрузка страницы поиска — она тяжёлая, ждём дольше чем у детальной
+    private static final int PAGE_LOAD_MIN_MS = 6_000;
+    private static final int PAGE_LOAD_MAX_MS = 12_000;
+
+    // view-source тоже рендерится какое-то время
+    private static final int VIEW_SOURCE_LOAD_MIN_MS = 2_500;
+    private static final int VIEW_SOURCE_LOAD_MAX_MS = 4_500;
+
+    // Минимальная длина HTML, которую считаем «настоящей страницей»
+    private static final int MIN_HTML_LENGTH = 5_000;
+
+    /**
+     * URL страницы поиска. Можно переопределить через application.yml:
+     *   avito:
+     *     search:
+     *       url: "https://www.avito.ru/..."
+     */
+    @Value("${avito.search.url:https://www.avito.ru/nizhniy_novgorod/kvartiry/prodam}")
+    private String defaultSearchUrl;
+
+    private final AvitoParserService parserService;
+
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "avito-search-bot");
+        t.setDaemon(true);
+        return t;
+    });
+
+    private volatile Status status = Status.IDLE;
+    private volatile String lastError;
+    private volatile Integer parsedCount;
+    private volatile String activeUrl;
+    private final AtomicBoolean stopRequested = new AtomicBoolean(false);
+    private volatile Future<?> runningTask;
+
+    public AvitoSearchPageBotService(AvitoParserService parserService) {
+        this.parserService = parserService;
+    }
+
+    public enum Status { IDLE, RUNNING, STOPPING }
+
+    public record BotStatusDto(
+            Status status,
+            Integer parsedCount,
+            String lastError,
+            String searchUrl
+    ) {}
+
+    /** Запуск с URL по умолчанию (из конфига). */
+    public synchronized BotStatusDto start() {
+        return start(null);
+    }
+
+    /** Запуск с произвольным URL (передаётся с фронта — там уже есть ссылка на поиск). */
+    public synchronized BotStatusDto start(String urlOverride) {
+        if (status == Status.RUNNING || status == Status.STOPPING) {
+            return getStatus();
+        }
+        if (GraphicsEnvironment.isHeadless()) {
+            lastError = "Нет графической сессии (headless). Бот управляет настоящей мышью/клавиатурой — " +
+                    "запускайте backend на десктопе с монитором (System.setProperty(\"java.awt.headless\",\"false\") " +
+                    "до SpringApplication.run).";
+            return getStatus();
+        }
+
+        this.activeUrl = (urlOverride != null && !urlOverride.isBlank())
+                ? urlOverride
+                : defaultSearchUrl;
+
+        stopRequested.set(false);
+        lastError = null;
+        parsedCount = null;
+        status = Status.RUNNING;
+        runningTask = executor.submit(this::runLoop);
+        return getStatus();
+    }
+
+    public synchronized BotStatusDto stop() {
+        if (status == Status.RUNNING) {
+            status = Status.STOPPING;
+            stopRequested.set(true);
+            if (runningTask != null) runningTask.cancel(true);
+        }
+        return getStatus();
+    }
+
+    public BotStatusDto getStatus() {
+        return new BotStatusDto(status, parsedCount, lastError, activeUrl);
+    }
+
+    // ------------------------------------------------------------------
+
+    private void runLoop() {
+        try {
+            Robot robot = new Robot();
+            robot.setAutoWaitForIdle(true);
+            robot.setAutoDelay(35);
+
+            log.info("Авто-загрузка: открываю страницу поиска {}", activeUrl);
+            Desktop.getDesktop().browse(new URI(activeUrl));
+            sleep(randomBetween(PAGE_LOAD_MIN_MS, PAGE_LOAD_MAX_MS));
+
+            if (stopRequested.get()) return;
+
+            log.info("Авто-загрузка: человекоподобно проматываю страницу до низа…");
+            scrollToBottomHumanLike(robot);
+
+            if (stopRequested.get()) return;
+
+            log.info("Авто-загрузка: открываю исходник страницы (Ctrl+U)…");
+            chord(robot, KeyEvent.VK_U);
+            sleep(randomBetween(VIEW_SOURCE_LOAD_MIN_MS, VIEW_SOURCE_LOAD_MAX_MS));
+
+            if (stopRequested.get()) { closeTab(robot); return; }
+
+            log.info("Авто-загрузка: выделяю всё (Ctrl+A)…");
+            chord(robot, KeyEvent.VK_A);
+            sleep(randomBetween(250, 600));
+
+            log.info("Авто-загрузка: копирую (Ctrl+C)…");
+            chord(robot, KeyEvent.VK_C);
+            sleep(randomBetween(700, 1_500)); // большая страница — даём время на копирование
+
+            String html = readClipboardText();
+
+            // Закрываем view-source и вкладку с поиском
+            closeTab(robot);
+            sleep(randomBetween(400, 900));
+            closeTab(robot);
+
+            if (html == null || html.length() < MIN_HTML_LENGTH) {
+                lastError = "Не удалось скопировать HTML страницы (получено "
+                        + (html == null ? 0 : html.length()) + " символов).";
+                log.warn(lastError);
+                return;
+            }
+
+            log.info("Авто-загрузка: получен HTML длиной {} символов, отдаю в парсер…", html.length());
+            List<Apartment> saved = parserService.parseAndSaveMultiple(List.of(html));
+            parsedCount = saved.size();
+            log.info("Авто-загрузка: сохранено/обновлено объявлений: {}", parsedCount);
+
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            log.info("Авто-загрузка: прервано пользователем");
+        } catch (Exception e) {
+            lastError = "Ошибка автоматической загрузки: " + e.getMessage();
+            log.error(lastError, e);
+        } finally {
+            status = Status.IDLE;
+            stopRequested.set(false);
+            log.info("Авто-загрузка завершена. parsedCount={}, lastError={}", parsedCount, lastError);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    //  Человекоподобный скролл
+    // ------------------------------------------------------------------
+
+    private void scrollToBottomHumanLike(Robot robot) throws InterruptedException {
+        // Человек «осмотрел шапку страницы», повозил мышью
+        sleep(randomBetween(1_500, 3_500));
+        wiggleMouse(robot);
+        sleep(randomBetween(800, 1_800));
+
+        // Общий бюджет прокрутки (в «щелчках» колеса).
+        // Avito подгружает ~50 карточек; 220–300 «щелчков» с запасом хватает.
+        int totalClicks = randomBetween(220, 300);
+        int done = 0;
+
+        while (done < totalClicks) {
+            if (stopRequested.get()) return;
+
+            // Небольшая порция прокрутки
+            int chunk = randomBetween(3, 8);
+            for (int i = 0; i < chunk && done < totalClicks; i++) {
+                int wheel = randomBetween(3, 7);
+                robot.mouseWheel(wheel);
+                done += wheel;
+                sleep(randomBetween(280, 800));
+            }
+
+            // Пауза «почитать карточки»
+            if (ThreadLocalRandom.current().nextDouble() < 0.55) {
+                sleep(randomBetween(900, 2_800));
+            }
+
+            // «Перечитал — откатился назад»
+            if (ThreadLocalRandom.current().nextDouble() < 0.14) {
+                robot.mouseWheel(-randomBetween(2, 5));
+                sleep(randomBetween(500, 1_200));
+            }
+
+            // Подвигать мышью — как будто следишь взглядом за скроллом
+            if (ThreadLocalRandom.current().nextDouble() < 0.35) {
+                wiggleMouse(robot);
+            }
+        }
+
+        // В самом низу — «дочитал, осмыслил»
+        sleep(randomBetween(2_000, 4_500));
+        wiggleMouse(robot);
+        sleep(randomBetween(500, 1_200));
+    }
+
+    private void wiggleMouse(Robot robot) throws InterruptedException {
+        try {
+            Point p = MouseInfo.getPointerInfo().getLocation();
+            int dx = randomBetween(-140, 140);
+            int dy = randomBetween(-100, 100);
+            moveMouseSmoothly(robot, p.x, p.y, p.x + dx, p.y + dy);
+            sleep(randomBetween(200, 600));
+        } catch (Exception ignored) {
+            // MouseInfo иногда недоступен — не критично
+        }
+    }
+
+    private void moveMouseSmoothly(Robot robot, int fromX, int fromY, int toX, int toY) throws InterruptedException {
+        int steps = randomBetween(8, 16);
+        for (int i = 1; i <= steps; i++) {
+            int x = fromX + (toX - fromX) * i / steps;
+            int y = fromY + (toY - fromY) * i / steps;
+            robot.mouseMove(x, y);
+            sleep(randomBetween(8, 25));
+        }
+    }
+
+    // ------------------------------------------------------------------
+    //  Клавиатура и буфер обмена
+    // ------------------------------------------------------------------
+
+    private void closeTab(Robot robot) {
+        chord(robot, KeyEvent.VK_W);
+    }
+
+    private void chord(Robot robot, int key) {
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(key);
+        robot.keyRelease(key);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+    }
+
+    private String readClipboardText() {
+        try {
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            Object data = clipboard.getData(DataFlavor.stringFlavor);
+            return data != null ? data.toString() : null;
+        } catch (Exception e) {
+            log.warn("Не удалось прочитать буфер обмена: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private static int randomBetween(int minInclusive, int maxInclusive) {
+        return ThreadLocalRandom.current().nextInt(minInclusive, maxInclusive + 1);
+    }
+
+    private static void sleep(long ms) throws InterruptedException {
+        Thread.sleep(ms);
+    }
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\service\AvitoVisitorBot.java ===
+package my.help.finance.avito.service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.event.KeyEvent;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+
+public class AvitoVisitorBot {
+
+    private static final String BACKEND_BASE_URL = "http://localhost:8080";
+
+    private static final int PAGE_LOAD_MIN_MS = 4_000;
+    private static final int PAGE_LOAD_MAX_MS = 9_000;
+
+    private static final int VIEW_SOURCE_LOAD_MIN_MS = 1_500;
+    private static final int VIEW_SOURCE_LOAD_MAX_MS = 2_800;
+
+    private static final int BETWEEN_ITEMS_MIN_MS = 20_000;
+    private static final int BETWEEN_ITEMS_MAX_MS = 75_000;
+
+    private static final double LONG_BREAK_CHANCE = 0.08;
+    private static final int LONG_BREAK_MIN_MS = 3 * 60_000;
+    private static final int LONG_BREAK_MAX_MS = 7 * 60_000;
+
+    private static final int MIN_HTML_LENGTH = 2000;
+    private static final int MAX_ATTEMPTS_PER_RUN = 3;
+
+    private final Robot robot;
+    private final HttpClient http = HttpClient.newHttpClient();
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    public AvitoVisitorBot() throws AWTException {
+        if (GraphicsEnvironment.isHeadless()) {
+            throw new IllegalStateException(
+                    "Нет графической сессии (headless). Бот управляет настоящей мышью/клавиатурой " +
+                            "и должен запускаться на десктопе, а не на сервере.");
+        }
+        this.robot = new Robot();
+        this.robot.setAutoWaitForIdle(true);
+        this.robot.setAutoDelay(35);
+    }
+
+    public static void main(String[] args) throws Exception {
+        System.out.println("Авито-бот запускается.");
+        System.out.println("Не трогайте мышь и клавиатуру, пока бот работает. Остановить — Ctrl+C в консоли.");
+        sleep(3000);
+
+        AvitoVisitorBot bot = new AvitoVisitorBot();
+        bot.run();
+    }
+
+    private void run() throws Exception {
+        List<QueueItem> queue = fetchQueue();
+        System.out.println("В очереди объявлений: " + queue.size());
+
+        int done = 0;
+        for (QueueItem item : queue) {
+            if (item.previousAttempts >= MAX_ATTEMPTS_PER_RUN) {
+                System.out.println("Пропускаю " + item.avitoId + " — уже " + item.previousAttempts + " неудачных попыток");
+                continue;
+            }
+
+            System.out.printf("[%d/%d] Объявление %s -> %s%n", ++done, queue.size(), item.avitoId, item.url);
+
+            boolean success;
+            try {
+                String html = visitAndCapture(item);
+                success = html != null;
+                reportVisited(item.avitoId, success, html);
+            } catch (Exception e) {
+                System.out.println("  Ошибка при обходе: " + e.getMessage());
+                reportVisited(item.avitoId, false, null);
+                success = false;
+            }
+
+            System.out.println(success ? "  ✅ данные отправлены на backend" : "  ⚠️ не удалось скопировать страницу, попробуем в другой раз");
+
+            waitBetweenItems();
+        }
+
+        System.out.println("Готово. Обработано объявлений: " + done);
+    }
+
+    private String visitAndCapture(QueueItem item) throws Exception {
+        Desktop.getDesktop().browse(new URI(item.url));
+        sleep(randomBetween(PAGE_LOAD_MIN_MS, PAGE_LOAD_MAX_MS));
+
+        humanizeReading();
+
+        chord(KeyEvent.VK_U);
+        sleep(randomBetween(VIEW_SOURCE_LOAD_MIN_MS, VIEW_SOURCE_LOAD_MAX_MS));
+
+        chord(KeyEvent.VK_A);
+        sleep(randomBetween(200, 500));
+        chord(KeyEvent.VK_C);
+        sleep(randomBetween(400, 900));
+
+        String html = readClipboardText();
+
+        closeTab();
+        sleep(randomBetween(300, 700));
+        closeTab();
+
+        if (html == null || html.length() < MIN_HTML_LENGTH) {
+            return null;
+        }
+        return html;
+    }
+
+    private String readClipboardText() {
+        try {
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            Object data = clipboard.getData(DataFlavor.stringFlavor);
+            return data != null ? data.toString() : null;
+        } catch (Exception e) {
+            System.out.println("  Не удалось прочитать буфер обмена: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private void humanizeReading() {
+        int wiggles = randomBetween(2, 4);
+        for (int i = 0; i < wiggles; i++) {
+            Point p = MouseInfo.getPointerInfo().getLocation();
+            int dx = randomBetween(-120, 120);
+            int dy = randomBetween(-80, 80);
+            moveMouseSmoothly(p.x, p.y, p.x + dx, p.y + dy);
+            sleep(randomBetween(300, 900));
+
+            if (ThreadLocalRandom.current().nextBoolean()) {
+                robot.mouseWheel(randomBetween(1, 4));
+                sleep(randomBetween(400, 1100));
+            }
+        }
+    }
+
+    private void moveMouseSmoothly(int fromX, int fromY, int toX, int toY) {
+        int steps = randomBetween(8, 16);
+        for (int i = 1; i <= steps; i++) {
+            int x = fromX + (toX - fromX) * i / steps;
+            int y = fromY + (toY - fromY) * i / steps;
+            robot.mouseMove(x, y);
+            sleep(randomBetween(8, 25));
+        }
+    }
+
+    private void closeTab() {
+        chord(KeyEvent.VK_W);
+    }
+
+    private void chord(int key) {
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(key);
+        robot.keyRelease(key);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+    }
+
+    private void waitBetweenItems() {
+        boolean longBreak = ThreadLocalRandom.current().nextDouble() < LONG_BREAK_CHANCE;
+        int ms = longBreak
+                ? randomBetween(LONG_BREAK_MIN_MS, LONG_BREAK_MAX_MS)
+                : randomBetween(BETWEEN_ITEMS_MIN_MS, BETWEEN_ITEMS_MAX_MS);
+        System.out.println("  … пауза " + (ms / 1000) + " сек" + (longBreak ? " (длинная)" : ""));
+        sleep(ms);
+    }
+
+    private List<QueueItem> fetchQueue() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BACKEND_BASE_URL + "/api/apartments/bot/queue"))
+                .GET()
+                .build();
+        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+
+        if (resp.statusCode() != 200) {
+            throw new IllegalStateException("Бэкенд вернул " + resp.statusCode() + ": " + resp.body());
+        }
+
+        List<QueueItem> result = new ArrayList<>();
+        JsonNode arr = mapper.readTree(resp.body());
+        for (JsonNode node : arr) {
+            QueueItem item = new QueueItem();
+            item.avitoId = node.get("avitoId").asText();
+            item.url = node.get("url").asText();
+            item.previousAttempts = node.hasNonNull("previousAttempts") ? node.get("previousAttempts").asInt() : 0;
+            result.add(item);
+        }
+        return result;
+    }
+
+    private void reportVisited(String avitoId, boolean success, String html) {
+        try {
+            String body = mapper.writeValueAsString(new VisitedRequest(success, html));
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(BACKEND_BASE_URL + "/api/apartments/" + avitoId + "/bot/visited"))
+                    .timeout(Duration.ofSeconds(20))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+            http.send(req, HttpResponse.BodyHandlers.discarding());
+        } catch (Exception e) {
+            System.out.println("  Не удалось отчитаться бэкенду по " + avitoId + ": " + e.getMessage());
+        }
+    }
+
+    private static int randomBetween(int minInclusive, int maxInclusive) {
+        return ThreadLocalRandom.current().nextInt(minInclusive, maxInclusive + 1);
+    }
+
+    private static void sleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static class QueueItem {
+        String avitoId;
+        String url;
+        int previousAttempts;
+    }
+
+    private record VisitedRequest(boolean success, String html) {}
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\service\AvitoVisitorBotService.java ===
+package my.help.finance.avito.service;
+
+import lombok.extern.slf4j.Slf4j;
+import my.help.finance.avito.entity.Apartment;
+import my.help.finance.avito.repository.ApartmentRepository;
+import org.springframework.stereotype.Service;
+
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.event.KeyEvent;
+import java.net.URI;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+@Slf4j
+@Service
+public class AvitoVisitorBotService {
+
+    private static final int PAGE_LOAD_MIN_MS = 4_000;
+    private static final int PAGE_LOAD_MAX_MS = 9_000;
+
+    private static final int VIEW_SOURCE_LOAD_MIN_MS = 1_500;
+    private static final int VIEW_SOURCE_LOAD_MAX_MS = 2_800;
+
+    private static final int BETWEEN_ITEMS_MIN_MS = 20_000;
+    private static final int BETWEEN_ITEMS_MAX_MS = 75_000;
+
+    private static final double LONG_BREAK_CHANCE = 0.08;
+    private static final int LONG_BREAK_MIN_MS = 3 * 60_000;
+    private static final int LONG_BREAK_MAX_MS = 7 * 60_000;
+
+    private static final int MAX_ATTEMPTS_PER_RUN = 3;
+
+    private static final int MIN_HTML_LENGTH = 2000;
+
+    // ------------------------------------------------------------------
+
+    private final ApartmentRepository repository;
+    private final AvitoDetailPageParserService detailParser;
+
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "avito-visitor-bot");
+        t.setDaemon(true);
+        return t;
+    });
+
+    private volatile Status status = Status.IDLE;
+    private volatile String currentAvitoId;
+    private volatile String currentUrl;
+    private volatile String lastError;
+    private final AtomicInteger totalCount = new AtomicInteger(0);
+    private final AtomicInteger processedCount = new AtomicInteger(0);
+    private final AtomicBoolean stopRequested = new AtomicBoolean(false);
+    private volatile Future<?> runningTask;
+
+    public AvitoVisitorBotService(ApartmentRepository repository, AvitoDetailPageParserService detailParser) {
+        this.repository = repository;
+        this.detailParser = detailParser;
+    }
+
+    public enum Status { IDLE, RUNNING, STOPPING }
+
+    public record BotStatusDto(
+            Status status,
+            int total,
+            int processed,
+            String currentAvitoId,
+            String currentUrl,
+            String lastError
+    ) {}
+
+    public synchronized BotStatusDto start() {
+        if (status == Status.RUNNING || status == Status.STOPPING) {
+            return getStatus();
+        }
+        if (GraphicsEnvironment.isHeadless()) {
+            lastError = "Нет графической сессии (headless). Бот управляет настоящей мышью/клавиатурой — " +
+                    "запускайте backend на десктопе с монитором (см. javadoc в главном классе приложения " +
+                    "про System.setProperty(\"java.awt.headless\",\"false\") до SpringApplication.run).";
+            return getStatus();
+        }
+
+        stopRequested.set(false);
+        lastError = null;
+        processedCount.set(0);
+        totalCount.set(0);
+        status = Status.RUNNING;
+
+        runningTask = executor.submit(this::runLoop);
+        return getStatus();
+    }
+
+    public synchronized BotStatusDto stop() {
+        if (status == Status.RUNNING) {
+            status = Status.STOPPING;
+            stopRequested.set(true);
+            if (runningTask != null) {
+                runningTask.cancel(true);
+            }
+        }
+        return getStatus();
+    }
+
+    public BotStatusDto getStatus() {
+        return new BotStatusDto(status, totalCount.get(), processedCount.get(), currentAvitoId, currentUrl, lastError);
+    }
+
+    private void runLoop() {
+        try {
+            Robot robot = new Robot();
+            robot.setAutoWaitForIdle(true);
+            robot.setAutoDelay(35);
+
+            List<Apartment> queue = repository.findQueueForBot();
+            totalCount.set(queue.size());
+            log.info("Бот стартовал, объявлений в очереди: {}", queue.size());
+
+            for (Apartment apt : queue) {
+                if (stopRequested.get() || Thread.currentThread().isInterrupted()) break;
+
+                int attempts = apt.getDetailVisitAttempts() == null ? 0 : apt.getDetailVisitAttempts();
+                if (attempts >= MAX_ATTEMPTS_PER_RUN) {
+                    processedCount.incrementAndGet();
+                    continue;
+                }
+
+                currentAvitoId = apt.getAvitoId();
+                currentUrl = apt.getUrl();
+                log.info("Обход объявления {} -> {}", currentAvitoId, currentUrl);
+
+                String html = null;
+                try {
+                    html = visitAndCapture(robot, apt);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    log.warn("Ошибка при обходе {}: {}", apt.getAvitoId(), e.getMessage());
+                }
+
+                enrichAndSave(apt, html);
+                processedCount.incrementAndGet();
+
+                if (stopRequested.get()) break;
+                try {
+                    waitBetweenItems();
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        } catch (AWTException e) {
+            lastError = "Не удалось создать Robot: " + e.getMessage();
+            log.error(lastError, e);
+        } catch (Exception e) {
+            lastError = "Бот упал с ошибкой: " + e.getMessage();
+            log.error(lastError, e);
+        } finally {
+            status = Status.IDLE;
+            currentAvitoId = null;
+            currentUrl = null;
+            log.info("Бот остановлен. Обработано: {}/{}", processedCount.get(), totalCount.get());
+        }
+    }
+
+    private void enrichAndSave(Apartment apt, String html) {
+        int attempts = apt.getDetailVisitAttempts() == null ? 0 : apt.getDetailVisitAttempts();
+        apt.setDetailVisitAttempts(attempts + 1);
+
+        boolean success = false;
+        if (html != null) {
+            try {
+                success = detailParser.enrichFromDetailHtml(apt, html);
+            } catch (Exception e) {
+                log.warn("Ошибка парсинга детальной страницы {}: {}", apt.getAvitoId(), e.getMessage());
+            }
+        }
+
+        if (success) {
+            apt.setDetailVisited(true);
+            apt.setDetailVisitedAt(LocalDateTime.now());
+        }
+
+        repository.save(apt);
+        log.info(success ? "  ✅ {} — данные обновлены" : "  ⚠️ {} — не удалось получить данные, попробуем позже",
+                apt.getAvitoId());
+    }
+
+    private String visitAndCapture(Robot robot, Apartment apt) throws Exception {
+        Desktop.getDesktop().browse(new URI(apt.getUrl()));
+        sleep(randomBetween(PAGE_LOAD_MIN_MS, PAGE_LOAD_MAX_MS));
+
+        humanizeReading(robot);
+
+        chord(robot, KeyEvent.VK_U);
+        sleep(randomBetween(VIEW_SOURCE_LOAD_MIN_MS, VIEW_SOURCE_LOAD_MAX_MS));
+
+        chord(robot, KeyEvent.VK_A);
+        sleep(randomBetween(200, 500));
+        chord(robot, KeyEvent.VK_C);
+        sleep(randomBetween(400, 900));
+
+        String html = readClipboardText();
+
+        closeTab(robot);
+        sleep(randomBetween(300, 700));
+        closeTab(robot);
+
+        if (html == null || html.length() < MIN_HTML_LENGTH) {
+            return null;
+        }
+        return html;
+    }
+
+    private String readClipboardText() {
+        try {
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            Object data = clipboard.getData(DataFlavor.stringFlavor);
+            return data != null ? data.toString() : null;
+        } catch (Exception e) {
+            log.warn("Не удалось прочитать буфер обмена: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private void humanizeReading(Robot robot) throws InterruptedException {
+        int wiggles = randomBetween(2, 4);
+        for (int i = 0; i < wiggles; i++) {
+            Point p = MouseInfo.getPointerInfo().getLocation();
+            int dx = randomBetween(-120, 120);
+            int dy = randomBetween(-80, 80);
+            moveMouseSmoothly(robot, p.x, p.y, p.x + dx, p.y + dy);
+            sleep(randomBetween(300, 900));
+
+            if (ThreadLocalRandom.current().nextBoolean()) {
+                robot.mouseWheel(randomBetween(1, 4));
+                sleep(randomBetween(400, 1100));
+            }
+        }
+    }
+
+    private void moveMouseSmoothly(Robot robot, int fromX, int fromY, int toX, int toY) throws InterruptedException {
+        int steps = randomBetween(8, 16);
+        for (int i = 1; i <= steps; i++) {
+            int x = fromX + (toX - fromX) * i / steps;
+            int y = fromY + (toY - fromY) * i / steps;
+            robot.mouseMove(x, y);
+            sleep(randomBetween(8, 25));
+        }
+    }
+
+    private void closeTab(Robot robot) {
+        chord(robot, KeyEvent.VK_W);
+    }
+
+    private void chord(Robot robot, int key) {
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(key);
+        robot.keyRelease(key);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+    }
+
+    private void waitBetweenItems() throws InterruptedException {
+        boolean longBreak = ThreadLocalRandom.current().nextDouble() < LONG_BREAK_CHANCE;
+        int ms = longBreak
+                ? randomBetween(LONG_BREAK_MIN_MS, LONG_BREAK_MAX_MS)
+                : randomBetween(BETWEEN_ITEMS_MIN_MS, BETWEEN_ITEMS_MAX_MS);
+        sleep(ms);
+    }
+
+    private static int randomBetween(int minInclusive, int maxInclusive) {
+        return ThreadLocalRandom.current().nextInt(minInclusive, maxInclusive + 1);
+    }
+
+    private static void sleep(long ms) throws InterruptedException {
+        Thread.sleep(ms);
+    }
+}
+
+=== File: .\finance\src\main\java\my\help\finance\avito\service\DeepSeekBotService.java ===
+package my.help.finance.avito.service;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.KeyEvent;
+import java.net.URI;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * Робот, который открывает чат DeepSeek в браузере,
+ * вставляет туда готовый промпт и отправляет его.
+
+ * Управляет настоящей мышью/клавиатурой — backend должен запускаться
+ * на десктопе с монитором (java.awt.headless=false).
+ */
+@Slf4j
+@Service
+public class DeepSeekBotService {
+
+    private static final int PAGE_LOAD_MIN_MS = 5_000;
+    private static final int PAGE_LOAD_MAX_MS = 9_000;
+    private static final int AFTER_PASTE_MS    = 900;
+    private static final int AFTER_SUBMIT_MS   = 1_500;
+
+    /** URL чата DeepSeek. Можно переопределить через application.yml. */
+    @Value("${deepseek.chat.url:https://chat.deepseek.com/}")
+    private String deepSeekUrl;
+
+    private final ApartmentAnalysisService analysisService;
+
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "deepseek-bot");
+        t.setDaemon(true);
+        return t;
+    });
+
+    public enum Status { IDLE, RUNNING, STOPPING }
+
+    public record BotStatusDto(
+            Status status,
+            Integer promptLength,
+            String lastError,
+            String chatUrl
+    ) {}
+
+    private volatile Status status = Status.IDLE;
+    private volatile String lastError;
+    private volatile Integer promptLength;
+    private final AtomicBoolean stopRequested = new AtomicBoolean(false);
+    private volatile Future<?> runningTask;
+
+    public DeepSeekBotService(ApartmentAnalysisService analysisService) {
+        this.analysisService = analysisService;
+    }
+
+    public synchronized BotStatusDto start() {
+        return start(null);
+    }
+
+    /**
+     * @param promptOverride готовый промпт с фронта (если null — генерируется автоматически из БД)
+     */
+    public synchronized BotStatusDto start(String promptOverride) {
+        if (status == Status.RUNNING || status == Status.STOPPING) {
+            return getStatus();
+        }
+        if (GraphicsEnvironment.isHeadless()) {
+            lastError = "Нет графической сессии (headless). Бот управляет настоящей мышью/клавиатурой — "
+                    + "запускайте backend на десктопе.";
+            return getStatus();
+        }
+
+        stopRequested.set(false);
+        lastError = null;
+        promptLength = null;
+        status = Status.RUNNING;
+
+        final String override = promptOverride;
+        runningTask = executor.submit(() -> runLoop(override));
+        return getStatus();
+    }
+
+    public synchronized BotStatusDto stop() {
+        if (status == Status.RUNNING) {
+            status = Status.STOPPING;
+            stopRequested.set(true);
+            if (runningTask != null) runningTask.cancel(true);
+        }
+        return getStatus();
+    }
+
+    public BotStatusDto getStatus() {
+        return new BotStatusDto(status, promptLength, lastError, deepSeekUrl);
+    }
+
+    private void runLoop(String promptOverride) {
+        try {
+            Robot robot = new Robot();
+            robot.setAutoWaitForIdle(true);
+            robot.setAutoDelay(35);
+
+            String prompt = (promptOverride != null && !promptOverride.isBlank())
+                    ? promptOverride
+                    : analysisService.buildAnalysisPrompt();
+
+            promptLength = prompt.length();
+            log.info("DeepSeek-бот: промпт длиной {} символов", promptLength);
+
+            if (stopRequested.get()) return;
+
+            log.info("DeepSeek-бот: открываю чат {}", deepSeekUrl);
+            Desktop.getDesktop().browse(new URI(deepSeekUrl));
+            sleep(randomBetween());
+
+            if (stopRequested.get()) return;
+
+            // кладём промпт в системный буфер обмена
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            clipboard.setContents(new StringSelection(prompt), null);
+            log.info("DeepSeek-бот: промпт помещён в буфер обмена");
+
+            log.info("DeepSeek-бот: вставляю промпт (Ctrl+V)…");
+            chord(robot);
+            sleep(AFTER_PASTE_MS);
+
+            if (stopRequested.get()) return;
+
+            log.info("DeepSeek-бот: отправляю (Enter)…");
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+            sleep(AFTER_SUBMIT_MS);
+
+            log.info("DeepSeek-бот: промпт отправлен в чат DeepSeek");
+
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            log.info("DeepSeek-бот: прервано пользователем");
+        } catch (Exception e) {
+            lastError = "Ошибка DeepSeek-бота: " + e.getMessage();
+            log.error(lastError, e);
+        } finally {
+            status = Status.IDLE;
+            stopRequested.set(false);
+        }
+    }
+
+    private void chord(Robot robot) {
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+    }
+
+    private static int randomBetween() {
+        return ThreadLocalRandom.current().nextInt(DeepSeekBotService.PAGE_LOAD_MIN_MS, DeepSeekBotService.PAGE_LOAD_MAX_MS + 1);
+    }
+
+    private static void sleep(long ms) throws InterruptedException {
+        Thread.sleep(ms);
+    }
+}
+

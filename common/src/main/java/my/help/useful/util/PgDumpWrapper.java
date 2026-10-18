@@ -1,37 +1,22 @@
 package my.help.useful.util;
 
-import java.io.*;
+import java.io.IOException;
+import java.net.URI;
 
 public class PgDumpWrapper {
-    public static void dumpDatabase(String dbName, String user, String password, String outputFile)
+    public static void dumpDatabase(String executable, String jdbcUrl, String user, String password, String outputFile)
             throws IOException, InterruptedException {
-
-        ProcessBuilder pb = new ProcessBuilder(
-                "C:\\Program Files\\PostgreSQL\\18\\bin\\pg_dump.exe",
-                "--column-inserts",
-                "-d", dbName,
-                "-U", user,
-                "-h", "localhost",
-                "-f", outputFile
-        );
-
-        pb.environment().put("PGPASSWORD", password);
-        pb.redirectErrorStream(true);
-
-        Process process = pb.start();
-        int exitCode = process.waitFor();
-
-        if (exitCode == 0) {
-            System.out.println("Dump created successfully: " + outputFile);
-        } else {
-            // Читаем ошибки
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.err.println(line);
-                }
-            }
+        URI database = URI.create(jdbcUrl.substring("jdbc:".length()));
+        ProcessBuilder builder = new ProcessBuilder(executable, "--column-inserts",
+                "-d", database.getPath().substring(1), "-U", user,
+                "-h", database.getHost(), "-p", String.valueOf(database.getPort() < 0 ? 5432 : database.getPort()),
+                "-f", outputFile);
+        builder.environment().put("PGPASSWORD", password);
+        builder.redirectErrorStream(true);
+        Process process = builder.start();
+        String output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        if (process.waitFor() != 0) {
+            throw new IOException("pg_dump failed: " + output);
         }
     }
 }

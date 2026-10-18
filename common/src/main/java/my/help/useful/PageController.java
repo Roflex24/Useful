@@ -1,13 +1,27 @@
 package my.help.useful;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class PageController {
+    @Value("${services.finance.url}")
+    private String financeUrl;
+    @Value("${services.food.url}")
+    private String foodUrl;
+    @Value("${services.kanban.url}")
+    private String kanbanUrl;
+
+    @GetMapping("/page/finance")
+    public String finance() { return "redirect:" + financeUrl + "/page/finance"; }
+    @GetMapping("/page/food")
+    public String food() { return "redirect:" + foodUrl + "/page/food"; }
+    @GetMapping("/page/projects")
+    public String projects() { return "redirect:" + kanbanUrl + "/page/projects"; }
+    @GetMapping("/page/ai/chat")
+    public String chat() { return "redirect:" + financeUrl + "/page/ai/chat"; }
+
 
     @GetMapping("/")
     public String index() {
@@ -17,100 +31,5 @@ public class PageController {
     @GetMapping("/page/vacancy")
     public String vacancyPage() {
         return "vacancy";
-    }
-
-
-    /*Food*/
-
-    @GetMapping("/page/food")
-    public String foodPage() {
-        return "/food/food";
-    }
-
-
-    /*Planning*/
-
-    @GetMapping("/page/kanban")
-    public String kanbanPage(@RequestParam(required = false) Long id, Model model) {
-        model.addAttribute("projectId", id);
-        return "/planning/kanban";
-    }
-
-    @GetMapping("/page/projects")
-    public String projectsPage() {
-        return "/planning/projects";
-    }
-
-    @GetMapping("/page/planning")
-    public String planningPage(Model model) {
-        model.addAttribute("pageTitle", "Дашборд стратегического планирования");
-        model.addAttribute("apiBaseUrl", "/api/planning");
-        return "/planning/planning";
-    }
-
-    @GetMapping("/page/planning/{planId}/tasks")
-    public String tasksPage(@PathVariable Long planId, Model model) {
-        model.addAttribute("pageTitle", "Задачи плана");
-        model.addAttribute("apiBaseUrl", "/api/planning");
-        model.addAttribute("planId", planId);
-        return "/planning/tasks";
-    }
-
-    @GetMapping("/page/ideas")
-    public String ideasPage() {
-        return "/planning/ideas";
-    }
-
-
-    /*Finance*/
-
-    @GetMapping("/page/finance")
-    public String financePage() {
-        return "/finance/finance";
-    }
-
-    @GetMapping("/page/analysis")
-    public String analysisPage() {
-        return "/finance/analysis";
-    }
-
-    @GetMapping("/page/runway")
-    public String runwayPage() {
-        return "/finance/runway";
-    }
-
-    @GetMapping("/page/invest")
-    public String investPage() {
-        return "/finance/invest";
-    }
-
-    @GetMapping("/page/ofz")
-    public String ofzPage() {
-        return "/finance/ofz";
-    }
-
-    @GetMapping("/page/deposits")
-    public String depositsPage() {
-        return "/finance/deposits";
-    }
-
-    @GetMapping("/page/avito")
-    public String avitoPage() {
-        return "/finance/avito";
-    }
-
-    @GetMapping("/page/key/rate")
-    public String keyratePage() {
-        return "/finance/keyrate";
-    }
-
-    @GetMapping("/page/currency/rate")
-    public String currencyRatePage() {
-        return "/finance/currencyrate";
-    }
-
-    @GetMapping("/page/ai/chat")
-    public String aiChatPage() {
-        return "chat";
     }
 }

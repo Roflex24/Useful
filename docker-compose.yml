@@ -1,56 +1,167 @@
-version: '3.8'
-
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: postgres
+  common:
+    build:
+      context: ./common
     ports:
-      - "5432:5432"
+      - "8080:8080"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=123456
-      - POSTGRES_DB=postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      SERVER_PORT: 8080
+      DB_URL: jdbc:postgresql://common-db:5432/common
+      DB_USER: common
+      DB_PASSWORD: ${COMMON_DB_PASSWORD:-common}
+      REDIS_HOST: common-redis
+      FINANCE_URL: ${FINANCE_URL:-http://localhost:8081}
+      FOOD_URL: ${FOOD_URL:-http://localhost:8082}
+      KANBAN_URL: ${KANBAN_URL:-http://localhost:8083}
+    depends_on:
+      common-db:
+        condition: service_healthy
+      common-redis:
+        condition: service_healthy
 
-  redis:
-    image: redis:latest
-    container_name: redis
+  common-db:
+    image: postgres:15-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: common
+      POSTGRES_USER: common
+      POSTGRES_PASSWORD: ${COMMON_DB_PASSWORD:-common}
+    volumes:
+      - common_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U common -d common"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  finance:
+    build:
+      context: ./finance
+    ports:
+      - "8081:8080"
+    environment:
+      SERVER_PORT: 8080
+      DB_URL: jdbc:postgresql://finance-db:5432/finance
+      DB_USER: finance
+      DB_PASSWORD: ${FINANCE_DB_PASSWORD:-finance}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-http://host.docker.internal:8090}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-dummy}
+      OPENAI_MODEL: ${OPENAI_MODEL:-Qwen3.5-4B_Q4_K_M.gguf}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      finance-db:
+        condition: service_healthy
+
+  finance-db:
+    image: postgres:15-alpine
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: finance
+      POSTGRES_USER: finance
+      POSTGRES_PASSWORD: ${FINANCE_DB_PASSWORD:-finance}
+    volumes:
+      - finance_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finance -d finance"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  food:
+    build:
+      context: ./food
+    ports:
+      - "8082:8080"
+    environment:
+      SERVER_PORT: 8080
+      DB_URL: jdbc:postgresql://food-db:5432/food
+      DB_USER: food
+      DB_PASSWORD: ${FOOD_DB_PASSWORD:-food}
+    depends_on:
+      food-db:
+        condition: service_healthy
+
+  food-db:
+    image: postgres:15-alpine
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: food
+      POSTGRES_USER: food
+      POSTGRES_PASSWORD: ${FOOD_DB_PASSWORD:-food}
+    volumes:
+      - food_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U food -d food"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kanban:
+    build:
+      context: ./kanban
+    ports:
+      - "8083:8080"
+    environment:
+      SERVER_PORT: 8080
+      DB_URL: jdbc:postgresql://kanban-db:5432/kanban
+      DB_USER: kanban
+      DB_PASSWORD: ${KANBAN_DB_PASSWORD:-kanban}
+      TELEGRAM_ENABLED: ${TELEGRAM_ENABLED:-false}
+      TELEGRAM_USERNAME: ${TELEGRAM_USERNAME:-}
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN:-}
+    depends_on:
+      kanban-db:
+        condition: service_healthy
+
+  kanban-db:
+    image: postgres:15-alpine
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_DB: kanban
+      POSTGRES_USER: kanban
+      POSTGRES_PASSWORD: ${KANBAN_DB_PASSWORD:-kanban}
+    volumes:
+      - kanban_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kanban -d kanban"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  common-redis:
+    image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - common_redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus
+    profiles: [monitoring]
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana
+    profiles: [monitoring]
     ports:
       - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
 volumes:
-  postgres_data:
-  redis_data:
+  common_data:
+  finance_data:
+  food_data:
+  kanban_data:
+  common_redis_data:

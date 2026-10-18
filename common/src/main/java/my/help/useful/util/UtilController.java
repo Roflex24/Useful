@@ -7,18 +7,29 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/util")
 @Tag(name = "Common API", description = "Общее")
 public class UtilController {
+    @Value("${spring.datasource.url}")
+    private String databaseUrl;
+    @Value("${spring.datasource.username}")
+    private String databaseUser;
+    @Value("${spring.datasource.password}")
+    private String databasePassword;
+    @Value("${backup.pg-dump:pg_dump}")
+    private String pgDump;
+
 
     @GetMapping("/base/backup")
     ResponseEntity<Void> baseBackUp() throws IOException, InterruptedException {
         PgDumpWrapper.dumpDatabase(
-                "postgres",
-                "postgres",
-                "123456",
+                pgDump,
+                databaseUrl,
+                databaseUser,
+                databasePassword,
                 "backup.sql"
         );
         return ResponseEntity.ok().build();

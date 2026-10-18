@@ -1,0 +1,2741 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>🍏 Калькулятор калорий | Анализ рациона на бэкенде</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, 'Segoe UI', 'Poppins', sans-serif;
+            background: radial-gradient(circle at 10% 20%, #1e293b, #0b1120);
+            min-height: 100vh;
+            padding: 30px 24px;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap');
+
+        .page-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 32px;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            padding: 18px 32px;
+            border-radius: 80px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+        }
+
+        .title-section h1 {
+            font-size: 1.9rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            letter-spacing: -0.3px;
+        }
+
+        .title-section h1 i {
+            background: linear-gradient(135deg, #f97316, #fdba74);
+            padding: 10px;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            box-shadow: 0 8px 18px rgba(249,115,22,0.4);
+        }
+
+        .title-section p {
+            color: #cbd5e6;
+            margin-top: 6px;
+            font-size: 0.85rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .analyze-week-btn {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            padding: 10px 24px;
+            border-radius: 60px;
+            color: white;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: 0.25s ease;
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .analyze-week-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        }
+
+        .back-home {
+            background: rgba(255,255,255,0.12);
+            padding: 10px 24px;
+            border-radius: 60px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.25s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        .back-home:hover {
+            background: #f97316;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(249,115,22,0.4);
+        }
+
+        .columns-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+            margin-bottom: 40px;
+        }
+
+        .column {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 44px;
+            box-shadow: 0 30px 50px -20px rgba(0,0,0,0.5);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .column:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 35px 55px -18px black;
+        }
+
+        .column-header {
+            background: linear-gradient(105deg, #1f2a3e, #0f172a);
+            padding: 22px 28px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .column-header h2 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        .badge-count {
+            background: #f97316;
+            padding: 5px 14px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 800;
+        }
+
+        .reset-btn {
+            background: rgba(255,255,255,0.18);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .reset-btn:hover {
+            background: #ef4444;
+            transform: scale(0.97);
+        }
+
+        .filters-container {
+            padding: 20px 22px;
+            background: #fefcf5;
+            border-bottom: 1px solid #ffe7cc;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 150px;
+            position: relative;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #b45309;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select select {
+            width: 100%;
+            padding: 12px 18px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+            background: white;
+            border: 2px solid #fed7aa;
+            border-radius: 60px;
+            cursor: pointer;
+            appearance: none;
+            transition: all 0.3s ease;
+        }
+
+        .custom-select select:hover {
+            border-color: #f97316;
+            background: #fffaf5;
+        }
+
+        .custom-select select:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 4px rgba(249,115,22,0.2);
+        }
+
+        .custom-select::after {
+            content: '\f0d7';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #f97316;
+            pointer-events: none;
+        }
+
+        .filter-group input {
+            width: 100%;
+            padding: 12px 18px;
+            border: 2px solid #fed7aa;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: white;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .filter-group input:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 4px rgba(249,115,22,0.2);
+        }
+
+        .product-list {
+            padding: 18px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-height: 560px;
+            overflow-y: auto;
+            background: #ffffff;
+        }
+
+        .product-item {
+            background: white;
+            border-radius: 32px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.03);
+            transition: all 0.2s;
+            border: 1px solid #f3e8dd;
+            cursor: pointer;
+        }
+
+        .product-item:hover {
+            background: #fffaf3;
+            border-color: #fbaa6b;
+            transform: translateX(4px);
+        }
+
+        .product-photo {
+            width: 64px;
+            height: 64px;
+            border-radius: 28px;
+            background: #fef3e8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .product-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-fallback {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #ffedd5, #ffd6a5);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .product-info {
+            flex: 1;
+        }
+
+        .product-name {
+            font-weight: 800;
+            font-size: 1.05rem;
+            color: #221c14;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .product-calories {
+            font-size: 0.7rem;
+            background: #ffede3;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-weight: 700;
+            color: #c2410c;
+        }
+
+        .product-shop {
+            font-size: 0.65rem;
+            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+            padding: 3px 10px;
+            border-radius: 40px;
+            color: #0369a1;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+        }
+
+        .nutrients-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.7rem;
+            margin-top: 8px;
+        }
+
+        .nutrient-badge {
+            background: #f7f2ec;
+            padding: 3px 10px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #5c3e2a;
+        }
+
+        .add-product-form {
+            background: linear-gradient(115deg, #fffaf5, #fff5ea);
+            border-radius: 36px;
+            margin: 18px 18px 24px 18px;
+            padding: 0;
+            box-shadow: 0 18px 35px -12px rgba(0,0,0,0.2);
+            border: 1px solid rgba(249,115,22,0.25);
+            overflow: hidden;
+        }
+
+        .form-header {
+            background: #f97316;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+        }
+
+        .form-header i {
+            font-size: 1.6rem;
+        }
+
+        .form-header h3 {
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .form-body {
+            padding: 24px 24px 28px;
+        }
+
+        .elegant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .field-group label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #9c4221;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .field-group input,
+        .field-group select {
+            padding: 12px 18px;
+            border: 2px solid #ffe0c4;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            background: white;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+
+        .field-group input:focus,
+        .field-group select:focus {
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249,115,22,0.2);
+            outline: none;
+        }
+
+        .double-buttons {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(95deg, #f97316, #f59e0b);
+            border: none;
+            padding: 14px 28px;
+            border-radius: 80px;
+            color: white;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 18px rgba(249,115,22,0.3);
+        }
+
+        .submit-btn:hover {
+            transform: scale(1.02);
+            background: linear-gradient(95deg, #ea580c, #f97316);
+        }
+
+        .clear-form-btn {
+            background: #eef2ff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 80px;
+            font-weight: 600;
+            color: #4b5563;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .clear-form-btn:hover {
+            background: #f1f5f9;
+            color: #dc2626;
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .quantity-control button {
+            background: #fff0e6;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .quantity-control button:hover { background: #f97316; color: white; transform: scale(1.05); }
+        .quantity-input {
+            width: 75px;
+            text-align: center;
+            border-radius: 50px;
+            border: 1px solid #ffd9b5;
+            padding: 6px;
+        }
+        .total-card {
+            background: linear-gradient(125deg, #ffedd5, #ffdec2);
+            border-radius: 36px;
+            margin: 20px;
+            padding: 22px;
+            text-align: center;
+        }
+        .total-value {
+            font-size: 3.2rem;
+            font-weight: 800;
+            color: #c2410c;
+        }
+        .total-nutrients {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .history-section {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 40px;
+            padding: 20px;
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .history-table th, .history-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .history-table th {
+            background: #f97316;
+            color: white;
+            font-weight: 700;
+        }
+        .refresh-history-btn {
+            background: #f97316;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .diets-section {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 40px;
+            padding: 20px;
+            margin-bottom: 28px;
+        }
+
+        .diets-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .diets-header h2 {
+            font-size: 1.4rem;
+            color: #1f2a3e;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        .diets-header h2 i {
+            color: #f97316;
+        }
+
+        .diets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 18px;
+            position: relative;
+            overflow: visible;
+        }
+
+        .diet-card {
+            position: relative;
+            background: linear-gradient(135deg, #fff7ed, #ffffff);
+            border: 2px solid #ffe0c4;
+            border-radius: 28px;
+            padding: 20px 20px 18px;
+            cursor: pointer;
+            transition: 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .diet-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 30px -10px rgba(249,115,22,0.35);
+            border-color: #f97316;
+            z-index: 40;
+        }
+
+        .diet-tooltip {
+            position: absolute;
+            left: 50%;
+            top: calc(100% + 12px);
+            transform: translateX(-50%) translateY(-6px);
+            width: 260px;
+            background: #1f2a3e;
+            color: white;
+            border-radius: 18px;
+            padding: 14px 16px;
+            box-shadow: 0 18px 40px -10px rgba(0,0,0,0.45);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            z-index: 50;
+        }
+
+        .diet-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-bottom-color: #1f2a3e;
+        }
+
+        .diet-card:hover .diet-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .diet-tooltip-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #fb923c;
+            font-weight: 800;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .diet-tooltip-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.82rem;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .diet-tooltip-item:last-child {
+            border-bottom: none;
+        }
+
+        .diet-tooltip-item span:first-child {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .diet-tooltip-qty {
+            color: #fcd34d;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .diet-tooltip-empty {
+            font-size: 0.82rem;
+            color: #94a3b8;
+            text-align: center;
+            padding: 6px 0;
+        }
+
+        .diet-card-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #1f2a3e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-right: 56px;
+        }
+
+        .diet-card-title span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
+        }
+
+        .diet-card-title i {
+            color: #f97316;
+        }
+
+        .diet-card-desc {
+            font-size: 0.82rem;
+            color: #64748b;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+        }
+
+        .diet-card-count {
+            font-size: 0.75rem;
+            color: #f97316;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .diet-card-actions {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .diet-card-edit, .diet-card-delete {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .diet-card-edit {
+            background: rgba(14,165,233,0.1);
+            color: #0ea5e9;
+        }
+
+        .diet-card-edit:hover {
+            background: #0ea5e9;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .diet-card-delete {
+            background: rgba(239,68,68,0.1);
+            color: #ef4444;
+        }
+
+        .diet-card-delete:hover {
+            background: #ef4444;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .diets-empty {
+            text-align: center;
+            padding: 24px;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            grid-column: 1 / -1;
+        }
+
+        .save-as-diet-btn {
+            width: calc(100% - 40px);
+            margin: 0 20px 12px;
+            border-radius: 50px;
+            padding: 14px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            background: linear-gradient(95deg, #0ea5e9, #0284c7);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .save-as-diet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.35);
+            background: linear-gradient(95deg, #0284c7, #0369a1);
+        }
+
+        .diet-form-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .diet-form-grid textarea {
+            padding: 12px 18px;
+            border: 2px solid #ffe0c4;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            background: white;
+            font-weight: 500;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        .diet-form-grid textarea:focus, .diet-form-grid input:focus {
+            outline: none;
+            border-color: #f97316;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            inset: 0;
+            align-items: center;
+            justify-content: center;
+            z-index: 1100;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: linear-gradient(135deg, #ffffff, #fffaf5);
+            border-radius: 48px;
+            padding: 0;
+            max-width: 700px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #f97316, #f59e0b);
+            padding: 24px 28px;
+            border-radius: 48px 48px 0 0;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+        .modal-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .modal-close:hover {
+            background: rgba(255,255,255,0.4);
+            transform: rotate(90deg);
+        }
+        .modal-body {
+            padding: 28px;
+        }
+        .edit-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+        .edit-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .edit-field label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #9c4221;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .edit-field input, .edit-field select {
+            padding: 12px 18px;
+            border: 2px solid #ffe0c4;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            background: white;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .edit-field input:focus, .edit-field select:focus {
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249,115,22,0.2);
+            outline: none;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 14px;
+            justify-content: flex-end;
+        }
+        .modal-buttons button {
+            padding: 12px 28px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+        }
+        .cancel-btn {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .save-btn {
+            background: linear-gradient(95deg, #f97316, #f59e0b);
+            color: white;
+            box-shadow: 0 4px 12px rgba(249,115,22,0.3);
+        }
+        .save-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .analysis-content {
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+        }
+
+        .copy-analysis-btn {
+            background: linear-gradient(95deg, #3b82f6, #2563eb);
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        .copy-analysis-btn:hover {
+            background: linear-gradient(95deg, #2563eb, #1d4ed8);
+        }
+
+        .toast-notify {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            padding: 14px 28px;
+            border-radius: 60px;
+            color: white;
+            font-weight: bold;
+            opacity: 0;
+            transition: 0.2s;
+            z-index: 1200;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .empty-message { text-align: center; padding: 40px; color: #94a3b8; }
+        .action-buttons { display: flex; gap: 8px; align-items: center; }
+        .edit-icon, .delete-icon, .drag-icon { cursor: pointer; padding: 6px; transition: 0.2s; border-radius: 50%; }
+        .edit-icon:hover { background: #dbeafe; color: #3b82f6; transform: scale(1.1); }
+        .delete-icon:hover { background: #fee2e2; color: #ef4444; transform: scale(1.1); }
+        .remove-icon { cursor: pointer; padding: 8px; color: #ef4444; transition: 0.2s; border-radius: 50%; }
+        .remove-icon:hover { background: #fee2e2; transform: scale(1.1); }
+        .msg-success { background: #e6f7e6; padding: 8px 16px; border-radius: 40px; color: #2e7d32; font-weight: 600; }
+        .animate-pulse { animation: pulse 0.2s ease-in-out; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .history-row {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .history-row:hover {
+            background: #fff3e6 !important;
+        }
+
+        .details-row {
+            background: #fefaf5;
+        }
+
+        .details-content {
+            padding: 20px;
+            background: #fefaf5;
+        }
+
+        .products-list-inline {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .inline-product-item {
+            background: white;
+            border-radius: 20px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border: 1px solid #ffe0c4;
+            transition: all 0.2s;
+        }
+
+        .inline-product-item:hover {
+            border-color: #f97316;
+            box-shadow: 0 2px 8px rgba(249,115,22,0.1);
+        }
+
+        .inline-product-photo {
+            width: 50px;
+            height: 50px;
+            border-radius: 16px;
+            background: #fef3e8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .inline-product-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .inline-product-info {
+            flex: 1;
+        }
+
+        .inline-product-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #221c14;
+            margin-bottom: 4px;
+        }
+
+        .inline-product-nutrients {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.7rem;
+        }
+
+        .inline-product-quantity {
+            background: #f97316;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .load-day-btn {
+            background: linear-gradient(95deg, #10b981, #059669);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .load-day-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16,185,129,0.3);
+        }
+
+        .expand-icon {
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(180deg);
+        }
+
+        .history-table th:first-child {
+            text-align: left;
+            border-radius: 20px 0 0 0;
+        }
+
+        .history-table th:not(:first-child) {
+            text-align: center;
+        }
+
+        .history-table td:first-child {
+            text-align: left;
+        }
+
+        .history-table td:not(:first-child) {
+            text-align: center;
+        }
+
+        .history-table th {
+            background: #f97316;
+            color: white;
+            font-weight: 700;
+            padding: 12px;
+        }
+
+        .history-table td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+
+        .history-row td:first-child {
+            font-weight: 600;
+        }
+
+        .details-content {
+            padding: 20px;
+            background: #fefaf5;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin: 0 20px 12px;
+        }
+
+        .save-diet-btn,
+        .save-tomorrow-btn {
+            flex: 1;
+            min-width: 0;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            min-width: 0;
+        }
+
+        .save-diet-btn {
+            background: linear-gradient(95deg, #10b981, #059669);
+        }
+
+        .save-diet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            background: linear-gradient(95deg, #059669, #047857);
+        }
+
+        .save-tomorrow-btn {
+            background: linear-gradient(95deg, #8b5cf6, #7c3aed);
+        }
+
+        .save-tomorrow-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3);
+            background: linear-gradient(95deg, #7c3aed, #6d28d9);
+        }
+
+        .clear-all-btn {
+            width: calc(100% - 40px);
+            margin: 0 20px 12px;
+            border-radius: 50px;
+            padding: 14px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #334155;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .clear-all-btn:hover {
+            background: #ef4444;
+            transform: translateY(-2px);
+        }
+
+        .loading-indicator {
+            background: #fefcf5;
+            border-top: 1px solid #ffe7cc;
+            color: #f97316;
+            font-weight: 600;
+            text-align: center;
+            padding: 12px;
+        }
+
+        /* Стили для кнопки "Показать ещё" */
+        .load-more-container {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .load-more-btn {
+            background: #f97316;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+        .load-more-btn:hover {
+            background: #ea580c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(249,115,22,0.3);
+        }
+        .load-more-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+<div class="page-wrapper">
+    <div class="header">
+        <div class="title-section">
+            <h1><i class="fas fa-leaf"></i> CalculateCalories</h1>
+            <p><i class="fas fa-chart-line"></i> Анализ рациона по дням</p>
+        </div>
+        <div class="header-actions">
+            <button id="analyzeWeekBtn" class="analyze-week-btn"><i class="fas fa-chart-line"></i> 📊 Анализ недели</button>
+            <a href="http://localhost:8080/" class="back-home"><i class="fas fa-arrow-left"></i> Главная</a>
+        </div>
+    </div>
+
+    <div class="diets-section">
+        <div class="diets-header">
+            <h2><i class="fas fa-clipboard-list"></i> Готовые рационы</h2>
+        </div>
+        <div class="diets-grid" id="dietsGrid">
+            <div class="diets-empty"><i class="fas fa-circle-info"></i> Пока нет сохранённых рационов. Соберите рацион справа и нажмите «Сохранить как рацион».</div>
+        </div>
+    </div>
+
+    <div class="columns-container">
+        <div class="column">
+            <div class="column-header">
+                <h2><i class="fas fa-database"></i> База продуктов</h2>
+                <div class="badge-count" id="sourceCount">0</div>
+                <button id="refreshProductsBtn" class="reset-btn"><i class="fas fa-sync-alt"></i> Обновить</button>
+            </div>
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label><i class="fas fa-chart-simple"></i> Сортировка</label>
+                    <div class="custom-select">
+                        <select id="filterMacronutrient"></select>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-store"></i> Магазин</label>
+                    <div class="custom-select">
+                        <select id="filterShop"><option value="">Все магазины</option></select>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-search"></i> Поиск</label>
+                    <input type="text" id="filterName" placeholder="🔍 Найти продукт...">
+                </div>
+            </div>
+            <div class="product-list" id="sourceList">
+                <div id="productItemsContainer"></div>
+                <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+                    <i class="fas fa-spinner fa-pulse"></i> Загружаем ещё...
+                </div>
+            </div>
+
+            <div class="add-product-form">
+                <div class="form-header">
+                    <i class="fas fa-magic"></i>
+                    <h3>✨ Создать свой продукт</h3>
+                </div>
+                <div class="form-body">
+                    <div class="elegant-grid">
+                        <div class="field-group"><label><i class="fas fa-tag"></i> Название *</label><input type="text" id="prodName" placeholder="Например: Протеиновый батончик"></div>
+                        <div class="field-group"><label><i class="fas fa-fire"></i> Калории (ккал) *</label><input type="number" id="prodCalories" placeholder="250" step="any"></div>
+                        <div class="field-group"><label><i class="fas fa-dumbbell"></i> Белки (г)</label><input type="number" id="prodProtein" placeholder="0" step="any" value="0"></div>
+                        <div class="field-group"><label><i class="fas fa-oil-can"></i> Жиры (г)</label><input type="number" id="prodFat" placeholder="0" step="any" value="0"></div>
+                        <div class="field-group"><label><i class="fas fa-bread-slice"></i> Углеводы (г)</label><input type="number" id="prodCarbs" placeholder="0" step="any" value="0"></div>
+                        <div class="field-group"><label><i class="fas fa-seedling"></i> Клетчатка (г)</label><input type="number" id="prodFiber" placeholder="0" step="any" value="0"></div>
+                        <div class="field-group">
+                            <label><i class="fas fa-balance-scale"></i> Единица</label>
+                            <div class="custom-select">
+                                <select id="prodUnit">
+                                    <option value="шт">🍽️ шт (штука)</option>
+                                    <option value="100г">⚖️ 100 г</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field-group"><label><i class="fas fa-image"></i> URL фото</label><input type="text" id="prodPhotoUrl" placeholder="https://...jpg"></div>
+                        <div class="field-group">
+                            <label><i class="fas fa-shop"></i> Магазин</label>
+                            <div class="custom-select">
+                                <select id="prodShop"><option value="">🏪 Выберите магазин</option></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="double-buttons">
+                        <button id="addProductBtn" class="submit-btn"><i class="fas fa-plus-circle"></i> Добавить продукт</button>
+                        <button id="clearFormBtn" class="clear-form-btn"><i class="fas fa-eraser"></i> Очистить форму</button>
+                    </div>
+                    <div id="addProductMessage" style="margin-top: 14px; font-size: 0.85rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="column">
+            <div class="column-header">
+                <h2><i class="fas fa-basket-shopping"></i> Мой рацион</h2>
+                <button id="resetSelectionBtn" class="reset-btn"><i class="fas fa-trash-alt"></i> Сброс</button>
+            </div>
+            <div class="product-list" id="selectedList"><div class="empty-message"><i class="fas fa-hand-peace"></i> Перетащите продукты сюда</div></div>
+            <div class="total-card">
+                <div class="total-label"><i class="fas fa-charging-station"></i> Суммарная энергия</div>
+                <div class="total-value" id="totalKcalDisplay">0 <span>ккал</span></div>
+                <div class="total-nutrients" id="totalNutrientsDisplay">
+                    <span>🥩 Белки: 0 г</span>
+                    <span>🧈 Жиры: 0 г</span>
+                    <span>🍚 Углеводы: 0 г</span>
+                    <span>🌾 Клетчатка: 0 г</span>
+                </div>
+            </div>
+
+            <div class="field-group" style="padding: 0 22px; margin-bottom: 14px;">
+                <label><i class="fas fa-comment-dots"></i> Комментарий к рациону</label>
+                <textarea id="dietDayComment" placeholder="Например: читмил на ужин, тренировка вечером..." style="width:100%; min-height: 60px; resize: vertical;"></textarea>
+            </div>
+
+            <div class="button-group">
+                <button id="saveDietBtn" class="save-diet-btn">
+                    <i class="fas fa-calendar-check"></i> Сохранить сегодня
+                </button>
+                <button id="savePlannedDietBtn" class="save-tomorrow-btn">
+                    <i class="fas fa-calendar-days"></i> Запланировать на дату
+                </button>
+            </div>
+
+            <button id="saveAsDietBtn" class="save-as-diet-btn">
+                <i class="fas fa-bookmark"></i> Сохранить как рацион
+            </button>
+
+            <button id="clearSelectedBtn" class="clear-all-btn">
+                <i class="fas fa-trash-can"></i> Удалить всё из рациона
+            </button>
+        </div>
+    </div>
+
+    <div class="history-section">
+        <div class="history-header">
+            <h2><i class="fas fa-history"></i> История по дням</h2>
+            <button id="refreshHistoryBtn" class="refresh-history-btn"><i class="fas fa-sync-alt"></i> Обновить</button>
+        </div>
+        <div class="history-table-wrapper">
+            <table class="history-table">
+                <thead>
+                <tr><th>📅 Дата</th><th>🔥 Калории</th><th>🥩 Белки</th><th>🧈 Жиры</th><th>🍚 Углеводы</th><th>🌾 Клетчатка</th></tr>
+                </thead>
+                <tbody id="historyTableBody"><tr><td colspan="6" style="text-align:center;">Загрузка...</td></tr>
+                </tbody>
+            </table>
+            <!-- Кнопка "Показать ещё" для подгрузки истории -->
+            <div class="load-more-container" id="loadMoreContainer" style="display: none;">
+                <button id="loadMoreHistoryBtn" class="load-more-btn">
+                    <i class="fas fa-chevron-down"></i> Показать ещё
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-pen-fancy"></i> Редактировать продукт</h3>
+            <button class="modal-close" id="closeModalBtn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="edit-form-grid">
+                <div class="edit-field"><label>Название</label><input type="text" id="editName"></div>
+                <div class="edit-field"><label>Калории</label><input type="number" id="editCalories" step="any"></div>
+                <div class="edit-field"><label>Белки</label><input type="number" id="editProtein" step="any"></div>
+                <div class="edit-field"><label>Жиры</label><input type="number" id="editFat" step="any"></div>
+                <div class="edit-field"><label>Углеводы</label><input type="number" id="editCarbs" step="any"></div>
+                <div class="edit-field"><label>Клетчатка</label><input type="number" id="editFiber" step="any"></div>
+                <div class="edit-field"><label>Единица</label>
+                    <select id="editUnit"><option value="шт">шт</option><option value="100г">100г</option></select>
+                </div>
+                <div class="edit-field"><label>URL фото</label><input type="text" id="editPhotoUrl"></div>
+                <div class="edit-field"><label>Магазин</label><select id="editShop"></select></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelEditBtn">Отмена</button>
+                <button class="save-btn" id="saveEditBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно планирования рациона на выбранную дату -->
+<div id="planDateModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-calendar-days"></i> Запланировать рацион</h3>
+            <button class="modal-close" id="closePlanDateModalBtn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="edit-form-grid">
+                <div class="edit-field" style="grid-column: 1 / -1;">
+                    <label>Выберите дату</label>
+                    <input type="date" id="planDateInput">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelPlanDateBtn">Отмена</button>
+                <button class="save-btn" id="confirmPlanDateBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для анализа недели -->
+<div id="analysisModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-chart-line"></i> Анализ рациона за неделю</h3>
+            <button class="modal-close" id="closeAnalysisModalBtn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div id="analysisText" class="analysis-content"></div>
+            <button id="copyAnalysisBtn" class="drawer-btn copy-analysis-btn"><i class="fas fa-copy"></i> 📋 Скопировать анализ</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно сохранения рациона -->
+<div id="saveDietModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="saveDietModalTitle"><i class="fas fa-bookmark"></i> Сохранить как рацион</h3>
+            <button class="modal-close" id="closeSaveDietModalBtn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="diet-form-grid">
+                <div class="edit-field"><label>Название рациона *</label><input type="text" id="dietNameInput" placeholder="Например: ПП завтрак"></div>
+                <div class="edit-field"><label>Описание</label><textarea id="dietDescInput" placeholder="Краткое описание рациона..."></textarea></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelSaveDietBtn">Отмена</button>
+                <button class="save-btn" id="confirmSaveDietBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toastMsg" class="toast-notify"><i class="fas fa-check-circle"></i> <span>Готово</span></div>
+
+<script>
+    // ========== Утилиты ==========
+
+    const API_BASE = '/api';
+
+    async function request(url, options = {}) {
+        const response = await fetch(API_BASE + url, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...(options.headers || {})
+            },
+            ...options
+        });
+
+        if (!response.ok) {
+            let message = `HTTP ${response.status}`;
+            try {
+                const data = await response.json();
+                message = data.message || message;
+                if (data.details && data.details.length) {
+                    message += ': ' + data.details.join(', ');
+                }
+            } catch (_) {
+                // ignore
+            }
+            throw new Error(message);
+        }
+
+        return response.status === 204 ? null : response.json();
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function localDateString(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    const getMultiplier = (product) => {
+        const qty = product.quantity || 0;
+        return product.unit === '100г' ? qty / 100 : qty;
+    };
+
+    const calculateNutrientTotals = (products) => {
+        let totalCalories = 0, protein = 0, fat = 0, carbs = 0, fiber = 0;
+        products.forEach(p => {
+            const m = getMultiplier(p);
+            totalCalories += (p.calories || 0) * m;
+            protein += (p.protein || 0) * m;
+            fat += (p.fat || 0) * m;
+            carbs += (p.carbohydrate || 0) * m;
+            fiber += (p.fiber || 0) * m;
+        });
+        return {
+            calories: Math.round(totalCalories),
+            protein: Math.round(protein * 10) / 10,
+            fat: Math.round(fat * 10) / 10,
+            carbohydrates: Math.round(carbs * 10) / 10,
+            fiber: Math.round(fiber * 10) / 10
+        };
+    };
+
+    const parsePageMeta = (data, fallbackPage) => {
+        const pageInfo = data.page ?? {};
+        return {
+            page: pageInfo.number ?? fallbackPage,
+            totalPages: pageInfo.totalPages ?? 0,
+            totalElements: pageInfo.totalElements ?? 0
+        };
+    };
+
+    const showToast = (msg) => {
+        const toast = document.getElementById('toastMsg');
+        if (toast) {
+            toast.querySelector('span').innerText = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 2000);
+        }
+    };
+
+    // ========== Состояние ==========
+
+    let allProducts = [];
+    let selectedProducts = [];
+    let shopsMap = {};
+    let currentOpenDate = null;
+    let savedDiets = [];
+    let editingDietId = null;
+
+    // Пагинация продуктов
+    let currentPage = 0;
+    let totalPages = 0;
+    let totalElements = 0;
+    const PAGE_SIZE = 30; // <-- ИЗМЕНЕНО НА 30
+    let isLoadingMore = false;
+
+    // Пагинация истории
+    let historyPage = 0;
+    let historyTotalPages = 0;
+    let historyTotalElements = 0;
+    const HISTORY_PAGE_SIZE = 30; // <-- ИЗМЕНЕНО НА 30
+    let historyRecords = [];
+    let historyLoading = false;
+
+    const sourceList = document.getElementById('sourceList');
+    const productItemsContainer = document.getElementById('productItemsContainer');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const selectedList = document.getElementById('selectedList');
+    const totalKcalDisplay = document.getElementById('totalKcalDisplay');
+    const totalNutrientsDisplay = document.getElementById('totalNutrientsDisplay');
+    const sourceCountSpan = document.getElementById('sourceCount');
+    const filterMacronutrient = document.getElementById('filterMacronutrient');
+    const filterShop = document.getElementById('filterShop');
+    const filterName = document.getElementById('filterName');
+    const prodShopSelect = document.getElementById('prodShop');
+    const editShopSelect = document.getElementById('editShop');
+    const historyTableBody = document.getElementById('historyTableBody');
+    const loadMoreContainer = document.getElementById('loadMoreContainer');
+    const loadMoreHistoryBtn = document.getElementById('loadMoreHistoryBtn');
+    const analyzeWeekBtn = document.getElementById('analyzeWeekBtn');
+    const analysisModal = document.getElementById('analysisModal');
+    const analysisText = document.getElementById('analysisText');
+    const closeAnalysisModalBtn = document.getElementById('closeAnalysisModalBtn');
+    const dietsGrid = document.getElementById('dietsGrid');
+    const saveDietModal = document.getElementById('saveDietModal');
+    const saveDietModalTitle = document.getElementById('saveDietModalTitle');
+    const dietNameInput = document.getElementById('dietNameInput');
+    const dietDescInput = document.getElementById('dietDescInput');
+    const copyAnalysisBtn = document.getElementById('copyAnalysisBtn');
+
+    // ========== Вспомогательные функции ==========
+
+    const updateTotalCalories = (animate = true) => {
+        const totals = calculateNutrientTotals(selectedProducts);
+
+        if (animate) {
+            totalKcalDisplay.classList.add('animate-pulse');
+            setTimeout(() => totalKcalDisplay.classList.remove('animate-pulse'), 200);
+        }
+
+        totalKcalDisplay.innerHTML = `${totals.calories} <span>ккал</span>`;
+        totalNutrientsDisplay.innerHTML = `
+            <span>🥩 Белки: ${totals.protein.toFixed(1)} г</span>
+            <span>🧈 Жиры: ${totals.fat.toFixed(1)} г</span>
+            <span>🍚 Углеводы: ${totals.carbohydrates.toFixed(1)} г</span>
+            <span>🌾 Клетчатка: ${totals.fiber.toFixed(1)} г</span>
+        `;
+    };
+
+    const saveToLocalStorage = () => {
+        try {
+            localStorage.setItem('calorie_selected_products', JSON.stringify(selectedProducts));
+        } catch (e) {}
+    };
+
+    const loadFromLocalStorage = () => {
+        const stored = localStorage.getItem('calorie_selected_products');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed)) {
+                    selectedProducts = parsed;
+                    renderSelectedList();
+                    updateTotalCalories(false);
+                }
+            } catch (e) {}
+        }
+    };
+
+    // ========== Готовые рационы ==========
+
+    const fetchDiets = async () => {
+        try {
+            savedDiets = await request('/diets');
+        } catch (e) {
+            savedDiets = [];
+            showToast('⚠️ Не удалось загрузить рационы');
+        }
+        renderDietsGrid();
+    };
+
+    const buildDietTooltipHtml = (diet) => {
+        const items = diet.items || [];
+        if (!items.length) return '<div class="diet-tooltip-empty">Нет продуктов</div>';
+        return items.map(item => {
+            const product = item.product;
+            const name = product ? escapeHtml(product.name) : `Продукт #${item.productId} (не найден)`;
+            const unit = product ? product.unit : '';
+            const qtyLabel = unit === '100г' ? `${item.quantity} г` : `${item.quantity} шт`;
+            return `<div class="diet-tooltip-item"><span>${name}</span><span class="diet-tooltip-qty">${escapeHtml(qtyLabel)}</span></div>`;
+        }).join('');
+    };
+
+    const renderDietsGrid = () => {
+        if (!dietsGrid) return;
+        if (!savedDiets.length) {
+            dietsGrid.innerHTML = '<div class="diets-empty"><i class="fas fa-circle-info"></i> Пока нет сохранённых рационов. Соберите рацион справа и нажмите «Сохранить как рацион».</div>';
+            return;
+        }
+
+        let html = '';
+        savedDiets.forEach((diet) => {
+            html += `
+                <div class="diet-card" data-diet-id="${diet.id}">
+                    <div class="diet-card-actions">
+                        <div class="diet-card-edit" data-action="edit-diet" data-id="${diet.id}"><i class="fas fa-pen"></i></div>
+                        <div class="diet-card-delete" data-action="delete-diet" data-id="${diet.id}"><i class="fas fa-times"></i></div>
+                    </div>
+                    <div class="diet-card-title"><i class="fas fa-utensils"></i> <span>${escapeHtml(diet.name)}</span></div>
+                    ${diet.description ? `<div class="diet-card-desc">${escapeHtml(diet.description)}</div>` : ''}
+                    <div class="diet-card-count"><i class="fas fa-list"></i> ${(diet.items || []).length} продукт(ов)</div>
+                    <div class="diet-tooltip">
+                        <div class="diet-tooltip-title"><i class="fas fa-list-ul"></i> Состав рациона</div>
+                        ${buildDietTooltipHtml(diet)}
+                    </div>
+                </div>
+            `;
+        });
+        dietsGrid.innerHTML = html;
+    };
+
+    const applyDiet = async (diet) => {
+        if (!diet || !Array.isArray(diet.items) || !diet.items.length) return;
+        selectedProducts = [];
+
+        showToast(`⏳ Применяем "${diet.name}"...`);
+
+        for (const item of diet.items) {
+            if (item.product) {
+                selectedProducts.push({ ...item.product, quantity: item.quantity });
+            } else {
+                showToast(`⚠️ Продукт (id ${item.productId}) не найден`);
+            }
+        }
+
+        renderSelectedList();
+        updateTotalCalories(true);
+        saveToLocalStorage();
+        showToast(`✅ Рацион "${diet.name}" применён`);
+    };
+
+    const openSaveDietModal = () => {
+        if (!selectedProducts.length) {
+            showToast('⚠️ Сначала добавьте продукты в рацион');
+            return;
+        }
+        editingDietId = null;
+        saveDietModalTitle.innerHTML = '<i class="fas fa-bookmark"></i> Сохранить как рацион';
+        dietNameInput.value = '';
+        dietDescInput.value = '';
+        saveDietModal.classList.add('active');
+        dietNameInput.focus();
+    };
+
+    const openEditDietModal = (diet) => {
+        editingDietId = diet.id;
+        saveDietModalTitle.innerHTML = '<i class="fas fa-pen"></i> Редактировать рацион';
+        dietNameInput.value = diet.name || '';
+        dietDescInput.value = diet.description || '';
+        saveDietModal.classList.add('active');
+        dietNameInput.focus();
+    };
+
+    const confirmSaveDiet = async () => {
+        const name = dietNameInput.value.trim();
+        const description = dietDescInput.value.trim();
+        if (!name) {
+            showToast('⚠️ Введите название рациона');
+            return;
+        }
+
+        if (editingDietId !== null) {
+            const diet = savedDiets.find(d => d.id === editingDietId);
+            const items = (diet ? diet.items : []).map(item => ({
+                productId: item.productId,
+                quantity: item.quantity
+            }));
+            try {
+                await request(`/diets/${editingDietId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ name, description, items })
+                });
+                await fetchDiets();
+                saveDietModal.classList.remove('active');
+                showToast(`✅ Рацион "${name}" обновлён`);
+            } catch (e) {
+                showToast(`❌ Не удалось обновить рацион: ${e.message}`);
+            }
+            return;
+        }
+
+        const items = selectedProducts
+            .filter(p => (p.quantity || 0) > 0)
+            .map(p => ({ productId: p.id, quantity: p.quantity }));
+        try {
+            await request('/diets', {
+                method: 'POST',
+                body: JSON.stringify({ name, description, items })
+            });
+            await fetchDiets();
+            saveDietModal.classList.remove('active');
+            showToast(`✅ Рацион "${name}" сохранён`);
+        } catch (e) {
+            showToast(`❌ Не удалось сохранить рацион: ${e.message}`);
+        }
+    };
+
+    // ========== Продукты ==========
+
+    const getShopName = (shopKey) => shopKey && shopsMap[shopKey] ? shopsMap[shopKey] : null;
+
+    const renderSourceList = () => {
+        if (!productItemsContainer) return;
+        if (!allProducts.length) {
+            productItemsContainer.innerHTML = '<div class="empty-message"><i class="fas fa-box-open"></i> Нет продуктов</div>';
+            return;
+        }
+
+        let html = '';
+        allProducts.forEach(product => {
+            const photoHtml = product.photoUrl
+                ? `<img src="${escapeHtml(product.photoUrl)}" alt="${escapeHtml(product.name)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\'>🍎</div>'">`
+                : '<div class="photo-fallback">🍎</div>';
+            const shopName = getShopName(product.shop);
+            html += `
+                <div class="product-item" draggable="true" data-action="add-product" data-id="${product.id}">
+                    <div class="product-photo">${photoHtml}</div>
+                    <div class="product-info">
+                        <div class="product-name">
+                            ${escapeHtml(product.name)}
+                            <span class="product-calories">⚡ ${product.calories} ккал / ${escapeHtml(product.unit || 'шт')}</span>
+                            ${shopName ? `<span class="product-shop"><i class="fas fa-store"></i> ${escapeHtml(shopName)}</span>` : ''}
+                        </div>
+                        <div class="nutrients-row">
+                            <span class="nutrient-badge">🥩 Б: ${(product.protein || 0).toFixed(1)}</span>
+                            <span class="nutrient-badge">🧈 Ж: ${(product.fat || 0).toFixed(1)}</span>
+                            <span class="nutrient-badge">🍚 У: ${(product.carbohydrate || 0).toFixed(1)}</span>
+                            <span class="nutrient-badge">🌾 Кл: ${(product.fiber || 0).toFixed(1)}</span>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <div class="edit-icon" data-action="edit-product" data-id="${product.id}"><i class="fas fa-edit"></i></div>
+                        <div class="delete-icon" data-action="delete-product" data-id="${product.id}"><i class="fas fa-trash-alt"></i></div>
+                        <div class="drag-icon"><i class="fas fa-grip-vertical"></i></div>
+                    </div>
+                </div>
+            `;
+        });
+        productItemsContainer.innerHTML = html;
+
+        document.querySelectorAll('#productItemsContainer .product-item').forEach(el => {
+            el.addEventListener('dragstart', (e) => {
+                const productId = parseInt(el.dataset.id);
+                const product = allProducts.find(p => p.id === productId);
+                if (product) {
+                    e.dataTransfer.setData('text/plain', JSON.stringify(product));
+                    e.dataTransfer.effectAllowed = 'copy';
+                }
+            });
+        });
+    };
+
+    const addProductToSelected = (product) => {
+        const existing = selectedProducts.find(p => p.id === product.id);
+        if (existing) {
+            const increment = existing.unit === '100г' ? 50 : 1;
+            existing.quantity = (existing.quantity || 1) + increment;
+        } else {
+            const initialQuantity = product.unit === '100г' ? 100 : 1;
+            selectedProducts.push({ ...product, quantity: initialQuantity });
+        }
+        renderSelectedList();
+        updateTotalCalories(true);
+        saveToLocalStorage();
+        showToast(`✅ ${product.name} добавлен`);
+    };
+
+    const renderSelectedList = () => {
+        if (!selectedList) return;
+        if (selectedProducts.length === 0) {
+            selectedList.innerHTML = '<div class="empty-message"><i class="fas fa-hand-peace"></i> Перетащите продукты сюда</div>';
+            return;
+        }
+
+        let html = '';
+        selectedProducts.forEach((item, idx) => {
+            const mult = getMultiplier(item);
+            const totalCal = ((item.calories || 0) * mult).toFixed(0);
+            const photoHtml = item.photoUrl
+                ? `<img src="${escapeHtml(item.photoUrl)}" alt="${escapeHtml(item.name)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\'>🍽️</div>'">`
+                : '<div class="photo-fallback">🍽️</div>';
+            html += `
+                <div class="product-item selected-item">
+                    <div class="product-photo">${photoHtml}</div>
+                    <div class="product-info">
+                        <div class="product-name">
+                            ${escapeHtml(item.name)}
+                            <span class="product-calories">🔥 ${totalCal} ккал</span>
+                        </div>
+                        <div class="nutrients-row">
+                            <span class="nutrient-badge">🥩 Б: ${((item.protein || 0) * mult).toFixed(1)}</span>
+                            <span class="nutrient-badge">🧈 Ж: ${((item.fat || 0) * mult).toFixed(1)}</span>
+                            <span class="nutrient-badge">🍚 У: ${((item.carbohydrate || 0) * mult).toFixed(1)}</span>
+                        </div>
+                        <div class="quantity-control">
+                            <button class="qty-minus" data-action="dec-qty" data-idx="${idx}">-${item.unit === '100г' ? 50 : 1}</button>
+                            <input type="number" class="quantity-input" data-idx="${idx}" value="${item.quantity || 0}" step="${item.unit === '100г' ? 50 : 1}" min="0">
+                            <button class="qty-plus" data-action="inc-qty" data-idx="${idx}">+${item.unit === '100г' ? 50 : 1}</button>
+                            <span>${item.unit === '100г' ? 'г' : escapeHtml(item.unit || 'шт')}</span>
+                        </div>
+                    </div>
+                    <div class="remove-icon" data-action="remove-selected" data-idx="${idx}"><i class="fas fa-trash-alt"></i></div>
+                </div>
+            `;
+        });
+        selectedList.innerHTML = html;
+    };
+
+    // ========== Анализ недели ==========
+
+    const analyzeWeek = async () => {
+        try {
+            showToast("📊 Загружаем данные за неделю...");
+            const weeklyData = await request('/nutrients/week');
+            const analysisTextContent = `Проанализируй этот JSON как диетолог: для каждого дня напиши, что хорошо, что плохо, и дай 2-3 конкретные подсказки по улучшению. В конце — главные выводы и топ-3 совета. Рацион уже довольно чистый, но можно сделать лучше. JSON:\n\n${JSON.stringify(weeklyData, null, 2)}`;
+            if (analysisText) {
+                analysisText.textContent = analysisTextContent;
+            }
+            if (analysisModal) {
+                analysisModal.classList.add('active');
+            }
+            showToast("✅ Данные загружены!");
+        } catch (error) {
+            console.error('Ошибка при получении данных за неделю:', error);
+            showToast(`❌ Ошибка: ${error.message}`);
+        }
+    };
+
+    const copyAnalysisToClipboard = () => {
+        if (analysisText && analysisText.textContent) {
+            navigator.clipboard.writeText(analysisText.textContent).then(() => {
+                showToast("📋 Текст скопирован в буфер обмена!");
+            }).catch(() => {
+                showToast("❌ Не удалось скопировать текст");
+            });
+        }
+    };
+
+    // ========== Загрузка продуктов с пагинацией ==========
+
+    const fetchProducts = async (page = 0, append = false) => {
+        if (append && isLoadingMore) return;
+
+        if (append) {
+            isLoadingMore = true;
+            loadingIndicator.style.display = 'block';
+        }
+
+        try {
+            const params = new URLSearchParams();
+            const sortByMacronutrient = filterMacronutrient.value;
+            const shop = filterShop.value;
+            const name = filterName.value.trim();
+
+            if (sortByMacronutrient && sortByMacronutrient !== 'NAME') {
+                params.append('sortByMacronutrient', sortByMacronutrient);
+            }
+            if (shop) params.append('shop', shop);
+            if (name) params.append('name', name);
+
+            params.append('page', page);
+            params.append('size', PAGE_SIZE); // 30
+
+            const url = `/products?${params.toString()}`;
+            const data = await request(url);
+
+            if (data && Array.isArray(data.content)) {
+                if (append) {
+                    allProducts = [...allProducts, ...data.content];
+                } else {
+                    allProducts = data.content;
+                }
+
+                const pageMeta = parsePageMeta(data, page);
+                currentPage = pageMeta.page;
+                totalPages = pageMeta.totalPages;
+                totalElements = pageMeta.totalElements;
+
+                renderSourceList();
+                if (sourceCountSpan) sourceCountSpan.innerText = totalElements;
+
+                if (!append && page === 0) {
+                    sourceList.scrollTop = 0;
+                }
+            } else {
+                throw new Error('Неверный формат данных');
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки продуктов:', e);
+            if (!append) {
+                productItemsContainer.innerHTML = `<div class="empty-message"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки: ${escapeHtml(e.message)}</div>`;
+            } else {
+                showToast(`❌ Ошибка подгрузки: ${e.message}`);
+            }
+        } finally {
+            if (append) {
+                isLoadingMore = false;
+                loadingIndicator.style.display = 'none';
+            }
+        }
+    };
+
+    const setupInfiniteScroll = () => {
+        sourceList.addEventListener('scroll', () => {
+            const { scrollTop, scrollHeight, clientHeight } = sourceList;
+            if (scrollTop + clientHeight >= scrollHeight - 150) {
+                if (!isLoadingMore && currentPage < totalPages - 1) {
+                    fetchProducts(currentPage + 1, true);
+                }
+            }
+        });
+    };
+
+    const loadShops = async () => {
+        try {
+            const data = await request('/products/shops');
+            shopsMap = data;
+            const fillSelect = (select) => {
+                if (select) {
+                    select.innerHTML = '<option value="">🏪 Все магазины</option>';
+                    for (const [key, value] of Object.entries(shopsMap)) {
+                        const option = document.createElement('option');
+                        option.value = key;
+                        option.textContent = `🏪 ${value}`;
+                        select.appendChild(option);
+                    }
+                }
+            };
+            fillSelect(filterShop);
+            fillSelect(prodShopSelect);
+            fillSelect(editShopSelect);
+        } catch (e) {
+            console.error('Ошибка загрузки магазинов:', e);
+        }
+    };
+
+    const loadMacronutrients = async () => {
+        try {
+            const data = await request('/products/macronutrients');
+            filterMacronutrient.innerHTML = '';
+
+            const nameOption = document.createElement('option');
+            nameOption.value = 'NAME';
+            nameOption.textContent = '📝 По названию';
+            filterMacronutrient.appendChild(nameOption);
+
+            const iconMap = { 'PROTEIN': '🥩', 'FAT': '🧈', 'CARBOHYDRATE': '🍚', 'FIBER': '🌾', 'CALORIES': '🔥' };
+            for (const [key, value] of Object.entries(data)) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = `${iconMap[key] || '📊'} ${value}`;
+                filterMacronutrient.appendChild(option);
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки макронутриентов:', e);
+        }
+    };
+
+    // ========== Загрузка истории с пагинацией ==========
+
+    const renderHistoryTable = () => {
+        if (!historyTableBody) return;
+        if (historyRecords.length === 0) {
+            historyTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Нет сохранённых рационов</td></tr>';
+            return;
+        }
+
+        // Локальная сортировка удалена для оптимизации, т.к. бэкенд возвращает данные уже отсортированными по дате DESC
+        historyTableBody.innerHTML = historyRecords.map(rec => `
+            <tr class="history-row" data-date="${rec.date}" style="cursor: pointer;">
+                <td style="text-align: left; position: relative;">
+                    <i class="fas fa-chevron-down expand-icon" style="margin-right: 12px; color: #f97316; transition: transform 0.3s ease;"></i>
+                    <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #f97316;"></i>
+                    ${escapeHtml(rec.date || '—')}
+                    ${rec.comment ? '<i class="fas fa-comment-dots" title="Есть комментарий" style="margin-left: 10px; color: #f97316; opacity: 0.7;"></i>' : ''}
+                </td>
+                <td style="text-align: center;">🔥 ${Math.round(rec.calories || 0)} ккал</td>
+                <td style="text-align: center;">🥩 ${(rec.protein || 0).toFixed(1)} г</td>
+                <td style="text-align: center;">🧈 ${(rec.fat || 0).toFixed(1)} г</td>
+                <td style="text-align: center;">🍚 ${(rec.carbohydrates || 0).toFixed(1)} г</td>
+                <td style="text-align: center;">🌾 ${(rec.fiber || 0).toFixed(1)} г</td>
+            </tr>
+            <tr class="details-row" data-date="${rec.date}" style="display: none;">
+                <td colspan="6" style="padding: 0;">
+                    <div class="details-content">
+                        <div class="products-list-inline" id="products-${rec.date.replace(/-/g, '')}">
+                            <div style="text-align: center; padding: 20px;">
+                                <i class="fas fa-spinner fa-pulse"></i> Загрузка продуктов...
+                            </div>
+                        </div>
+                        <button class="load-day-btn" data-action="load-day" data-date="${rec.date}">
+                            <i class="fas fa-download"></i> Загрузить этот рацион в "Мой рацион"
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    };
+
+    const updateLoadMoreButton = () => {
+        if (!loadMoreContainer || !loadMoreHistoryBtn) return;
+        if (historyPage < historyTotalPages - 1) {
+            loadMoreContainer.style.display = 'block';
+            loadMoreHistoryBtn.disabled = historyLoading;
+            loadMoreHistoryBtn.innerHTML = historyLoading
+                ? '<i class="fas fa-spinner fa-pulse"></i> Загрузка...'
+                : '<i class="fas fa-chevron-down"></i> Показать ещё';
+        } else {
+            loadMoreContainer.style.display = 'none';
+        }
+    };
+
+    const loadHistory = async (page = 0, append = false) => {
+        if (append && historyLoading) return;
+
+        if (append) {
+            historyLoading = true;
+            updateLoadMoreButton();
+        }
+
+        try {
+            const params = new URLSearchParams();
+            params.append('page', page);
+            params.append('size', HISTORY_PAGE_SIZE); // 30
+            const url = `/nutrients?${params.toString()}`;
+            const data = await request(url);
+
+            if (data && Array.isArray(data.content)) {
+                if (append) {
+                    historyRecords = [...historyRecords, ...data.content];
+                } else {
+                    historyRecords = data.content;
+                }
+
+                const pageMeta = parsePageMeta(data, page);
+                historyPage = pageMeta.page;
+                historyTotalPages = pageMeta.totalPages;
+                historyTotalElements = pageMeta.totalElements;
+
+                renderHistoryTable();
+                updateLoadMoreButton();
+            } else {
+                throw new Error('Неверный формат данных');
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки истории:', e);
+            if (!append) {
+                historyTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#ef4444;">Ошибка загрузки истории: ${escapeHtml(e.message)}</td></tr>`;
+                loadMoreContainer.style.display = 'none';
+            } else {
+                showToast(`❌ Ошибка подгрузки: ${e.message}`);
+            }
+        } finally {
+            if (append) {
+                historyLoading = false;
+                updateLoadMoreButton();
+            }
+        }
+    };
+
+    // ========== Загрузка продуктов конкретного дня ==========
+
+    const loadDayProducts = async (date, container) => {
+        try {
+            const dayData = await request(`/nutrients/${date}`);
+            const commentHtml = dayData.comment
+                ? `<div class="day-comment-block" style="padding: 12px 16px; margin-bottom: 14px; background: #fff7ed; border: 1px solid #ffe7cc; border-radius: 14px; font-size: 0.88rem; color: #57534e;">
+                       <i class="fas fa-comment-dots" style="color:#f97316; margin-right: 8px;"></i>${escapeHtml(dayData.comment)}
+                   </div>`
+                : '';
+
+            if (dayData.productsPerDay && dayData.productsPerDay.length > 0) {
+                const productsHtml = dayData.productsPerDay.map(product => {
+                    const mult = getMultiplier(product);
+                    const photoHtml = product.photoUrl
+                        ? `<img src="${escapeHtml(product.photoUrl)}" alt="${escapeHtml(product.name)}" onerror="this.parentElement.innerHTML='<div class=\'photo-fallback\' style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;\'>🍽️</div>'">`
+                        : '<div class="photo-fallback" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🍽️</div>';
+                    return `
+                        <div class="inline-product-item">
+                            <div class="inline-product-photo">${photoHtml}</div>
+                            <div class="inline-product-info">
+                                <div class="inline-product-name">${escapeHtml(product.name)}</div>
+                                <div class="inline-product-nutrients">
+                                    <span>🔥 ${Math.round((product.calories || 0) * mult)} ккал</span>
+                                    <span>🥩 ${((product.protein || 0) * mult).toFixed(1)}г</span>
+                                    <span>🧈 ${((product.fat || 0) * mult).toFixed(1)}г</span>
+                                    <span>🍚 ${((product.carbohydrate || 0) * mult).toFixed(1)}г</span>
+                                    <span>🌾 ${((product.fiber || 0) * mult).toFixed(1)}г</span>
+                                </div>
+                            </div>
+                            <div class="inline-product-quantity">
+                                ${product.quantity} ${product.unit === '100г' ? 'г' : escapeHtml(product.unit || 'шт')}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                container.innerHTML = commentHtml + productsHtml;
+            } else {
+                container.innerHTML = commentHtml + '<div style="text-align: center; padding: 20px; color: #94a3b8;"><i class="fas fa-box-open"></i> Нет продуктов в этом рационе</div>';
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки продуктов дня:', e);
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки продуктов</div>';
+        }
+    };
+
+    const loadDayToSelected = async (date) => {
+        try {
+            showToast(`📦 Загружаем рацион за ${date}...`);
+            const dayData = await request(`/nutrients/${date}`);
+            if (dayData.productsPerDay && Array.isArray(dayData.productsPerDay)) {
+                selectedProducts = dayData.productsPerDay.map(product => ({
+                    id: product.id,
+                    name: product.name,
+                    calories: product.calories,
+                    protein: product.protein,
+                    fat: product.fat,
+                    carbohydrate: product.carbohydrate,
+                    fiber: product.fiber || 0,
+                    unit: product.unit,
+                    photoUrl: product.photoUrl || '',
+                    shop: product.shop || null,
+                    quantity: product.quantity
+                }));
+                renderSelectedList();
+                updateTotalCalories(true);
+                saveToLocalStorage();
+                const commentInput = document.getElementById('dietDayComment');
+                if (commentInput) commentInput.value = dayData.comment || '';
+                showToast(`✅ Рацион за ${date} загружен (${selectedProducts.length} продуктов)`);
+                document.querySelector('.column:last-child').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                showToast(`⚠️ Нет данных о продуктах за ${date}`);
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки рациона:', e);
+            showToast(`❌ Не удалось загрузить рацион за ${date}`);
+        }
+    };
+
+    // ========== Сохранение дневного рациона (PUT) ==========
+
+    const saveDietForDate = async (date, dateLabel) => {
+        const activeProducts = selectedProducts.filter(p => (p.quantity || 0) > 0);
+        if (!activeProducts.length) {
+            showToast('⚠️ Рацион пуст');
+            return false;
+        }
+
+        const productsPerDay = activeProducts.map(p => ({
+            productId: p.id,
+            quantity: p.quantity
+        }));
+
+        const totals = calculateNutrientTotals(activeProducts);
+        const commentInput = document.getElementById('dietDayComment');
+        const comment = commentInput ? commentInput.value.trim() : '';
+
+        const payload = {
+            comment,
+            calories: totals.calories,
+            protein: totals.protein,
+            fat: totals.fat,
+            carbohydrates: totals.carbohydrates,
+            fiber: totals.fiber,
+            productsPerDay
+        };
+
+        try {
+            await request(`/nutrients/${date}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+            showToast(`✅ Рацион сохранён на ${dateLabel}`);
+            // Перезагружаем историю с первой страницы
+            await loadHistory(0, false);
+            return true;
+        } catch (e) {
+            console.error('Ошибка сохранения:', e);
+            showToast(`❌ Ошибка сохранения: ${e.message}`);
+            return false;
+        }
+    };
+
+    const saveCurrentDiet = () => {
+        const today = localDateString();
+        const todayFormatted = new Date().toLocaleDateString('ru-RU');
+        saveDietForDate(today, `сегодня (${todayFormatted})`);
+    };
+
+    // ========== Модальные окна ==========
+
+    const planDateModal = document.getElementById('planDateModal');
+    const planDateInput = document.getElementById('planDateInput');
+
+    const openPlanDateModal = () => {
+        if (!planDateModal || !planDateInput) return;
+        if (!planDateInput.value) {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            planDateInput.value = localDateString(tomorrow);
+        }
+        planDateModal.classList.add('active');
+    };
+
+    const confirmPlanDate = async () => {
+        const dateValue = planDateInput?.value;
+        if (!dateValue) {
+            showToast('❌ Выберите дату');
+            return;
+        }
+        const parsedDate = new Date(dateValue + 'T00:00:00');
+        const dateFormatted = parsedDate.toLocaleDateString('ru-RU');
+        const success = await saveDietForDate(dateValue, dateFormatted);
+        if (success) {
+            planDateModal.classList.remove('active');
+        }
+    };
+
+    let currentEditId = null;
+    const openEditModal = (product) => {
+        currentEditId = product.id;
+        document.getElementById('editName').value = product.name || '';
+        document.getElementById('editCalories').value = product.calories || 0;
+        document.getElementById('editProtein').value = product.protein || 0;
+        document.getElementById('editFat').value = product.fat || 0;
+        document.getElementById('editCarbs').value = product.carbohydrate || 0;
+        document.getElementById('editFiber').value = product.fiber || 0;
+        document.getElementById('editUnit').value = product.unit === '100г' ? '100г' : 'шт';
+        document.getElementById('editPhotoUrl').value = product.photoUrl || '';
+        document.getElementById('editShop').value = product.shop || '';
+        document.getElementById('editModal').classList.add('active');
+    };
+
+    const saveProductUpdate = async () => {
+        const updated = {
+            name: document.getElementById('editName').value.trim(),
+            calories: parseFloat(document.getElementById('editCalories').value) || 0,
+            protein: parseFloat(document.getElementById('editProtein').value) || 0,
+            fat: parseFloat(document.getElementById('editFat').value) || 0,
+            carbohydrate: parseFloat(document.getElementById('editCarbs').value) || 0,
+            fiber: parseFloat(document.getElementById('editFiber').value) || 0,
+            unit: document.getElementById('editUnit').value,
+            photoUrl: document.getElementById('editPhotoUrl').value.trim() || '',
+            shop: document.getElementById('editShop').value || null
+        };
+        if (!updated.name) {
+            showToast('Название не может быть пустым');
+            return;
+        }
+        try {
+            await request(`/products/${currentEditId}`, {
+                method: 'PUT',
+                body: JSON.stringify(updated)
+            });
+            document.getElementById('editModal').classList.remove('active');
+            showToast('✅ Продукт обновлён');
+            currentPage = 0;
+            await fetchProducts(0, false);
+            selectedProducts = selectedProducts.map(p => p.id === currentEditId ? { ...p, ...updated, quantity: p.quantity } : p);
+            renderSelectedList();
+            updateTotalCalories(true);
+        } catch (e) {
+            showToast(`❌ Ошибка обновления: ${e.message}`);
+        }
+    };
+
+    const addNewProduct = async () => {
+        const name = document.getElementById('prodName').value.trim();
+        const calories = parseFloat(document.getElementById('prodCalories').value);
+        if (!name || isNaN(calories)) {
+            showToast('Заполните название и калории');
+            return;
+        }
+        const newProduct = {
+            name,
+            calories,
+            protein: parseFloat(document.getElementById('prodProtein').value) || 0,
+            fat: parseFloat(document.getElementById('prodFat').value) || 0,
+            carbohydrate: parseFloat(document.getElementById('prodCarbs').value) || 0,
+            fiber: parseFloat(document.getElementById('prodFiber').value) || 0,
+            unit: document.getElementById('prodUnit').value,
+            photoUrl: document.getElementById('prodPhotoUrl').value.trim() || '',
+            shop: document.getElementById('prodShop').value || null
+        };
+        try {
+            await request('/products', {
+                method: 'POST',
+                body: JSON.stringify(newProduct)
+            });
+            const msgDiv = document.getElementById('addProductMessage');
+            msgDiv.innerHTML = '<div class="msg-success"><i class="fas fa-check-circle"></i> Продукт добавлен!</div>';
+            setTimeout(() => msgDiv.innerHTML = '', 2000);
+            document.getElementById('prodName').value = '';
+            document.getElementById('prodCalories').value = '';
+            document.getElementById('prodProtein').value = '0';
+            document.getElementById('prodFat').value = '0';
+            document.getElementById('prodCarbs').value = '0';
+            document.getElementById('prodFiber').value = '0';
+            document.getElementById('prodPhotoUrl').value = '';
+            currentPage = 0;
+            await fetchProducts(0, false);
+        } catch (e) {
+            showToast(`❌ Ошибка добавления: ${e.message}`);
+        }
+    };
+
+    const clearForm = () => {
+        document.getElementById('prodName').value = '';
+        document.getElementById('prodCalories').value = '';
+        document.getElementById('prodProtein').value = '0';
+        document.getElementById('prodFat').value = '0';
+        document.getElementById('prodCarbs').value = '0';
+        document.getElementById('prodFiber').value = '0';
+        document.getElementById('prodPhotoUrl').value = '';
+        showToast('Форма очищена');
+    };
+
+    const setupDropTarget = () => {
+        if (selectedList) {
+            selectedList.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+            });
+            selectedList.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const raw = e.dataTransfer.getData('text/plain');
+                if (raw) {
+                    try {
+                        const product = JSON.parse(raw);
+                        if (product && product.name) addProductToSelected(product);
+                    } catch (err) {}
+                }
+            });
+        }
+    };
+
+    // ========== Делегирование событий ==========
+
+    function setupEventDelegation() {
+        sourceList.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('[data-action="edit-product"]');
+            if (editBtn) {
+                const id = Number(editBtn.dataset.id);
+                const product = allProducts.find(p => p.id === id);
+                if (product) openEditModal(product);
+                return;
+            }
+
+            const deleteBtn = e.target.closest('[data-action="delete-product"]');
+            if (deleteBtn) {
+                const id = Number(deleteBtn.dataset.id);
+                const product = allProducts.find(p => p.id === id);
+                if (product && confirm(`Удалить "${product.name}"?`)) {
+                    request(`/products/${id}`, { method: 'DELETE' })
+                        .then(async () => {
+                            showToast(`🗑️ ${product.name} удалён`);
+                            if (allProducts.length === 1 && currentPage > 0) {
+                                currentPage--;
+                            }
+                            await fetchProducts(currentPage, false);
+                            selectedProducts = selectedProducts.filter(p => p.id !== id);
+                            renderSelectedList();
+                            updateTotalCalories(true);
+                            await Promise.all([loadHistory(0, false), fetchDiets()]);
+                        })
+                        .catch(e => showToast(`❌ Ошибка удаления: ${e.message}`));
+                }
+                return;
+            }
+
+            const addItem = e.target.closest('[data-action="add-product"]');
+            if (addItem) {
+                const id = Number(addItem.dataset.id);
+                const product = allProducts.find(p => p.id === id);
+                if (product) addProductToSelected(product);
+            }
+        });
+
+        selectedList.addEventListener('click', (e) => {
+            const decBtn = e.target.closest('[data-action="dec-qty"]');
+            if (decBtn) {
+                const idx = Number(decBtn.dataset.idx);
+                if (selectedProducts[idx]) {
+                    const step = selectedProducts[idx].unit === '100г' ? 50 : 1;
+                    selectedProducts[idx].quantity = Math.max(0, (selectedProducts[idx].quantity || 0) - step);
+                    renderSelectedList();
+                    updateTotalCalories(true);
+                    saveToLocalStorage();
+                }
+                return;
+            }
+
+            const incBtn = e.target.closest('[data-action="inc-qty"]');
+            if (incBtn) {
+                const idx = Number(incBtn.dataset.idx);
+                if (selectedProducts[idx]) {
+                    const step = selectedProducts[idx].unit === '100г' ? 50 : 1;
+                    selectedProducts[idx].quantity = (selectedProducts[idx].quantity || 0) + step;
+                    renderSelectedList();
+                    updateTotalCalories(true);
+                    saveToLocalStorage();
+                }
+                return;
+            }
+
+            const removeBtn = e.target.closest('[data-action="remove-selected"]');
+            if (removeBtn) {
+                const idx = Number(removeBtn.dataset.idx);
+                selectedProducts.splice(idx, 1);
+                renderSelectedList();
+                updateTotalCalories(true);
+                saveToLocalStorage();
+            }
+        });
+
+        selectedList.addEventListener('change', (e) => {
+            if (e.target.classList.contains('quantity-input')) {
+                const idx = Number(e.target.dataset.idx);
+                if (selectedProducts[idx]) {
+                    let val = parseFloat(e.target.value);
+                    if (isNaN(val) || val <= 0) val = 0;
+                    selectedProducts[idx].quantity = val;
+                    renderSelectedList();
+                    updateTotalCalories(true);
+                    saveToLocalStorage();
+                }
+            }
+        });
+
+        historyTableBody.addEventListener('click', async (e) => {
+            const loadBtn = e.target.closest('[data-action="load-day"]');
+            if (loadBtn) {
+                const date = loadBtn.dataset.date;
+                await loadDayToSelected(date);
+                return;
+            }
+
+            const row = e.target.closest('.history-row');
+            if (row) {
+                const date = row.dataset.date;
+                const detailsRow = document.querySelector(`.details-row[data-date="${date}"]`);
+                const expandIcon = row.querySelector('.expand-icon');
+
+                if (currentOpenDate && currentOpenDate !== date) {
+                    const prevDetailsRow = document.querySelector(`.details-row[data-date="${currentOpenDate}"]`);
+                    const prevExpandIcon = document.querySelector(`.history-row[data-date="${currentOpenDate}"] .expand-icon`);
+                    if (prevDetailsRow) {
+                        prevDetailsRow.style.display = 'none';
+                        if (prevExpandIcon) prevExpandIcon.classList.remove('expanded');
+                    }
+                }
+
+                if (detailsRow.style.display === 'none') {
+                    const productsContainer = document.getElementById(`products-${date.replace(/-/g, '')}`);
+                    if (productsContainer && productsContainer.innerHTML.includes('Загрузка продуктов')) {
+                        await loadDayProducts(date, productsContainer);
+                    }
+                    detailsRow.style.display = 'table-row';
+                    if (expandIcon) expandIcon.classList.add('expanded');
+                    currentOpenDate = date;
+                } else {
+                    detailsRow.style.display = 'none';
+                    if (expandIcon) expandIcon.classList.remove('expanded');
+                    currentOpenDate = null;
+                }
+            }
+        });
+
+        dietsGrid.addEventListener('click', async (e) => {
+            const deleteBtn = e.target.closest('[data-action="delete-diet"]');
+            if (deleteBtn) {
+                const id = Number(deleteBtn.dataset.id);
+                const diet = savedDiets.find(d => d.id === id);
+                if (diet && confirm(`Удалить рацион "${diet.name}"?`)) {
+                    try {
+                        await request(`/diets/${id}`, { method: 'DELETE' });
+                        savedDiets = savedDiets.filter(d => d.id !== id);
+                        renderDietsGrid();
+                        showToast('🗑️ Рацион удалён');
+                    } catch (e) {
+                        showToast(`❌ Не удалось удалить рацион: ${e.message}`);
+                    }
+                }
+                return;
+            }
+
+            const editBtn = e.target.closest('[data-action="edit-diet"]');
+            if (editBtn) {
+                const id = Number(editBtn.dataset.id);
+                const diet = savedDiets.find(d => d.id === id);
+                if (diet) openEditDietModal(diet);
+                return;
+            }
+
+            const card = e.target.closest('.diet-card');
+            if (card) {
+                const id = Number(card.dataset.dietId);
+                const diet = savedDiets.find(d => d.id === id);
+                if (diet) applyDiet(diet);
+            }
+        });
+    }
+
+    const clearSelectedProducts = () => {
+        selectedProducts = [];
+        renderSelectedList();
+        updateTotalCalories(true);
+        saveToLocalStorage();
+    };
+
+    // ========== Инициализация ==========
+
+    const init = async () => {
+        setupEventDelegation();
+        setupInfiniteScroll();
+
+        await Promise.all([loadShops(), loadMacronutrients()]);
+        await Promise.all([
+            fetchProducts(0, false),
+            fetchDiets(),
+            loadHistory(0, false)
+        ]);
+        loadFromLocalStorage();
+        setupDropTarget();
+
+        document.getElementById('refreshProductsBtn')?.addEventListener('click', () => fetchProducts(0, false));
+        document.getElementById('refreshHistoryBtn')?.addEventListener('click', () => loadHistory(0, false));
+        document.getElementById('resetSelectionBtn')?.addEventListener('click', clearSelectedProducts);
+        document.getElementById('clearSelectedBtn')?.addEventListener('click', clearSelectedProducts);
+        document.getElementById('saveDietBtn')?.addEventListener('click', saveCurrentDiet);
+        document.getElementById('addProductBtn')?.addEventListener('click', addNewProduct);
+        document.getElementById('clearFormBtn')?.addEventListener('click', clearForm);
+        document.getElementById('saveEditBtn')?.addEventListener('click', saveProductUpdate);
+        document.getElementById('cancelEditBtn')?.addEventListener('click', () => {
+            document.getElementById('editModal').classList.remove('active');
+        });
+        document.getElementById('closeModalBtn')?.addEventListener('click', () => {
+            document.getElementById('editModal').classList.remove('active');
+        });
+        document.getElementById('savePlannedDietBtn')?.addEventListener('click', openPlanDateModal);
+        document.getElementById('confirmPlanDateBtn')?.addEventListener('click', confirmPlanDate);
+        document.getElementById('cancelPlanDateBtn')?.addEventListener('click', () => {
+            planDateModal?.classList.remove('active');
+        });
+        document.getElementById('closePlanDateModalBtn')?.addEventListener('click', () => {
+            planDateModal?.classList.remove('active');
+        });
+        planDateModal?.addEventListener('click', (e) => {
+            if (e.target === planDateModal) planDateModal.classList.remove('active');
+        });
+        document.getElementById('saveAsDietBtn')?.addEventListener('click', openSaveDietModal);
+        document.getElementById('confirmSaveDietBtn')?.addEventListener('click', confirmSaveDiet);
+        document.getElementById('cancelSaveDietBtn')?.addEventListener('click', () => {
+            saveDietModal.classList.remove('active');
+        });
+        document.getElementById('closeSaveDietModalBtn')?.addEventListener('click', () => {
+            saveDietModal.classList.remove('active');
+        });
+        saveDietModal?.addEventListener('click', (e) => {
+            if (e.target === saveDietModal) saveDietModal.classList.remove('active');
+        });
+
+        filterMacronutrient?.addEventListener('change', () => {
+            currentPage = 0;
+            fetchProducts(0, false);
+        });
+        filterShop?.addEventListener('change', () => {
+            currentPage = 0;
+            fetchProducts(0, false);
+        });
+        let debounceTimer;
+        filterName?.addEventListener('input', () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                currentPage = 0;
+                fetchProducts(0, false);
+            }, 500);
+        });
+
+        closeAnalysisModalBtn?.addEventListener('click', () => {
+            analysisModal.classList.remove('active');
+        });
+        analysisModal?.addEventListener('click', (e) => {
+            if (e.target === analysisModal) analysisModal.classList.remove('active');
+        });
+        copyAnalysisBtn?.addEventListener('click', copyAnalysisToClipboard);
+        analyzeWeekBtn?.addEventListener('click', analyzeWeek);
+
+        loadMoreHistoryBtn?.addEventListener('click', () => {
+            loadHistory(historyPage + 1, true);
+        });
+    };
+
+    init();
+</script>
+</body>
+</html>

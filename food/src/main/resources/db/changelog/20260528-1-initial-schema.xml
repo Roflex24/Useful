@@ -1,0 +1,64 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="Roflex (generated)" id="1779949408317-2">
+        <createTable tableName="products">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="product_entity_pkey"/>
+            </column>
+            <column name="calories" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="carbohydrate" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fat" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fiber" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="photo_url" type="VARCHAR(255)"/>
+            <column name="protein" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="shop" type="SMALLINT"/>
+            <column name="unit" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779949408317-5">
+        <createTable tableName="nutrients_per_day">
+            <column name="date" type="date">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="calories_entity_pkey"/>
+            </column>
+            <column name="calories" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="carbohydrates" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fat" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fiber" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="protein" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Roflex (generated)" id="1779949408317-9">
+        <createTable tableName="products_per_day">
+            <column name="date" type="date">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="day_product_pkey"/>
+            </column>
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="day_product_pkey"/>
+            </column>
+            <column name="quantity" type="FLOAT8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

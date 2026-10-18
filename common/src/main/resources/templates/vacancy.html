@@ -408,7 +408,7 @@
                 <span><i class="fas fa-calendar-alt"></i> Анализ изменений по дням</span>
             </div>
             <div class="refresh-area">
-                <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> На главную</a>
+                <a href="http://localhost:8080/" class="back-btn"><i class="fas fa-arrow-left"></i> На главную</a>
                 <button id="refreshChartBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Обновить</button>
             </div>
         </div>
@@ -699,7 +699,7 @@
         }
 
         try {
-            const response = await fetch('http://localhost:8080/api/vacancy/list');
+            const response = await fetch('/api/vacancy/list');
             if (!response.ok) {
                 throw new Error(`HTTP ошибка: ${response.status} ${response.statusText}`);
             }
@@ -730,7 +730,7 @@
                     <div class="error-message">
                         <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 12px; display: inline-block;"></i>
                         <h3>Не удалось загрузить данные о вакансиях</h3>
-                        <p>${error.message || 'Проверьте доступность сервера http://localhost:8080/api/vacancy/list'}</p>
+                        <p>${error.message || 'Проверьте доступность сервера /api/vacancy/list'}</p>
                         <button id="retryFetchBtn" style="margin-top: 20px; background: #667eea; border: none; padding: 10px 28px; border-radius: 40px; color: white; font-weight: bold; cursor: pointer;">
                             <i class="fas fa-redo-alt"></i> Повторить запрос
                         </button>

@@ -18,7 +18,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class AvitoVisitorBot {
 
-    private static final String BACKEND_BASE_URL = "http://localhost:8080";
+    private static final String BACKEND_BASE_URL = System.getenv().getOrDefault("FINANCE_URL", "http://localhost:8081");
 
     private static final int PAGE_LOAD_MIN_MS = 4_000;
     private static final int PAGE_LOAD_MAX_MS = 9_000;

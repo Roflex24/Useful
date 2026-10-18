@@ -517,7 +517,7 @@
     <div class="shape shape-3"></div>
 </div>
 
-<a href="/" class="back-button">
+<a href="http://localhost:8080/" class="back-button">
     <i class="fas fa-home"></i> На главную
 </a>
 
@@ -543,7 +543,7 @@
                 <i class="fas fa-arrow-right arrow"></i>
             </a>
 
-            <a href="http://localhost:8080/page/finance" class="nav-link finance-link-btn">
+            <a href="/page/finance" class="nav-link finance-link-btn">
                 <i class="fas fa-coins"></i>
                 <span>Финансовый менеджер</span>
                 <i class="fas fa-arrow-right arrow"></i>
@@ -614,7 +614,7 @@
             vacancyContainer.innerHTML = '<div style="padding:10px; color: rgba(255,255,255,0.6);"><i class="fas fa-spinner fa-pulse"></i> Загрузка данных о вакансиях...</div>';
         }
         try {
-            const response = await fetch('http://localhost:8080/api/vacancy/count');
+            const response = await fetch('/api/vacancy/count');
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
             if (data && typeof data.vacancyCount === 'number' && data.date) {
